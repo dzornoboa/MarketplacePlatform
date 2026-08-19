@@ -1,94 +1,176 @@
 import React, { useState } from "react";
-import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import {
-  Globe, Shield, Lock, Zap, TrendingUp, DollarSign,
-  ChevronRight, Bell, FileText, Eye, Gavel, CheckCircle2, Clock,
-  ArrowUpRight, Star, MapPin, BarChart2, LogOut, Settings,
-  Home, Check, Building2, ChevronDown, Award, RefreshCw,
-  Layers, Wallet,
+  Globe, Shield, Lock, Zap, TrendingUp, DollarSign, ChevronRight, Bell,
+  FileText, Eye, Gavel, CheckCircle2, Clock, ArrowUpRight, ArrowDownRight,
+  Star, MapPin, BarChart2, LogOut, Settings, Home, Check, Building2,
+  ChevronDown, Award, RefreshCw, Layers, Wallet, Search, Mail, Phone,
+  User, Key, AlertCircle, Download, Upload, Plus, X, CreditCard, Activity,
+  Users, BookOpen, ChevronLeft, Menu, ToggleLeft, ToggleRight, Edit2,
 } from "lucide-react";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
-type View = "landing" | "investor" | "founder";
-type Currency = "USD" | "EUR" | "AED" | "JPY" | "GBP" | "SGD";
-type NavItem = { id: string; label: string; icon: React.ElementType };
+type View =
+  | "home" | "platform" | "deals" | "chapters" | "about"
+  | "login" | "list-project" | "project-detail"
+  | "investor" | "founder";
 
-// ─── FX DATA ──────────────────────────────────────────────────────────────────
+type Currency = "USD" | "EUR" | "AED" | "JPY" | "GBP" | "SGD";
+
+// ─── BRAND ────────────────────────────────────────────────────────────────────
+
+const B = {
+  navy:   "#154074",
+  orange: "#E4580A",
+  blue:   "#4D8BBE",
+  peach:  "#F9A25E",
+  teal:   "#09D0AC",
+  yellow: "#E5C056",
+  lgray:  "#ECECEF",
+  mgray:  "#A9A9AB",
+};
+
+// ─── FX ───────────────────────────────────────────────────────────────────────
 
 const CURRENCIES: Currency[] = ["USD", "EUR", "AED", "JPY", "GBP", "SGD"];
 const FX: Record<Currency, number> = { USD: 1, EUR: 0.918, AED: 3.673, JPY: 149.84, GBP: 0.788, SGD: 1.341 };
 const SYM: Record<Currency, string> = { USD: "$", EUR: "€", AED: "AED ", JPY: "¥", GBP: "£", SGD: "S$" };
 
 function fmt(usd: number, ccy: Currency = "USD"): string {
-  const val = usd * FX[ccy];
-  const sym = SYM[ccy];
-  if (val >= 1e9) return `${sym}${(val / 1e9).toFixed(2)}B`;
-  if (val >= 1e6) return `${sym}${(val / 1e6).toFixed(1)}M`;
-  if (val >= 1e3) return `${sym}${(val / 1e3).toFixed(0)}K`;
-  return `${sym}${val.toFixed(0)}`;
+  const v = usd * FX[ccy], s = SYM[ccy];
+  if (v >= 1e9) return `${s}${(v / 1e9).toFixed(2)}B`;
+  if (v >= 1e6) return `${s}${(v / 1e6).toFixed(1)}M`;
+  if (v >= 1e3) return `${s}${(v / 1e3).toFixed(0)}K`;
+  return `${s}${v.toFixed(0)}`;
 }
 
-// ─── DEAL DATA ────────────────────────────────────────────────────────────────
+// ─── DATA ─────────────────────────────────────────────────────────────────────
 
 const DEALS = [
   {
     id: "d1", name: "Nexus AI", sector: "Technology", stage: "Series A",
-    country: "UAE", city: "Dubai", founder: "Amira Khalil",
+    country: "UAE", city: "Dubai", founder: "Amira Khalil", founderTitle: "CEO & Co-founder",
+    founded: 2021, employees: 48,
     target: 15_000_000, committed: 9_200_000, matchScore: 94,
     minTicket: 250_000, irr: "24–32%", ndaSigned: true,
     description: "AI supply chain optimization for MENA logistics. 3× YoY growth, $4.2M ARR, 180 enterprise clients.",
-    wtcChapter: "WTC Dubai", initials: "NA", accentBg: "#1B3A6B",
+    longDesc: "Nexus AI has developed a proprietary logistics intelligence platform that integrates with existing ERP systems to reduce supply chain inefficiencies across Gulf, Levant, and North Africa regions.",
+    wtcChapter: "WTC Dubai", initials: "NA", bg: B.navy,
+    team: [{ n: "Amira Khalil", r: "CEO & Co-founder" }, { n: "Rami Farhat", r: "CTO & Co-founder" }, { n: "Nadia Singh", r: "CFO" }],
+    financials: { revenue: 4_200_000, growth: "312%", margin: "68%", burnRate: 280_000 },
+    milestones: ["$1M ARR Q2 2022", "Seed — $2.5M closed", "WTC Dubai recognition", "Series A launch Q1 2024"],
+    useOfFunds: [["Product R&D", "40%"], ["Sales & Marketing", "30%"], ["Ops & Infra", "20%"], ["Legal", "10%"]],
   },
   {
     id: "d2", name: "GreenHaven Realty", sector: "Real Estate", stage: "Growth",
-    country: "Singapore", city: "Singapore", founder: "Lucas Tan",
+    country: "Singapore", city: "Singapore", founder: "Lucas Tan", founderTitle: "Managing Director",
+    founded: 2018, employees: 124,
     target: 50_000_000, committed: 31_500_000, matchScore: 87,
     minTicket: 500_000, irr: "14–19%", ndaSigned: true,
     description: "Institutional-grade green commercial portfolio across Singapore and KL. LEED Platinum certified.",
-    wtcChapter: "WTC Singapore", initials: "GH", accentBg: "#1F4A2C",
+    longDesc: "GreenHaven operates a portfolio of premium green commercial properties with strong ESG credentials targeting institutional-grade yield with capital appreciation through LEED certification.",
+    wtcChapter: "WTC Singapore", initials: "GH", bg: B.blue,
+    team: [{ n: "Lucas Tan", r: "Managing Director" }, { n: "Priscilla Ng", r: "Head of Acquisitions" }, { n: "David Lim", r: "Finance Director" }],
+    financials: { revenue: 8_200_000, growth: "45%", margin: "52%", burnRate: 0 },
+    milestones: ["First LEED Platinum asset 2019", "SGD 120M AUM 2021", "KL expansion 2022", "Growth round 2024"],
+    useOfFunds: [["Asset Acquisition", "70%"], ["Capex", "20%"], ["Working Capital", "10%"]],
   },
   {
     id: "d3", name: "VoltEdge Energy", sector: "Energy", stage: "Series B",
-    country: "Germany", city: "Berlin", founder: "Katrin Müller",
+    country: "Germany", city: "Berlin", founder: "Katrin Müller", founderTitle: "CEO",
+    founded: 2019, employees: 87,
     target: 30_000_000, committed: 12_000_000, matchScore: 78,
     minTicket: 1_000_000, irr: "18–27%", ndaSigned: false,
-    description: "Next-gen solid-state battery storage for industrial grid balancing. EU Horizon grant recipient.",
-    wtcChapter: "WTC Berlin", initials: "VE", accentBg: "#4A3D18",
+    description: "Next-gen solid-state battery storage for industrial grid balancing. EU Horizon grant, 12 pilot deployments.",
+    longDesc: "VoltEdge has developed proprietary solid-state battery technology with 3× energy density of conventional lithium-ion, addressing large-scale renewable energy storage challenges.",
+    wtcChapter: "WTC Berlin", initials: "VE", bg: B.orange,
+    team: [{ n: "Katrin Müller", r: "CEO" }, { n: "Dr. Hans Weber", r: "CTO" }, { n: "Andrea Richter", r: "COO" }],
+    financials: { revenue: 2_800_000, growth: "180%", margin: "74%", burnRate: 450_000 },
+    milestones: ["EU Horizon grant €2.1M", "First commercial pilot 2022", "12 deployments live 2023", "Series B 2024"],
+    useOfFunds: [["Manufacturing Scale", "50%"], ["R&D", "30%"], ["Market Expansion", "20%"]],
   },
   {
     id: "d4", name: "MediCore Systems", sector: "Healthcare", stage: "Series A",
-    country: "USA", city: "Boston", founder: "Dr. Priya Nair",
+    country: "USA", city: "Boston", founder: "Dr. Priya Nair", founderTitle: "CEO & Founder",
+    founded: 2020, employees: 63,
     target: 12_000_000, committed: 8_800_000, matchScore: 91,
     minTicket: 100_000, irr: "28–40%", ndaSigned: true,
-    description: "FDA-cleared AI pathology platform cutting false negatives by 43%. 280 hospital clients.",
-    wtcChapter: "WTC Boston", initials: "MC", accentBg: "#3C1A50",
+    description: "FDA-cleared AI pathology diagnostics reducing false negatives by 43%. 280 hospital clients in North America.",
+    longDesc: "MediCore's AI platform augments pathologist workflow for cancer detection. FDA 510(k) cleared and CE marked, operating across 280 hospital systems in the US and Canada.",
+    wtcChapter: "WTC Boston", initials: "MC", bg: "#6B21A8",
+    team: [{ n: "Dr. Priya Nair", r: "CEO & Founder" }, { n: "James O'Connor", r: "CTO" }, { n: "Sandra Hoffmann", r: "VP Clinical" }],
+    financials: { revenue: 6_800_000, growth: "240%", margin: "71%", burnRate: 320_000 },
+    milestones: ["FDA 510(k) cleared 2022", "CE Mark 2023", "280 hospital integrations", "Series A 2024"],
+    useOfFunds: [["Clinical Trials", "35%"], ["Sales", "35%"], ["Product Dev", "20%"], ["G&A", "10%"]],
   },
   {
     id: "d5", name: "PayPath FinTech", sector: "FinTech", stage: "Seed",
-    country: "UAE", city: "Abu Dhabi", founder: "Omar Al-Rashid",
+    country: "UAE", city: "Abu Dhabi", founder: "Omar Al-Rashid", founderTitle: "Co-founder & CEO",
+    founded: 2022, employees: 24,
     target: 5_000_000, committed: 2_100_000, matchScore: 83,
     minTicket: 50_000, irr: "—", ndaSigned: false,
     description: "B2B cross-border payment rails for GCC SMEs. 1,200 business accounts, $80M annualized volume.",
-    wtcChapter: "WTC Abu Dhabi", initials: "PP", accentBg: "#1A3B4A",
+    longDesc: "PayPath provides compliant, fast, and affordable cross-border payment infrastructure tailored to GCC regulatory requirements.",
+    wtcChapter: "WTC Abu Dhabi", initials: "PP", bg: B.teal,
+    team: [{ n: "Omar Al-Rashid", r: "Co-founder & CEO" }, { n: "Fatima Jaber", r: "Co-founder & CTO" }, { n: "Michael Torres", r: "Head of Compliance" }],
+    financials: { revenue: 960_000, growth: "410%", margin: "42%", burnRate: 180_000 },
+    milestones: ["CBUAE RegLab cohort 2023", "1,000 business clients 2023", "$80M annualized vol", "Seed round 2024"],
+    useOfFunds: [["Licensing & Compliance", "40%"], ["Tech Infrastructure", "35%"], ["Team Growth", "25%"]],
   },
   {
     id: "d6", name: "UrbanFlow Mobility", sector: "Technology", stage: "Series A",
-    country: "Japan", city: "Tokyo", founder: "Kenji Watanabe",
+    country: "Japan", city: "Tokyo", founder: "Kenji Watanabe", founderTitle: "Founder & CEO",
+    founded: 2020, employees: 95,
     target: 20_000_000, committed: 7_600_000, matchScore: 72,
     minTicket: 500_000, irr: "20–28%", ndaSigned: false,
-    description: "Autonomous last-mile logistics for dense urban environments. Operational in 60 cities across Asia.",
-    wtcChapter: "WTC Tokyo", initials: "UF", accentBg: "#2A1A4A",
+    description: "Autonomous last-mile logistics for dense urban environments. Operating in 60 cities across Asia.",
+    longDesc: "UrbanFlow has deployed a mixed fleet of autonomous delivery robots and smart e-cargo bikes managed by a centralized AI dispatch system optimized for dense Asian urban environments.",
+    wtcChapter: "WTC Tokyo", initials: "UF", bg: "#7C3AED",
+    team: [{ n: "Kenji Watanabe", r: "Founder & CEO" }, { n: "Yuki Tanaka", r: "CTO" }, { n: "Christine Park", r: "CFO" }],
+    financials: { revenue: 5_100_000, growth: "195%", margin: "58%", burnRate: 620_000 },
+    milestones: ["First city pilot Osaka 2021", "30 city expansion 2022", "60 city network 2023", "Series A 2024"],
+    useOfFunds: [["Fleet Expansion", "45%"], ["Platform R&D", "30%"], ["International", "25%"]],
   },
 ];
 
+type Deal = typeof DEALS[0];
+
 const PORTFOLIO_DATA = [
-  { m: "Feb", c: 420 }, { m: "Mar", c: 820 }, { m: "Apr", c: 1100 },
-  { m: "May", c: 1450 }, { m: "Jun", c: 1850 }, { m: "Jul", c: 1850 },
-  { m: "Aug", c: 1850 },
+  { m: "Mar", c: 420 }, { m: "Apr", c: 820 }, { m: "May", c: 1100 },
+  { m: "Jun", c: 1450 }, { m: "Jul", c: 1850 }, { m: "Aug", c: 2180 },
 ];
 
-const VDR_LOG = [
+const MY_INVESTMENTS = [
+  { deal: "Nexus AI", sector: "Technology", invested: 500_000, currentVal: 680_000, irr: 28.4, status: "Active", date: "Jan 2024" },
+  { deal: "MediCore Systems", sector: "Healthcare", invested: 250_000, currentVal: 310_000, irr: 31.2, status: "Active", date: "Mar 2024" },
+  { deal: "GreenHaven Realty", sector: "Real Estate", invested: 750_000, currentVal: 840_000, irr: 15.8, status: "Active", date: "Dec 2023" },
+  { deal: "TechBridge (Exited)", sector: "Technology", invested: 200_000, currentVal: 380_000, irr: 42.1, status: "Exited", date: "Jul 2022" },
+  { deal: "CarbonZero Fund I", sector: "Energy", invested: 150_000, currentVal: 170_000, irr: 12.3, status: "Active", date: "Jun 2023" },
+];
+
+const VDR_ROOMS = [
+  { deal: "Nexus AI", docs: ["Executive Summary", "Financial Model FY24", "Cap Table", "Pitch Deck v4", "Term Sheet Template"], lastAccess: "Today, 14:32", ndaDate: "Jan 15, 2024", watermarkId: "WTC-JP-8841" },
+  { deal: "MediCore Systems", docs: ["FDA 510(k) Clearance", "Clinical Trials Data", "Revenue Model", "Pitch Deck v3"], lastAccess: "Yesterday, 11:07", ndaDate: "Mar 2, 2024", watermarkId: "WTC-JP-8841" },
+  { deal: "GreenHaven Realty", docs: ["Asset Portfolio Report", "LEED Certificates", "Valuation Report Q1 24", "Investor FAQ"], lastAccess: "3 days ago", ndaDate: "Dec 20, 2023", watermarkId: "WTC-JP-8841" },
+];
+
+const MY_BIDS = [
+  { id: "b1", deal: "Nexus AI", amount: 500_000, type: "Hard Bid", status: "In Escrow", submitted: "Feb 28, 2024", equity: "3.2%", escrow: "ESC-2024-0041" },
+  { id: "b2", deal: "MediCore Systems", amount: 250_000, type: "Hard Bid", status: "Countered", submitted: "Mar 18, 2024", equity: "2.0%", escrow: "ESC-2024-0078" },
+  { id: "b3", deal: "VoltEdge Energy", amount: 1_000_000, type: "Soft Commit", status: "NDA Pending", submitted: "Apr 2, 2024", equity: "—", escrow: "—" },
+  { id: "b4", deal: "PayPath FinTech", amount: 100_000, type: "Soft Commit", status: "Interested", submitted: "Apr 10, 2024", equity: "—", escrow: "—" },
+  { id: "b5", deal: "TechBridge Ltd", amount: 200_000, type: "Hard Bid", status: "Closed — Won", submitted: "Jun 12, 2022", equity: "1.8%", escrow: "ESC-2022-0017" },
+];
+
+const FOUNDER_BIDS = [
+  { id: "b1", investor: "Meridian Capital", amount: 1_200_000, type: "Hard Bid", status: "In Escrow", submitted: "2 days ago", equity: "18%" },
+  { id: "b2", investor: "Gulf Ventures", amount: 800_000, type: "Hard Bid", status: "Under Review", submitted: "3 days ago", equity: "12%" },
+  { id: "b3", investor: "Pacific Growth Partners", amount: 500_000, type: "Soft Commit", status: "Pending NDA", submitted: "4 days ago", equity: "TBD" },
+  { id: "b4", investor: "IndoTech Capital", amount: 250_000, type: "Soft Commit", status: "Interested", submitted: "5 days ago", equity: "TBD" },
+];
+
+const VDR_ACCESS_LOG = [
   { investor: "James Pemberton", firm: "Meridian Capital", location: "London, UK", time: "Today, 14:32", docs: ["Pitch Deck", "Financial Model"], verified: true },
   { investor: "Sun Wei", firm: "Pacific Growth Partners", location: "Hong Kong", time: "Today, 11:07", docs: ["Cap Table", "Pitch Deck"], verified: true },
   { investor: "Rania Al-Fayed", firm: "Gulf Ventures", location: "Riyadh, SA", time: "Yesterday, 16:45", docs: ["Financial Model", "Term Sheet"], verified: true },
@@ -96,100 +178,134 @@ const VDR_LOG = [
   { investor: "Aditi Chopra", firm: "IndoTech Capital", location: "Mumbai, IN", time: "3 days ago", docs: ["Business Plan", "Financial Model"], verified: true },
 ];
 
-const ACTIVE_BIDS = [
-  { id: "b1", investor: "Meridian Capital", amount: 1_200_000, type: "Hard Bid", status: "In Escrow", submitted: "2 days ago", equity: "18%" },
-  { id: "b2", investor: "Gulf Ventures", amount: 800_000, type: "Hard Bid", status: "Under Review", submitted: "3 days ago", equity: "12%" },
-  { id: "b3", investor: "Pacific Growth Partners", amount: 500_000, type: "Soft Commit", status: "Pending NDA", submitted: "4 days ago", equity: "TBD" },
-  { id: "b4", investor: "IndoTech Capital", amount: 250_000, type: "Soft Commit", status: "Interested", submitted: "5 days ago", equity: "TBD" },
+const CHAPTERS_DATA = [
+  { region: "Middle East", name: "WTC Dubai", city: "Dubai, UAE", active: 12 },
+  { region: "Middle East", name: "WTC Abu Dhabi", city: "Abu Dhabi, UAE", active: 7 },
+  { region: "Middle East", name: "WTC Riyadh", city: "Riyadh, SA", active: 9 },
+  { region: "Asia Pacific", name: "WTC Singapore", city: "Singapore", active: 18 },
+  { region: "Asia Pacific", name: "WTC Tokyo", city: "Tokyo, Japan", active: 11 },
+  { region: "Asia Pacific", name: "WTC Mumbai", city: "Mumbai, India", active: 14 },
+  { region: "Asia Pacific", name: "WTC Shanghai", city: "Shanghai, China", active: 22 },
+  { region: "Europe", name: "WTC Berlin", city: "Berlin, Germany", active: 8 },
+  { region: "Europe", name: "WTC London", city: "London, UK", active: 25 },
+  { region: "Europe", name: "WTC Paris", city: "Paris, France", active: 13 },
+  { region: "Americas", name: "WTC New York", city: "New York, USA", active: 31 },
+  { region: "Americas", name: "WTC Boston", city: "Boston, USA", active: 16 },
+  { region: "Americas", name: "WTC Miami", city: "Miami, USA", active: 9 },
+  { region: "Africa", name: "WTC Johannesburg", city: "Johannesburg, SA", active: 5 },
+  { region: "Africa", name: "WTC Lagos", city: "Lagos, Nigeria", active: 4 },
 ];
 
-const WORKFLOW_STEPS = [
-  { n: 1, Icon: Shield, title: "Register & Verify", desc: "KYC/AML via Persona or Sumsub. Identity and investor accreditation confirmed." },
-  { n: 2, Icon: Globe, title: "Profile Setup", desc: "Set native currency, language preference, sector mandates, and wallet link." },
-  { n: 3, Icon: Layers, title: "List or Subscribe", desc: "Founders select a SaaS tier. Investors complete preference profiling." },
-  { n: 4, Icon: Zap, title: "AI Matchmaking", desc: "Python vector engine scores 40+ attributes to surface highest-confidence deals." },
-  { n: 5, Icon: Lock, title: "NDA → VDR Access", desc: "Sign dynamic NDA. Unlock documents watermarked with your identity and IP." },
-  { n: 6, Icon: Gavel, title: "Bid or Soft Commit", desc: "Term-sheet bids backed by third-party escrow. Zero platform custody." },
-  { n: 7, Icon: CheckCircle2, title: "Escrow & Close", desc: "Milestone-based disbursements. Electronic contract execution on success." },
-  { n: 8, Icon: Star, title: "Reputation & Review", desc: "KYC-verified ratings update public trust scores for founders and investors." },
-];
+// ─── LOGO ─────────────────────────────────────────────────────────────────────
 
-const FEATURES = [
-  { Icon: Lock, title: "Virtual Data Room", desc: "Dynamic watermarking stamps every document with the downloader's identity, IP address, and timestamp. Full access audit trail maintained." },
-  { Icon: Zap, title: "AI Match Engine", desc: "Python cosine-similarity engine matches across check size, sector, stage, and geographic mandate to surface high-confidence opportunities first." },
-  { Icon: Shield, title: "Escrow-Linked Bids", desc: "Zero platform custody. All capital holds and milestone releases are fully delegated to licensed third-party escrow providers." },
-  { Icon: DollarSign, title: "Multi-Currency FX", desc: "60-second Redis-cached live rates enable real-time recalculation across USD, EUR, AED, JPY, GBP, SGD, and 20+ additional currencies." },
-  { Icon: CheckCircle2, title: "KYC/AML Compliance", desc: "Integrated Persona/Sumsub identity verification, investor accreditation audits, and mandatory WTC chapter membership validation." },
-  { Icon: Star, title: "Reputation Ledger", desc: "KYC-backed peer reviews score founder transparency and investor reliability. Non-editable, append-only trust history on every profile." },
-];
-
-const PRICING = [
-  {
-    tier: "Starter", price: 299,
-    tagline: "For early-stage founders testing the market",
-    features: ["1 active project listing", "Standard VDR with watermarking", "Up to 20 investor NDA requests", "Basic AI matching exposure", "Email support"],
-    cta: "Start Free Trial", accent: false,
-  },
-  {
-    tier: "Professional", price: 799,
-    tagline: "For founders actively running a live round",
-    features: ["3 active project listings", "Advanced VDR with full audit logs", "Unlimited NDA requests", "Priority AI matching placement", "Syndicate pool access", "Dedicated chapter liaison"],
-    cta: "Get Started", accent: true,
-  },
-  {
-    tier: "Enterprise", price: 2499,
-    tagline: "For multi-project or chapter-level programs",
-    features: ["Unlimited active projects", "White-glove onboarding", "Custom NDA templates", "Exclusive chapter matching", "Term sheet review support", "Co-investment facilitation", "24/7 priority support"],
-    cta: "Contact Sales", accent: false,
-  },
-];
-
-// ─── SHARED MICRO-COMPONENTS ──────────────────────────────────────────────────
-
-function MatchPill({ score }: { score: number }) {
-  const color = score >= 90 ? "text-emerald-400" : score >= 80 ? "text-amber-400" : "text-muted-foreground";
+function WTCGlobe({ size = 36 }: { size?: number }) {
   return (
-    <span className={`flex items-center gap-1 text-xs font-mono ${color}`}>
-      <Zap className="w-3 h-3" />{score}%
-    </span>
+    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="20" r="19.5" fill={B.navy} />
+      <ellipse cx="20" cy="20" rx="19.5" ry="9" stroke="rgba(255,255,255,0.25)" strokeWidth="0.8" fill="none" />
+      <line x1="0.5" y1="20" x2="39.5" y2="20" stroke="rgba(255,255,255,0.25)" strokeWidth="0.8" />
+      <line x1="20" y1="0.5" x2="20" y2="39.5" stroke="rgba(255,255,255,0.2)" strokeWidth="0.8" />
+      <ellipse cx="20" cy="20" rx="9.5" ry="19.5" stroke="rgba(255,255,255,0.18)" strokeWidth="0.8" fill="none" />
+      <circle cx="20" cy="20" r="5.5" fill={B.orange} />
+      <circle cx="20" cy="20" r="2.5" fill="white" />
+    </svg>
   );
 }
 
+function BrandLogo({ collapsed = false }: { collapsed?: boolean }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <WTCGlobe size={34} />
+      {!collapsed && (
+        <div className="leading-none">
+          <div className="text-sm font-bold tracking-wide" style={{ color: B.navy, fontFamily: '"Manrope", sans-serif' }}>
+            WTC <span style={{ color: B.orange }}>Investors</span>
+          </div>
+          <div className="text-xs tracking-widest mt-0.5" style={{ color: B.mgray, fontFamily: '"JetBrains Mono", monospace' }}>
+            HUB
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── SHARED UI ────────────────────────────────────────────────────────────────
+
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    "In Escrow": "bg-emerald-900/30 text-emerald-400 border-emerald-800/40",
-    "Under Review": "bg-amber-900/30 text-amber-400 border-amber-800/40",
-    "Pending NDA": "bg-blue-900/30 text-blue-400 border-blue-800/40",
-    "Interested": "border-border text-muted-foreground",
+    "In Escrow": "bg-emerald-50 text-emerald-700 border-emerald-200",
+    "Under Review": "bg-amber-50 text-amber-700 border-amber-200",
+    "Pending NDA": "bg-blue-50 text-blue-700 border-blue-200",
+    "Interested": "bg-gray-100 text-gray-600 border-gray-200",
+    "Countered": "bg-orange-50 text-orange-700 border-orange-200",
+    "NDA Pending": "bg-blue-50 text-blue-700 border-blue-200",
+    "Closed — Won": "bg-emerald-50 text-emerald-700 border-emerald-200",
+    "Active": "bg-emerald-50 text-emerald-700 border-emerald-200",
+    "Exited": "bg-gray-100 text-gray-600 border-gray-200",
   };
   return (
-    <span className={`text-xs font-mono px-2 py-0.5 rounded border ${map[status] ?? "border-border text-muted-foreground"}`}>
+    <span className={`text-xs font-mono px-2 py-0.5 rounded border ${map[status] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>
       {status}
     </span>
   );
 }
 
-// ─── CURRENCY SWITCHER ────────────────────────────────────────────────────────
+function MatchPill({ score }: { score: number }) {
+  const color = score >= 90 ? "text-emerald-600" : score >= 80 ? "text-amber-600" : "text-gray-500";
+  return (
+    <span className={`flex items-center gap-1 text-xs font-mono ${color}`}>
+      <Zap className="w-3 h-3" />{score}% match
+    </span>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return <div className="text-xs font-mono uppercase tracking-widest mb-3" style={{ color: B.orange }}>{children}</div>;
+}
+
+function PageTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 style={{ fontFamily: '"DM Serif Display", serif', fontSize: "2rem", lineHeight: 1.2, color: B.navy }}>
+      {children}
+    </h2>
+  );
+}
+
+function KPICard({ label, value, delta, up, Icon }: { label: string; value: string; delta: string; up?: boolean; Icon: React.ElementType }) {
+  return (
+    <div className="bg-white border border-border rounded-lg p-4 shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider leading-tight">{label}</span>
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${B.navy}12` }}>
+          <Icon className="w-4 h-4" style={{ color: B.navy }} />
+        </div>
+      </div>
+      <div className="text-xl font-mono font-semibold mb-1" style={{ color: B.navy }}>{value}</div>
+      {delta && (
+        <div className={`flex items-center gap-1 text-xs font-mono ${up !== false ? "text-emerald-600" : "text-red-500"}`}>
+          {up !== false ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+          {delta}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function CurrencySwitcher({ currency, setCurrency }: { currency: Currency; setCurrency: (c: Currency) => void }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="relative">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 text-xs font-mono border border-border px-3 py-1.5 rounded hover:border-primary/40 transition-colors"
-      >
-        <span className="text-primary">{currency}</span>
+      <button onClick={() => setOpen((o) => !o)} className="flex items-center gap-1.5 text-xs font-mono border border-border px-3 py-1.5 rounded-md hover:border-primary transition-colors bg-white">
+        <span style={{ color: B.navy }} className="font-semibold">{currency}</span>
         <ChevronDown className="w-3 h-3 text-muted-foreground" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded shadow-xl z-50 py-1 min-w-[100px]">
+        <div className="absolute right-0 top-full mt-1 bg-white border border-border rounded-lg shadow-lg z-50 py-1 min-w-[100px]">
           {CURRENCIES.map((c) => (
-            <button
-              key={c}
-              onClick={() => { setCurrency(c); setOpen(false); }}
-              className={`w-full text-left px-3 py-1.5 text-xs font-mono hover:bg-accent transition-colors ${c === currency ? "text-primary" : "text-muted-foreground"}`}
-            >
+            <button key={c} onClick={() => { setCurrency(c); setOpen(false); }}
+              className={`w-full text-left px-3 py-2 text-xs font-mono hover:bg-secondary transition-colors ${c === currency ? "font-bold" : ""}`}
+              style={{ color: c === currency ? B.navy : "#6B7280" }}>
               {c} {SYM[c].trim()}
             </button>
           ))}
@@ -199,99 +315,92 @@ function CurrencySwitcher({ currency, setCurrency }: { currency: Currency; setCu
   );
 }
 
-// ─── SIDEBAR ──────────────────────────────────────────────────────────────────
+// ─── DEAL CARD (shared) ───────────────────────────────────────────────────────
 
-function Sidebar({ items, active, setActive, onBack }: {
-  items: NavItem[]; active: string; setActive: (id: string) => void; onBack: () => void;
-}) {
+function DealCard({ deal, currency, onViewDeal }: { deal: Deal; currency: Currency; onViewDeal: (d: Deal) => void }) {
+  const pct = Math.round((deal.committed / deal.target) * 100);
   return (
-    <aside className="w-52 flex-shrink-0 border-r border-border bg-card/40 flex flex-col">
-      <div className="h-14 border-b border-border px-4 flex items-center gap-2 flex-shrink-0">
-        <Globe className="w-4 h-4 text-primary" />
-        <span className="text-xs font-mono uppercase tracking-widest text-muted-foreground">WTC Investors</span>
-      </div>
-      <nav className="flex-1 p-2.5 space-y-px">
-        {items.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            onClick={() => setActive(id)}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded text-sm transition-all text-left ${
-              active === id
-                ? "bg-primary/10 text-primary border border-primary/20"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-            }`}
-          >
-            <Icon className="w-4 h-4 flex-shrink-0" />
-            {label}
-          </button>
-        ))}
-      </nav>
-      <div className="p-2.5 border-t border-border space-y-px">
-        <button className="w-full flex items-center gap-3 px-3 py-2 rounded text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all">
-          <Settings className="w-4 h-4" />Settings
-        </button>
-        <button
-          onClick={onBack}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
-        >
-          <LogOut className="w-4 h-4" />Back to Platform
-        </button>
-      </div>
-    </aside>
-  );
-}
-
-// ─── DASHBOARD TOP BAR ────────────────────────────────────────────────────────
-
-function DashTopBar({ title, currency, setCurrency, initials, name }: {
-  title: string; currency: Currency; setCurrency: (c: Currency) => void; initials: string; name: string;
-}) {
-  return (
-    <div className="h-14 border-b border-border px-6 flex items-center justify-between bg-card/30 flex-shrink-0">
-      <span className="text-sm font-medium text-foreground">{title}</span>
-      <div className="flex items-center gap-3">
-        <CurrencySwitcher currency={currency} setCurrency={setCurrency} />
-        <button className="relative w-8 h-8 flex items-center justify-center border border-border rounded hover:border-primary/30 transition-colors">
-          <Bell className="w-4 h-4 text-muted-foreground" />
-          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-primary rounded-full" />
-        </button>
-        <div className="w-8 h-8 rounded bg-primary/15 border border-primary/25 flex items-center justify-center text-xs font-mono text-primary">
-          {initials}
+    <div className="bg-white border border-border rounded-xl shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col">
+      <div className="p-5 border-b border-border">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ backgroundColor: deal.bg }}>
+              {deal.initials}
+            </div>
+            <div>
+              <div className="font-semibold text-sm" style={{ color: B.navy }}>{deal.name}</div>
+              <div className="flex items-center gap-1 mt-0.5">
+                <MapPin className="w-3 h-3 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">{deal.city} · {deal.wtcChapter}</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-1">
+            <span className="text-xs font-mono border border-border px-2 py-0.5 rounded bg-secondary text-muted-foreground">{deal.sector}</span>
+            <span className="text-xs font-mono text-muted-foreground">{deal.stage}</span>
+          </div>
         </div>
-        <span className="hidden md:block text-sm text-muted-foreground">{name}</span>
+      </div>
+      <div className="px-5 pt-4 pb-3 flex-1">
+        <p className="text-xs text-muted-foreground leading-relaxed">{deal.description}</p>
+      </div>
+      <div className="px-5 py-3 grid grid-cols-3 gap-3 border-t border-border bg-secondary/30">
+        {([["Target", fmt(deal.target, currency)], ["Min Ticket", fmt(deal.minTicket, currency)], ["IRR", deal.irr]] as [string, string][]).map(([l, v]) => (
+          <div key={l}>
+            <div className="text-xs font-mono text-muted-foreground mb-0.5">{l}</div>
+            <div className="text-xs font-mono font-semibold" style={{ color: B.navy }}>{v}</div>
+          </div>
+        ))}
+      </div>
+      <div className="px-5 py-3 border-t border-border">
+        <div className="flex justify-between text-xs mb-1.5">
+          <span className="text-muted-foreground"><span className="font-mono font-semibold" style={{ color: B.navy }}>{fmt(deal.committed, currency)}</span> committed</span>
+          <span className="font-mono font-semibold" style={{ color: B.orange }}>{pct}%</span>
+        </div>
+        <div className="h-1.5 bg-secondary rounded-full">
+          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: B.navy }} />
+        </div>
+      </div>
+      <div className="px-5 py-4 border-t border-border flex items-center justify-between">
+        <MatchPill score={deal.matchScore} />
+        <button onClick={() => onViewDeal(deal)}
+          className="text-xs px-3 py-1.5 rounded-md font-medium transition-all text-white"
+          style={{ backgroundColor: deal.ndaSigned ? B.navy : B.orange }}>
+          {deal.ndaSigned ? "View VDR" : "Sign NDA"}
+        </button>
       </div>
     </div>
   );
 }
 
-// ─── LANDING: NAVBAR ─────────────────────────────────────────────────────────
+// ─── NAV BAR ─────────────────────────────────────────────────────────────────
 
-function NavBar({ setView }: { setView: (v: View) => void }) {
+function NavBar({ view, setView }: { view: View; setView: (v: View) => void }) {
+  const links: [string, View][] = [["Platform", "platform"], ["Deals", "deals"], ["Chapters", "chapters"], ["About", "about"]];
   return (
-    <nav className="fixed top-0 inset-x-0 z-50 border-b border-border bg-background/95 backdrop-blur-sm">
+    <nav className="fixed top-0 inset-x-0 z-50 bg-white border-b border-border">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <button onClick={() => setView("landing")} className="flex items-center gap-2.5 group">
-          <Globe className="w-5 h-5 text-primary" />
-          <span className="text-xs font-mono uppercase tracking-widest text-foreground group-hover:text-primary transition-colors">
-            WTC Investors
-          </span>
+        <button onClick={() => setView("home")} className="flex-shrink-0">
+          <BrandLogo />
         </button>
-        <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
-          {["Platform", "Deals", "Chapters", "About"].map((l) => (
-            <a key={l} href="#" className="hover:text-foreground transition-colors">{l}</a>
+        <div className="hidden md:flex items-center gap-8">
+          {links.map(([label, v]) => (
+            <button key={v} onClick={() => setView(v)}
+              className="text-sm font-medium transition-colors"
+              style={{ color: view === v ? B.navy : "#6B7280" }}>
+              {label}
+            </button>
           ))}
         </div>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setView("investor")}
-            className="hidden md:block text-sm text-muted-foreground border border-border px-4 py-1.5 rounded hover:border-primary/30 hover:text-foreground transition-all"
-          >
+          <button onClick={() => setView("login")}
+            className="hidden md:block text-sm font-medium border border-border px-4 py-1.5 rounded-lg hover:border-primary transition-all"
+            style={{ color: B.navy }}>
             Investor Login
           </button>
-          <button
-            onClick={() => setView("founder")}
-            className="text-sm bg-primary text-primary-foreground px-4 py-1.5 rounded hover:opacity-90 transition-opacity font-medium"
-          >
+          <button onClick={() => setView("list-project")}
+            className="text-sm font-semibold px-4 py-1.5 rounded-lg text-white transition-opacity hover:opacity-90"
+            style={{ backgroundColor: B.orange }}>
             List a Project
           </button>
         </div>
@@ -300,490 +409,1604 @@ function NavBar({ setView }: { setView: (v: View) => void }) {
   );
 }
 
-// ─── LANDING: HERO ────────────────────────────────────────────────────────────
-
-function HeroSection({ setView }: { setView: (v: View) => void }) {
+function PublicFooter({ setView }: { setView: (v: View) => void }) {
   return (
-    <section className="pt-36 pb-24 px-6 relative overflow-hidden">
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: "linear-gradient(rgba(200,169,110,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(200,169,110,0.04) 1px, transparent 1px)",
-          backgroundSize: "72px 72px",
-        }}
-      />
-      <div className="absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
-      <div className="max-w-5xl mx-auto relative text-center">
-        <div className="inline-flex items-center gap-2 text-xs font-mono text-primary border border-primary/25 bg-primary/5 px-4 py-1.5 rounded-full mb-12">
-          <Award className="w-3 h-3" />
-          Official WTCA Digital Capital Platform · 94 Chapters · 47 Countries
-        </div>
-        <h1
-          className="mb-6 text-foreground"
-          style={{ fontFamily: '"DM Serif Display", serif', fontSize: "clamp(3rem, 7vw, 5.5rem)", lineHeight: 1.05, letterSpacing: "-0.02em" }}
-        >
-          Where Capital Meets<br />
-          <em style={{ color: "var(--primary)", fontStyle: "italic" }}>Global Opportunity</em>
-        </h1>
-        <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-14 leading-relaxed">
-          The verified private capital marketplace for accredited investors and audited founders —
-          across 94 World Trade Center chapters worldwide.
-        </p>
-        <div className="grid sm:grid-cols-2 gap-4 max-w-xl mx-auto">
+    <footer className="border-t border-border bg-secondary/30 py-12 px-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid md:grid-cols-4 gap-8 mb-10">
+          <div>
+            <BrandLogo />
+            <p className="text-xs text-muted-foreground mt-3 leading-relaxed">The official WTCA digital investment marketplace. Connecting capital with opportunity across 94 chapters worldwide.</p>
+          </div>
           {[
-            { Icon: Building2, title: "I'm a Founder", sub: "List your project, manage a VDR, attract global capital", view: "founder" as View },
-            { Icon: TrendingUp, title: "I'm an Investor", sub: "Discover AI-matched deals, review VDRs, place bids", view: "investor" as View },
-          ].map(({ Icon, title, sub, view }) => (
-            <button
-              key={view}
-              onClick={() => setView(view)}
-              className="group flex flex-col items-start p-5 border border-border hover:border-primary/40 rounded bg-card transition-all text-left"
-            >
-              <div className="flex items-center justify-between w-full mb-3">
-                <Icon className="w-5 h-5 text-primary" />
-                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
-              </div>
-              <div className="text-sm font-medium text-foreground mb-1">{title}</div>
-              <div className="text-xs text-muted-foreground">{sub}</div>
-            </button>
+            ["Platform", ["Features", "How It Works", "Security", "Pricing"]],
+            ["Company", ["About", "Chapters", "Press", "Careers"]],
+            ["Legal", ["Privacy Policy", "Terms of Service", "Compliance", "KYC Policy"]],
+          ].map(([heading, items]) => (
+            <div key={heading as string}>
+              <div className="text-xs font-mono uppercase tracking-widest mb-3" style={{ color: B.navy }}>{heading}</div>
+              <ul className="space-y-2">
+                {(items as string[]).map((i) => <li key={i}><a href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">{i}</a></li>)}
+              </ul>
+            </div>
           ))}
         </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── LANDING: STATS BAR ───────────────────────────────────────────────────────
-
-function StatsBar() {
-  const stats = [
-    { v: "$2.4B", l: "Capital Deployed" },
-    { v: "847", l: "Verified Projects" },
-    { v: "12,400+", l: "Accredited Investors" },
-    { v: "94", l: "WTC Chapters" },
-    { v: "47", l: "Countries" },
-  ];
-  return (
-    <div className="border-y border-border bg-card/40">
-      <div className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-2 md:grid-cols-5 gap-6">
-        {stats.map((s) => (
-          <div key={s.l} className="text-center">
-            <div className="text-2xl font-mono font-medium text-primary mb-1">{s.v}</div>
-            <div className="text-xs font-mono text-muted-foreground uppercase tracking-widest">{s.l}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── LANDING: DEALS ───────────────────────────────────────────────────────────
-
-function DealsSection({ currency }: { currency: Currency }) {
-  const [sector, setSector] = useState("All");
-  const sectors = ["All", "Technology", "Real Estate", "Energy", "Healthcare", "FinTech"];
-  const filtered = sector === "All" ? DEALS : DEALS.filter((d) => d.sector === sector);
-
-  return (
-    <section className="py-20 px-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
-          <div>
-            <div className="text-xs font-mono text-primary uppercase tracking-widest mb-3">Live Deals</div>
-            <h2 className="text-foreground" style={{ fontFamily: '"DM Serif Display", serif', fontSize: "2.25rem", lineHeight: 1.15 }}>
-              Featured Opportunities
-            </h2>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {sectors.map((s) => (
-              <button
-                key={s}
-                onClick={() => setSector(s)}
-                className={`text-xs font-mono px-3 py-1.5 rounded border transition-all ${
-                  sector === s ? "border-primary text-primary bg-primary/10" : "border-border text-muted-foreground hover:border-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {s}
-              </button>
+        <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-xs text-muted-foreground">© 2025 WTC Investors Hub. Official WTCA Digital Platform.</p>
+          <div className="flex gap-6">
+            {["Privacy", "Terms", "Compliance", "Contact"].map((l) => (
+              <a key={l} href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">{l}</a>
             ))}
           </div>
-        </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filtered.map((d) => {
-            const pct = Math.round((d.committed / d.target) * 100);
-            return (
-              <div key={d.id} className="border border-border hover:border-primary/25 rounded bg-card transition-all overflow-hidden flex flex-col">
-                <div className="p-5 border-b border-border">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded flex items-center justify-center text-xs font-mono font-medium text-foreground flex-shrink-0" style={{ backgroundColor: d.accentBg }}>
-                        {d.initials}
-                      </div>
-                      <div>
-                        <div className="font-medium text-sm text-foreground">{d.name}</div>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <MapPin className="w-3 h-3 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">{d.city} · {d.wtcChapter}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="text-xs font-mono text-muted-foreground border border-border px-2 py-0.5 rounded">{d.sector}</span>
-                      <span className="text-xs font-mono text-muted-foreground">{d.stage}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="px-5 pt-4 pb-3 flex-1">
-                  <p className="text-xs text-muted-foreground leading-relaxed">{d.description}</p>
-                </div>
-                <div className="px-5 py-3 grid grid-cols-3 gap-3 border-t border-border bg-background/20 text-xs">
-                  {[["Target", fmt(d.target, currency)], ["Min Ticket", fmt(d.minTicket, currency)], ["IRR", d.irr]].map(([l, v]) => (
-                    <div key={l}>
-                      <div className="font-mono text-muted-foreground mb-0.5">{l}</div>
-                      <div className="font-mono text-foreground">{v}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="px-5 py-3 border-t border-border">
-                  <div className="flex justify-between text-xs mb-2">
-                    <span className="text-muted-foreground"><span className="font-mono text-foreground">{fmt(d.committed, currency)}</span> committed</span>
-                    <span className="font-mono text-primary">{pct}%</span>
-                  </div>
-                  <div className="h-1 bg-secondary rounded-full">
-                    <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
-                  </div>
-                </div>
-                <div className="px-5 py-4 border-t border-border flex items-center justify-between">
-                  <MatchPill score={d.matchScore} />
-                  <button className={`text-xs px-3 py-1.5 rounded border transition-all ${
-                    d.ndaSigned ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/20" : "border-border text-muted-foreground hover:border-muted-foreground hover:text-foreground"
-                  }`}>
-                    {d.ndaSigned ? "View VDR" : "Sign NDA"}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── LANDING: WORKFLOW ────────────────────────────────────────────────────────
-
-function WorkflowSection() {
-  return (
-    <section className="py-20 px-6 border-y border-border bg-card/20">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-14">
-          <div className="text-xs font-mono text-primary uppercase tracking-widest mb-3">How It Works</div>
-          <h2 className="text-foreground" style={{ fontFamily: '"DM Serif Display", serif', fontSize: "2.25rem", lineHeight: 1.15 }}>
-            The Full Investment Lifecycle
-          </h2>
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {WORKFLOW_STEPS.map(({ n, Icon, title, desc }) => (
-            <div key={n} className="p-5 border border-border rounded bg-card hover:border-primary/20 transition-colors">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 rounded border border-border flex items-center justify-center flex-shrink-0">
-                  <Icon className="w-4 h-4 text-primary" />
-                </div>
-                <span className="text-xs font-mono text-muted-foreground">Step {String(n).padStart(2, "0")}</span>
-              </div>
-              <div className="text-sm font-medium text-foreground mb-2">{title}</div>
-              <div className="text-xs text-muted-foreground leading-relaxed">{desc}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── LANDING: FEATURES ────────────────────────────────────────────────────────
-
-function FeaturesSection() {
-  return (
-    <section className="py-20 px-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-14">
-          <div className="text-xs font-mono text-primary uppercase tracking-widest mb-3">Platform Capabilities</div>
-          <h2 className="text-foreground" style={{ fontFamily: '"DM Serif Display", serif', fontSize: "2.25rem", lineHeight: 1.15 }}>
-            Built for Institutional-Grade Deals
-          </h2>
-        </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {FEATURES.map(({ Icon, title, desc }) => (
-            <div key={title} className="p-6 border border-border rounded bg-card hover:border-primary/20 transition-colors group">
-              <div className="w-10 h-10 rounded border border-primary/20 flex items-center justify-center mb-5 group-hover:border-primary/50 transition-colors">
-                <Icon className="w-5 h-5 text-primary" />
-              </div>
-              <div className="font-medium text-foreground mb-2 text-sm">{title}</div>
-              <div className="text-xs text-muted-foreground leading-relaxed">{desc}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── LANDING: PRICING ─────────────────────────────────────────────────────────
-
-function PricingSection() {
-  return (
-    <section className="py-20 px-6 border-t border-border bg-card/20">
-      <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-14">
-          <div className="text-xs font-mono text-primary uppercase tracking-widest mb-3">Founder Plans</div>
-          <h2 className="text-foreground" style={{ fontFamily: '"DM Serif Display", serif', fontSize: "2.25rem", lineHeight: 1.15 }}>
-            Choose Your Raise Plan
-          </h2>
-          <p className="text-xs text-muted-foreground mt-3">Investors access the platform at no cost, subject to KYC verification.</p>
-        </div>
-        <div className="grid md:grid-cols-3 gap-5">
-          {PRICING.map((p) => (
-            <div key={p.tier} className={`p-6 rounded border relative transition-all ${p.accent ? "border-primary/50 bg-primary/5" : "border-border bg-card"}`}>
-              {p.accent && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs font-mono text-primary-foreground bg-primary px-3 py-0.5 rounded-full whitespace-nowrap">
-                  Most Popular
-                </div>
-              )}
-              <div className="mb-6">
-                <div className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-2">{p.tier}</div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-mono font-medium text-foreground">${p.price}</span>
-                  <span className="text-muted-foreground text-sm">/mo</span>
-                </div>
-                <div className="text-xs text-muted-foreground mt-2">{p.tagline}</div>
-              </div>
-              <ul className="space-y-2.5 mb-6">
-                {p.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2.5 text-xs text-muted-foreground">
-                    <Check className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />{f}
-                  </li>
-                ))}
-              </ul>
-              <button className={`w-full py-2.5 rounded text-sm font-medium transition-all ${
-                p.accent ? "bg-primary text-primary-foreground hover:opacity-90" : "border border-border text-foreground hover:border-primary/40"
-              }`}>
-                {p.cta}
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── LANDING: FOOTER ──────────────────────────────────────────────────────────
-
-function FooterSection({ setView }: { setView: (v: View) => void }) {
-  return (
-    <footer className="border-t border-border">
-      <div className="bg-card/30 border-b border-border py-16 px-6">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-foreground mb-4" style={{ fontFamily: '"DM Serif Display", serif', fontSize: "2rem", lineHeight: 1.2 }}>
-            Ready to participate in global private markets?
-          </h2>
-          <p className="text-muted-foreground text-sm mb-8 leading-relaxed">
-            Join 12,400+ accredited investors and 847 verified founders on the only platform built around the World Trade Center global network.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button onClick={() => setView("founder")} className="px-6 py-2.5 bg-primary text-primary-foreground rounded text-sm font-medium hover:opacity-90 transition-opacity">
-              List Your Project
-            </button>
-            <button onClick={() => setView("investor")} className="px-6 py-2.5 border border-border text-foreground rounded text-sm font-medium hover:border-primary/40 transition-colors">
-              Explore as Investor
-            </button>
-          </div>
-        </div>
-      </div>
-      <div className="py-8 px-6 max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
-          <Globe className="w-4 h-4 text-primary" />
-          WTC Investors Hub · Official WTCA Digital Platform · © 2025
-        </div>
-        <div className="flex items-center gap-6 text-xs text-muted-foreground">
-          {["Privacy", "Terms", "Compliance", "Contact"].map((l) => (
-            <a key={l} href="#" className="hover:text-foreground transition-colors">{l}</a>
-          ))}
         </div>
       </div>
     </footer>
   );
 }
 
-// ─── INVESTOR DASHBOARD ───────────────────────────────────────────────────────
+// ─── SIDEBAR ─────────────────────────────────────────────────────────────────
 
-function InvestorDashboard({ setView }: { setView: (v: View) => void }) {
-  const [currency, setCurrency] = useState<Currency>("USD");
-  const [tab, setTab] = useState("deals");
+type NavItem = { id: string; label: string; icon: React.ElementType };
 
-  const navItems: NavItem[] = [
-    { id: "deals", label: "Deal Flow", icon: TrendingUp },
-    { id: "portfolio", label: "Portfolio", icon: BarChart2 },
-    { id: "bids", label: "My Bids", icon: Gavel },
-    { id: "vdr", label: "VDR Access", icon: Lock },
-    { id: "wallet", label: "Wallet", icon: Wallet },
-    { id: "kyc", label: "Profile & KYC", icon: Shield },
-  ];
-
-  const kpis = [
-    { l: "AI-Matched Deals", v: "23", d: "+4 this week", Icon: Zap, up: true },
-    { l: "Committed Capital", v: fmt(1_850_000, currency), d: "Across 7 deals", Icon: DollarSign, up: true },
-    { l: "Est. Returns (12m)", v: fmt(420_000, currency), d: "+22.7% blended IRR", Icon: TrendingUp, up: true },
-    { l: "Trust Score", v: "9.4 / 10", d: "8 KYC-verified reviews", Icon: Star, up: true },
-  ];
-
+function Sidebar({ items, active, setActive, onBack, userInitials, userName, userRole }: {
+  items: NavItem[]; active: string; setActive: (id: string) => void;
+  onBack: () => void; userInitials: string; userName: string; userRole: string;
+}) {
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
-      <Sidebar items={navItems} active={tab} setActive={setTab} onBack={() => setView("landing")} />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <DashTopBar title="Investor Workspace" currency={currency} setCurrency={setCurrency} initials="JP" name="James Pemberton" />
-        <main className="flex-1 overflow-y-auto p-6">
+    <aside className="w-56 flex-shrink-0 border-r border-border bg-white flex flex-col">
+      <div className="h-16 border-b border-border px-5 flex items-center">
+        <BrandLogo />
+      </div>
+      <div className="px-4 py-4 border-b border-border">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white" style={{ backgroundColor: B.navy }}>
+            {userInitials}
+          </div>
+          <div>
+            <div className="text-sm font-semibold" style={{ color: B.navy }}>{userName}</div>
+            <div className="text-xs text-muted-foreground">{userRole}</div>
+          </div>
+        </div>
+      </div>
+      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+        {items.map(({ id, label, icon: Icon }) => (
+          <button key={id} onClick={() => setActive(id)}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left ${active === id ? "text-white font-medium" : "text-muted-foreground hover:text-foreground hover:bg-secondary"}`}
+            style={active === id ? { backgroundColor: B.navy } : {}}>
+            <Icon className="w-4 h-4 flex-shrink-0" />
+            {label}
+          </button>
+        ))}
+      </nav>
+      <div className="p-3 border-t border-border space-y-0.5">
+        <button onClick={() => setActive("settings")}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-secondary transition-all">
+          <Settings className="w-4 h-4" />Settings
+        </button>
+        <button onClick={onBack}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-secondary transition-all">
+          <LogOut className="w-4 h-4" />Back to Site
+        </button>
+      </div>
+    </aside>
+  );
+}
 
-          {/* KPIs */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            {kpis.map(({ l, v, d, Icon, up }) => (
-              <div key={l} className="bg-card border border-border rounded p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider leading-snug">{l}</span>
-                  <Icon className="w-4 h-4 text-primary/50 flex-shrink-0" />
+function DashTopBar({ title, currency, setCurrency, badge }: { title: string; currency: Currency; setCurrency: (c: Currency) => void; badge?: string }) {
+  return (
+    <div className="h-14 border-b border-border px-6 flex items-center justify-between bg-white flex-shrink-0">
+      <div className="flex items-center gap-3">
+        <span className="text-base font-semibold" style={{ color: B.navy }}>{title}</span>
+        {badge && <span className="text-xs font-mono px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: B.orange }}>{badge}</span>}
+      </div>
+      <div className="flex items-center gap-3">
+        <CurrencySwitcher currency={currency} setCurrency={setCurrency} />
+        <button className="relative w-9 h-9 flex items-center justify-center border border-border rounded-lg hover:bg-secondary transition-colors">
+          <Bell className="w-4 h-4 text-muted-foreground" />
+          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full" style={{ backgroundColor: B.orange }} />
+        </button>
+        <button className="hidden md:flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: B.navy }}>JP</div>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── PUBLIC PAGES ─────────────────────────────────────────────────────────────
+
+function HomePage({ setView, onViewDeal }: { setView: (v: View) => void; onViewDeal: (d: Deal) => void }) {
+  return (
+    <div>
+      <NavBar view="home" setView={setView} />
+      <div className="pt-16">
+        {/* Hero */}
+        <section className="py-24 px-6 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #F0F4FA 0%, #FFFFFF 50%, #FFF5F0 100%)" }}>
+          <div className="max-w-6xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 text-xs font-mono border px-4 py-1.5 rounded-full mb-10" style={{ color: B.navy, borderColor: `${B.navy}30`, backgroundColor: `${B.navy}08` }}>
+              <Award className="w-3.5 h-3.5" style={{ color: B.orange }} />
+              Official WTCA Digital Capital Platform · 94 Chapters · 47 Countries
+            </div>
+            <h1 className="mb-6" style={{ fontFamily: '"DM Serif Display", serif', fontSize: "clamp(2.8rem, 6vw, 5rem)", lineHeight: 1.08, color: B.navy }}>
+              Where Capital Meets<br />
+              <em style={{ color: B.orange, fontStyle: "italic" }}>Global Opportunity</em>
+            </h1>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-12 leading-relaxed">
+              The verified private capital marketplace for accredited investors and audited founders — across 94 World Trade Center chapters worldwide.
+            </p>
+            <div className="grid sm:grid-cols-2 gap-4 max-w-xl mx-auto">
+              {[
+                { Icon: Building2, title: "I'm a Founder", sub: "List your project, manage a VDR, attract global capital", action: () => setView("list-project"), color: B.navy },
+                { Icon: TrendingUp, title: "I'm an Investor", sub: "Discover AI-matched deals, review VDRs, place bids", action: () => setView("login"), color: B.orange },
+              ].map(({ Icon, title, sub, action, color }) => (
+                <button key={title} onClick={action}
+                  className="group flex flex-col items-start p-5 border border-border rounded-xl bg-white hover:shadow-md transition-all text-left">
+                  <div className="flex items-center justify-between w-full mb-3">
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}12` }}>
+                      <Icon className="w-5 h-5" style={{ color }} />
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                  <div className="font-semibold text-sm mb-1" style={{ color: B.navy }}>{title}</div>
+                  <div className="text-xs text-muted-foreground">{sub}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+        {/* Stats */}
+        <div className="border-y border-border">
+          <div className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-2 md:grid-cols-5 gap-6">
+            {[["$2.4B", "Capital Deployed"], ["847", "Verified Projects"], ["12,400+", "Accredited Investors"], ["94", "WTC Chapters"], ["47", "Countries"]].map(([v, l]) => (
+              <div key={l} className="text-center">
+                <div className="text-2xl font-mono font-bold mb-1" style={{ color: B.navy }}>{v}</div>
+                <div className="text-xs font-mono text-muted-foreground uppercase tracking-widest">{l}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Featured deals */}
+        <section className="py-20 px-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-end justify-between mb-10">
+              <div>
+                <SectionLabel>Live Deals</SectionLabel>
+                <PageTitle>Featured Opportunities</PageTitle>
+              </div>
+              <button onClick={() => setView("deals")} className="flex items-center gap-1.5 text-sm font-medium" style={{ color: B.orange }}>
+                View all deals <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {DEALS.slice(0, 3).map((d) => <DealCard key={d.id} deal={d} currency="USD" onViewDeal={onViewDeal} />)}
+            </div>
+          </div>
+        </section>
+        {/* How it works */}
+        <section className="py-20 px-6 border-t border-border bg-secondary/20">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-14">
+              <SectionLabel>How It Works</SectionLabel>
+              <PageTitle>The Full Investment Lifecycle</PageTitle>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {[
+                [Shield, "01", "Register & Verify", "KYC/AML via Persona. Identity and investor accreditation confirmed."],
+                [Zap, "02", "AI Matchmaking", "Python vector engine scores 40+ attributes for highest-confidence deals."],
+                [Lock, "03", "VDR Access", "Sign NDA. Access documents watermarked with your identity and IP."],
+                [Gavel, "04", "Bid & Close", "Submit escrow-backed bids. Milestone-based funds release on success."],
+              ].map(([Icon, step, title, desc]) => (
+                <div key={title as string} className="p-5 border border-border rounded-xl bg-white">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${B.navy}10` }}>
+                      {React.createElement(Icon as React.ElementType, { className: "w-4 h-4", style: { color: B.navy } })}
+                    </div>
+                    <span className="text-xs font-mono font-bold" style={{ color: B.orange }}>Step {step}</span>
+                  </div>
+                  <div className="font-semibold text-sm mb-2" style={{ color: B.navy }}>{title as string}</div>
+                  <div className="text-xs text-muted-foreground leading-relaxed">{desc as string}</div>
                 </div>
-                <div className="text-xl font-mono font-medium text-foreground mb-1">{v}</div>
-                <div className={`text-xs font-mono flex items-center gap-1 ${up ? "text-emerald-400" : "text-red-400"}`}>
-                  <ArrowUpRight className="w-3 h-3" />{d}
+              ))}
+            </div>
+          </div>
+        </section>
+        <PublicFooter setView={setView} />
+      </div>
+    </div>
+  );
+}
+
+function PlatformPage({ setView }: { setView: (v: View) => void }) {
+  const features = [
+    [Lock, "Virtual Data Room", "Dynamic watermarking stamps every document with the downloader's identity, IP address, and timestamp. Full immutable audit trail maintained per file."],
+    [Zap, "AI Match Engine", "Python cosine-similarity microservice matches across check size, sector, stage, and geographic mandate — serving highest-confidence opportunities first."],
+    [Shield, "Escrow-Linked Bids", "Zero platform custody. All capital holds and milestone releases are fully delegated to licensed third-party escrow providers via secure API."],
+    [DollarSign, "Multi-Currency FX", "60-second Redis-cached live rates enable real-time recalculation across USD, EUR, AED, JPY, GBP, SGD, and 20+ additional currencies."],
+    [CheckCircle2, "KYC/AML Compliance", "Integrated Persona/Sumsub identity verification, investor accreditation audits, and mandatory WTC chapter membership validation."],
+    [Star, "Reputation Ledger", "KYC-backed peer reviews score founder transparency and investor reliability — non-editable, append-only trust history on every profile."],
+  ];
+  return (
+    <div>
+      <NavBar view="platform" setView={setView} />
+      <div className="pt-16">
+        <section className="py-20 px-6" style={{ background: `linear-gradient(135deg, ${B.navy}08 0%, white 60%)` }}>
+          <div className="max-w-4xl mx-auto text-center">
+            <SectionLabel>The Platform</SectionLabel>
+            <h1 style={{ fontFamily: '"DM Serif Display", serif', fontSize: "3rem", lineHeight: 1.1, color: B.navy }} className="mb-6">
+              Institutional-Grade Infrastructure<br />for Private Markets
+            </h1>
+            <p className="text-muted-foreground text-lg leading-relaxed">End-to-end deal management — from KYC onboarding through AI matching, watermarked VDR access, escrow-linked bidding, and post-close reputation tracking.</p>
+          </div>
+        </section>
+        <section className="py-16 px-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-12">
+              <SectionLabel>Platform Capabilities</SectionLabel>
+              <PageTitle>Built for Institutional-Grade Deals</PageTitle>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {features.map(([Icon, title, desc]) => (
+                <div key={title as string} className="p-6 border border-border rounded-xl bg-white hover:shadow-md transition-all group">
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5" style={{ backgroundColor: `${B.navy}0F` }}>
+                    {React.createElement(Icon as React.ElementType, { className: "w-5 h-5", style: { color: B.navy } })}
+                  </div>
+                  <div className="font-semibold text-sm mb-2" style={{ color: B.navy }}>{title as string}</div>
+                  <div className="text-xs text-muted-foreground leading-relaxed">{desc as string}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+        <section className="py-16 px-6 border-t border-border bg-secondary/30">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-12">
+              <SectionLabel>Integration Partners</SectionLabel>
+              <PageTitle>Enterprise Stack</PageTitle>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[["Persona / Sumsub", "KYC & AML"], ["Plaid / Stripe Connect", "Fiat Wallet"], ["WalletConnect", "Web3 Proof of Funds"], ["Qualified / Escrow.com", "Escrow API"], ["Redis Cloud", "FX Rate Cache"], ["PostgreSQL + Prisma", "Database ORM"], ["FastAPI (Python)", "Matching Engine"], ["Socket.io", "Real-time Events"]].map(([name, cat]) => (
+                <div key={name} className="p-4 border border-border rounded-xl bg-white text-center">
+                  <div className="font-medium text-sm mb-1" style={{ color: B.navy }}>{name}</div>
+                  <div className="text-xs font-mono text-muted-foreground">{cat}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+        <PublicFooter setView={setView} />
+      </div>
+    </div>
+  );
+}
+
+function DealsPage({ setView, onViewDeal }: { setView: (v: View) => void; onViewDeal: (d: Deal) => void }) {
+  const [sector, setSector] = useState("All");
+  const [stage, setStage] = useState("All");
+  const [search, setSearch] = useState("");
+  const [currency] = useState<Currency>("USD");
+  const sectors = ["All", "Technology", "Real Estate", "Energy", "Healthcare", "FinTech"];
+  const stages = ["All", "Seed", "Series A", "Series B", "Growth"];
+  const filtered = DEALS.filter((d) =>
+    (sector === "All" || d.sector === sector) &&
+    (stage === "All" || d.stage === stage) &&
+    (search === "" || d.name.toLowerCase().includes(search.toLowerCase()) || d.city.toLowerCase().includes(search.toLowerCase()))
+  );
+  return (
+    <div>
+      <NavBar view="deals" setView={setView} />
+      <div className="pt-16">
+        <section className="py-12 px-6 border-b border-border bg-secondary/20">
+          <div className="max-w-7xl mx-auto">
+            <div className="mb-6">
+              <SectionLabel>Marketplace</SectionLabel>
+              <PageTitle>Browse Verified Deals</PageTitle>
+            </div>
+            <div className="flex flex-col md:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by company, city, or keyword…"
+                  className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-lg bg-white focus:outline-none focus:border-primary" />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {sectors.map((s) => (
+                  <button key={s} onClick={() => setSector(s)}
+                    className={`text-xs font-mono px-3 py-2 rounded-lg border transition-all ${sector === s ? "text-white border-transparent" : "border-border text-muted-foreground hover:border-primary hover:text-foreground"}`}
+                    style={sector === s ? { backgroundColor: B.navy } : {}}>
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+        <section className="py-12 px-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between mb-6">
+              <span className="text-sm text-muted-foreground font-mono">{filtered.length} deal{filtered.length !== 1 ? "s" : ""} matching</span>
+              <div className="flex gap-2">
+                {stages.map((s) => (
+                  <button key={s} onClick={() => setStage(s)}
+                    className={`text-xs font-mono px-3 py-1.5 rounded-lg border transition-all ${stage === s ? "text-white border-transparent" : "border-border text-muted-foreground hover:text-foreground"}`}
+                    style={stage === s ? { backgroundColor: B.orange } : {}}>
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filtered.map((d) => <DealCard key={d.id} deal={d} currency={currency} onViewDeal={onViewDeal} />)}
+            </div>
+            {filtered.length === 0 && (
+              <div className="text-center py-20 text-muted-foreground">
+                <Search className="w-8 h-8 mx-auto mb-3 opacity-30" />
+                <p>No deals match your filters.</p>
+              </div>
+            )}
+          </div>
+        </section>
+        <PublicFooter setView={setView} />
+      </div>
+    </div>
+  );
+}
+
+function ChaptersPage({ setView }: { setView: (v: View) => void }) {
+  const [region, setRegion] = useState("All");
+  const regions = ["All", "Middle East", "Asia Pacific", "Europe", "Americas", "Africa"];
+  const filtered = region === "All" ? CHAPTERS_DATA : CHAPTERS_DATA.filter((c) => c.region === region);
+  const regionColors: Record<string, string> = { "Middle East": B.orange, "Asia Pacific": B.teal, "Europe": B.navy, "Americas": B.blue, "Africa": B.yellow };
+  return (
+    <div>
+      <NavBar view="chapters" setView={setView} />
+      <div className="pt-16">
+        <section className="py-14 px-6 border-b border-border" style={{ background: `linear-gradient(135deg, ${B.navy}08 0%, white 70%)` }}>
+          <div className="max-w-4xl mx-auto text-center">
+            <SectionLabel>Global Network</SectionLabel>
+            <h1 style={{ fontFamily: '"DM Serif Display", serif', fontSize: "2.75rem", lineHeight: 1.1, color: B.navy }} className="mb-4">94 WTC Chapters.<br />One Platform.</h1>
+            <p className="text-muted-foreground leading-relaxed">Every deal on the platform is anchored by a verified World Trade Center chapter — your assurance of institutional membership and local due diligence.</p>
+          </div>
+        </section>
+        <section className="py-14 px-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-wrap gap-2 mb-8">
+              {regions.map((r) => (
+                <button key={r} onClick={() => setRegion(r)}
+                  className={`text-xs font-mono px-4 py-2 rounded-full border transition-all ${region === r ? "text-white border-transparent" : "border-border text-muted-foreground hover:border-primary hover:text-foreground"}`}
+                  style={region === r ? { backgroundColor: regionColors[r] || B.navy } : {}}>
+                  {r}
+                </button>
+              ))}
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filtered.map((c) => (
+                <div key={c.name} className="p-5 border border-border rounded-xl bg-white hover:shadow-sm transition-all">
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div>
+                      <div className="font-semibold text-sm" style={{ color: B.navy }}>{c.name}</div>
+                      <div className="flex items-center gap-1 mt-1">
+                        <MapPin className="w-3 h-3 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">{c.city}</span>
+                      </div>
+                    </div>
+                    <span className="text-xs font-mono px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: regionColors[c.region] || B.navy }}>{c.region}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground font-mono">{c.active} active deals</span>
+                    <button className="font-medium" style={{ color: B.orange }}>View deals →</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+        <PublicFooter setView={setView} />
+      </div>
+    </div>
+  );
+}
+
+function AboutPage({ setView }: { setView: (v: View) => void }) {
+  return (
+    <div>
+      <NavBar view="about" setView={setView} />
+      <div className="pt-16">
+        <section className="py-20 px-6" style={{ backgroundColor: B.navy }}>
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 style={{ fontFamily: '"DM Serif Display", serif', fontSize: "3rem", lineHeight: 1.1, color: "white" }} className="mb-6">
+              Bridging the World's<br /><em style={{ color: B.peach }}>Trade Communities</em>
+            </h1>
+            <p className="text-blue-200 text-lg leading-relaxed max-w-2xl mx-auto">
+              WTC Investors Hub is the digital evolution of the World Trade Centers Association's mission — making trusted global commerce accessible, verified, and efficient.
+            </p>
+          </div>
+        </section>
+        <section className="py-16 px-6">
+          <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-start">
+            <div>
+              <SectionLabel>Our Mission</SectionLabel>
+              <PageTitle>Democratizing Access to Global Capital</PageTitle>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-4 mb-4">
+                Since 1970, the World Trade Centers Association has facilitated global business through a network of 330+ member organizations across 100 countries. WTC Investors Hub extends this mission into the digital realm of private capital formation.
+              </p>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                We believe that geography should not determine access to capital. By anchoring every transaction to a verified WTC chapter membership, we bring institutional-grade trust to cross-border private investment — for both founders seeking capital and investors seeking uncorrelated global returns.
+              </p>
+            </div>
+            <div className="space-y-4">
+              {[["Founded", "2023"], ["WTCA Members on Platform", "847 verified founders"], ["Accredited Investors", "12,400+"], ["Chapters Active", "94 in 47 countries"], ["Capital Facilitated", "$2.4B"], ["Average Deal Size", "$8.5M"]].map(([l, v]) => (
+                <div key={l} className="flex items-center justify-between p-4 border border-border rounded-xl bg-white">
+                  <span className="text-sm text-muted-foreground">{l}</span>
+                  <span className="text-sm font-semibold font-mono" style={{ color: B.navy }}>{v}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+        <section className="py-16 px-6 border-t border-border bg-secondary/20">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-12">
+              <SectionLabel>Leadership</SectionLabel>
+              <PageTitle>Advisory Council</PageTitle>
+            </div>
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5">
+              {[
+                ["Dr. Sarah Chen", "Chief Executive Officer", "Former MD, Goldman Sachs Asia"],
+                ["James Whitfield", "President & Co-founder", "Ex-WTCA Board Director"],
+                ["Leila Al-Mansoori", "Chief Operating Officer", "Former Abu Dhabi Investment Authority"],
+                ["Prof. Klaus Bergmann", "Chief Risk Officer", "Former ECB Senior Advisor"],
+                ["Yuki Nakamura", "Head of Asia Pacific", "Serial founder, 3 exits"],
+                ["Amara Diallo", "Head of Africa & MEA", "Ex-IFC Principal Investment Officer"],
+              ].map(([name, role, note]) => (
+                <div key={name} className="p-5 border border-border rounded-xl bg-white">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white mb-3" style={{ backgroundColor: B.navy }}>
+                    {(name as string).split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                  </div>
+                  <div className="font-semibold text-sm mb-0.5" style={{ color: B.navy }}>{name}</div>
+                  <div className="text-xs font-medium mb-1" style={{ color: B.orange }}>{role}</div>
+                  <div className="text-xs text-muted-foreground">{note}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+        <PublicFooter setView={setView} />
+      </div>
+    </div>
+  );
+}
+
+function LoginPage({ setView }: { setView: (v: View) => void }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  return (
+    <div className="min-h-screen flex">
+      <div className="hidden lg:flex flex-col justify-between w-1/2 p-12" style={{ backgroundColor: B.navy }}>
+        <BrandLogo />
+        <div>
+          <h2 style={{ fontFamily: '"DM Serif Display", serif', fontSize: "2.5rem", lineHeight: 1.15, color: "white" }} className="mb-4">
+            Your gateway to<br /><em style={{ color: B.peach }}>verified global deals</em>
+          </h2>
+          <p className="text-blue-200 text-sm leading-relaxed mb-8">Access AI-matched investment opportunities across 94 WTC chapters. KYC-verified, escrow-backed, and fully audited.</p>
+          <div className="grid grid-cols-2 gap-4">
+            {[["$2.4B", "Capital deployed"], ["847", "Verified projects"], ["94", "WTC Chapters"], ["9.4/10", "Avg trust score"]].map(([v, l]) => (
+              <div key={l} className="p-4 rounded-xl" style={{ backgroundColor: "rgba(255,255,255,0.08)" }}>
+                <div className="text-xl font-mono font-bold text-white">{v}</div>
+                <div className="text-xs text-blue-300 mt-0.5">{l}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <p className="text-xs text-blue-300">© 2025 WTC Investors Hub · Official WTCA Platform</p>
+      </div>
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="w-full max-w-md">
+          <div className="lg:hidden mb-8"><BrandLogo /></div>
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold mb-2" style={{ color: B.navy }}>Welcome back</h1>
+            <p className="text-sm text-muted-foreground">Sign in to your investor account</p>
+          </div>
+          <div className="space-y-4 mb-6">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground block mb-1.5">Email address</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="james@meridian.capital"
+                  className="w-full pl-9 pr-4 py-2.5 text-sm border border-border rounded-lg bg-white focus:outline-none focus:border-primary" />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground block mb-1.5">Password</label>
+              <div className="relative">
+                <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="••••••••••"
+                  className="w-full pl-9 pr-4 py-2.5 text-sm border border-border rounded-lg bg-white focus:outline-none focus:border-primary" />
+              </div>
+            </div>
+          </div>
+          <button onClick={() => setView("investor")}
+            className="w-full py-3 rounded-lg text-white font-semibold text-sm hover:opacity-90 transition-opacity mb-4"
+            style={{ backgroundColor: B.navy }}>
+            Sign In
+          </button>
+          <button className="w-full py-3 rounded-lg border border-border text-sm font-medium hover:bg-secondary transition-colors mb-6" style={{ color: B.navy }}>
+            Sign in with Google Workspace
+          </button>
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground mb-3">Not registered yet?</p>
+            <button onClick={() => setView("list-project")} className="text-xs font-medium" style={{ color: B.orange }}>
+              Register as Founder →
+            </button>
+            <span className="text-muted-foreground text-xs mx-2">·</span>
+            <button className="text-xs font-medium" style={{ color: B.orange }}>
+              Apply as Investor →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ListProjectPage({ setView }: { setView: (v: View) => void }) {
+  const [step, setStep] = useState(1);
+  const [plan, setPlan] = useState("Professional");
+  const plans = [
+    { name: "Starter", price: 299, features: ["1 project listing", "Standard VDR", "20 NDA requests", "Basic AI matching"] },
+    { name: "Professional", price: 799, features: ["3 project listings", "Advanced VDR + audit logs", "Unlimited NDAs", "Priority AI matching", "Syndicate pool access"] },
+    { name: "Enterprise", price: 2499, features: ["Unlimited projects", "White-glove onboarding", "Custom NDAs", "Exclusive chapter matching", "24/7 priority support"] },
+  ];
+  return (
+    <div>
+      <NavBar view="list-project" setView={setView} />
+      <div className="pt-16 min-h-screen">
+        <div className="max-w-3xl mx-auto px-6 py-12">
+          <div className="mb-10">
+            <SectionLabel>Get Started</SectionLabel>
+            <h1 style={{ fontFamily: '"DM Serif Display", serif', fontSize: "2.25rem", color: B.navy }}>List Your Project</h1>
+            <p className="text-muted-foreground text-sm mt-2">Connect with 12,400+ accredited investors through the WTC global network.</p>
+          </div>
+          {/* Step indicator */}
+          <div className="flex items-center gap-3 mb-10">
+            {["Choose Plan", "Company Details", "Deal Information"].map((s, i) => (
+              <React.Fragment key={s}>
+                <div className="flex items-center gap-2">
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${i + 1 <= step ? "text-white" : "border border-border text-muted-foreground"}`}
+                    style={i + 1 <= step ? { backgroundColor: B.navy } : {}}>
+                    {i + 1 < step ? <Check className="w-3.5 h-3.5" /> : i + 1}
+                  </div>
+                  <span className={`text-xs font-medium hidden sm:block ${i + 1 === step ? "" : "text-muted-foreground"}`}
+                    style={i + 1 === step ? { color: B.navy } : {}}>{s}</span>
+                </div>
+                {i < 2 && <div className="flex-1 h-px bg-border" />}
+              </React.Fragment>
+            ))}
+          </div>
+          {step === 1 && (
+            <div>
+              <p className="text-sm text-muted-foreground mb-6">Select the plan that best fits your fundraising needs.</p>
+              <div className="grid md:grid-cols-3 gap-4 mb-8">
+                {plans.map((p) => (
+                  <div key={p.name} onClick={() => setPlan(p.name)}
+                    className={`p-5 rounded-xl border-2 cursor-pointer transition-all ${plan === p.name ? "" : "border-border bg-white"}`}
+                    style={plan === p.name ? { borderColor: B.navy, backgroundColor: `${B.navy}05` } : {}}>
+                    {p.name === "Professional" && <div className="text-xs font-mono font-bold text-white px-2 py-0.5 rounded-full mb-3 inline-block" style={{ backgroundColor: B.orange }}>Popular</div>}
+                    <div className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-2">{p.name}</div>
+                    <div className="flex items-baseline gap-1 mb-4">
+                      <span className="text-2xl font-mono font-bold" style={{ color: B.navy }}>${p.price}</span>
+                      <span className="text-muted-foreground text-xs">/mo</span>
+                    </div>
+                    <ul className="space-y-2">
+                      {p.features.map((f) => (
+                        <li key={f} className="flex items-start gap-2 text-xs text-muted-foreground">
+                          <Check className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: B.teal }} />{f}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => setStep(2)} className="px-8 py-3 rounded-lg text-white font-semibold text-sm" style={{ backgroundColor: B.navy }}>
+                Continue with {plan} →
+              </button>
+            </div>
+          )}
+          {step === 2 && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground mb-2">Tell us about your company.</p>
+              {[["Company Name", "text", "Nexus AI Ltd"], ["Legal Entity", "text", "Registered company name"], ["Founded Year", "number", "2021"], ["WTC Chapter", "text", "WTC Dubai"], ["Sector", "text", "Technology"], ["Number of Employees", "number", "48"]].map(([label, type, placeholder]) => (
+                <div key={label as string}>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">{label}</label>
+                  <input type={type as string} placeholder={placeholder as string}
+                    className="w-full px-3.5 py-2.5 text-sm border border-border rounded-lg bg-white focus:outline-none focus:border-primary" />
+                </div>
+              ))}
+              <div className="flex gap-3 pt-2">
+                <button onClick={() => setStep(1)} className="px-5 py-2.5 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-secondary transition-colors">← Back</button>
+                <button onClick={() => setStep(3)} className="px-8 py-2.5 rounded-lg text-white font-semibold text-sm" style={{ backgroundColor: B.navy }}>Continue →</button>
+              </div>
+            </div>
+          )}
+          {step === 3 && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground mb-2">Tell us about your fundraising round.</p>
+              {[["Fundraising Stage", "text", "Series A"], ["Target Raise (USD)", "number", "15000000"], ["Minimum Ticket Size (USD)", "number", "250000"], ["Target IRR (%)", "text", "24–32%"], ["Use of Funds", "text", "R&D 40%, Sales 30%, Ops 20%, Legal 10%"]].map(([label, type, placeholder]) => (
+                <div key={label as string}>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">{label}</label>
+                  <input type={type as string} placeholder={placeholder as string}
+                    className="w-full px-3.5 py-2.5 text-sm border border-border rounded-lg bg-white focus:outline-none focus:border-primary" />
+                </div>
+              ))}
+              <div className="flex gap-3 pt-2">
+                <button onClick={() => setStep(2)} className="px-5 py-2.5 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-secondary transition-colors">← Back</button>
+                <button onClick={() => setView("founder")} className="px-8 py-2.5 rounded-lg text-white font-semibold text-sm" style={{ backgroundColor: B.orange }}>
+                  Submit Application →
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── PROJECT DETAIL PAGE ──────────────────────────────────────────────────────
+
+function ProjectDetailPage({ deal, setView, onBack, currency }: { deal: Deal; setView: (v: View) => void; onBack: () => void; currency: Currency }) {
+  const [tab, setTab] = useState("overview");
+  const pct = Math.round((deal.committed / deal.target) * 100);
+  const tabs = ["overview", "team", "financials", "documents", "bid"];
+  return (
+    <div className="min-h-screen bg-background">
+      <NavBar view="deals" setView={setView} />
+      <div className="pt-16">
+        {/* Hero */}
+        <div className="border-b border-border py-8 px-6" style={{ background: `linear-gradient(135deg, ${deal.bg}12 0%, white 70%)` }}>
+          <div className="max-w-6xl mx-auto">
+            <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6">
+              <ChevronLeft className="w-4 h-4" /> Back to Deals
+            </button>
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+              <div className="flex items-start gap-4">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-lg font-bold text-white flex-shrink-0" style={{ backgroundColor: deal.bg }}>
+                  {deal.initials}
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold mb-1" style={{ color: B.navy }}>{deal.name}</h1>
+                  <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-3">
+                    <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{deal.city}, {deal.country}</span>
+                    <span>· {deal.wtcChapter}</span>
+                    <span className="border border-border px-2 py-0.5 rounded-full text-xs bg-white">{deal.sector}</span>
+                    <span className="border border-border px-2 py-0.5 rounded-full text-xs bg-white">{deal.stage}</span>
+                  </div>
+                  <MatchPill score={deal.matchScore} />
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 md:items-end">
+                <div className="text-2xl font-mono font-bold" style={{ color: B.navy }}>{fmt(deal.target, currency)}</div>
+                <div className="text-xs text-muted-foreground">target raise</div>
+                <div className="w-40 h-2 bg-secondary rounded-full mt-1">
+                  <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: deal.bg }} />
+                </div>
+                <div className="text-xs font-mono" style={{ color: B.orange }}>{fmt(deal.committed, currency)} committed ({pct}%)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* Tabs */}
+        <div className="border-b border-border bg-white">
+          <div className="max-w-6xl mx-auto px-6 flex gap-1">
+            {tabs.map((t) => (
+              <button key={t} onClick={() => setTab(t)}
+                className={`px-4 py-3.5 text-sm font-medium capitalize border-b-2 transition-all ${tab === t ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+                style={tab === t ? { borderColor: B.navy, color: B.navy } : {}}>
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
+        {/* Content */}
+        <div className="max-w-6xl mx-auto px-6 py-8">
+          {tab === "overview" && (
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="md:col-span-2 space-y-6">
+                <div>
+                  <h3 className="font-semibold text-base mb-3" style={{ color: B.navy }}>About the Company</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{deal.longDesc}</p>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-base mb-3" style={{ color: B.navy }}>Key Milestones</h3>
+                  <div className="space-y-2">
+                    {deal.milestones.map((m, i) => (
+                      <div key={i} className="flex items-center gap-3 text-sm">
+                        <CheckCircle2 className="w-4 h-4 flex-shrink-0" style={{ color: B.teal }} />
+                        <span className="text-muted-foreground">{m}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-base mb-3" style={{ color: B.navy }}>Use of Funds</h3>
+                  <div className="space-y-2">
+                    {deal.useOfFunds.map(([cat, pctStr]) => (
+                      <div key={cat} className="flex items-center gap-3">
+                        <span className="text-xs text-muted-foreground w-32 flex-shrink-0">{cat}</span>
+                        <div className="flex-1 h-1.5 bg-secondary rounded-full">
+                          <div className="h-full rounded-full" style={{ width: pctStr, backgroundColor: deal.bg }} />
+                        </div>
+                        <span className="text-xs font-mono font-semibold w-8 text-right" style={{ color: B.navy }}>{pctStr}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-4">
+                {[["Min Ticket", fmt(deal.minTicket, currency)], ["Target IRR", deal.irr], ["Founded", String(deal.founded)], ["Employees", String(deal.employees)], ["WTC Chapter", deal.wtcChapter]].map(([l, v]) => (
+                  <div key={l} className="flex justify-between py-3 border-b border-border text-sm">
+                    <span className="text-muted-foreground">{l}</span>
+                    <span className="font-mono font-semibold" style={{ color: B.navy }}>{v}</span>
+                  </div>
+                ))}
+                <button onClick={() => setTab("bid")} className="w-full py-3 rounded-lg text-white font-semibold text-sm mt-2" style={{ backgroundColor: B.orange }}>
+                  {deal.ndaSigned ? "Submit a Bid" : "Sign NDA to Proceed"}
+                </button>
+              </div>
+            </div>
+          )}
+          {tab === "team" && (
+            <div>
+              <h3 className="font-semibold text-base mb-6" style={{ color: B.navy }}>Leadership Team</h3>
+              <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5">
+                {deal.team.map(({ n, r }) => (
+                  <div key={n} className="p-5 border border-border rounded-xl bg-white">
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold text-white mb-3" style={{ backgroundColor: deal.bg }}>
+                      {n.split(" ").map((x) => x[0]).join("").slice(0, 2)}
+                    </div>
+                    <div className="font-semibold text-sm mb-0.5" style={{ color: B.navy }}>{n}</div>
+                    <div className="text-xs text-muted-foreground">{r}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {tab === "financials" && (
+            <div className="grid md:grid-cols-2 gap-8">
+              <div>
+                <h3 className="font-semibold text-base mb-6" style={{ color: B.navy }}>Key Financials</h3>
+                <div className="space-y-3">
+                  {[["Annual Revenue", fmt(deal.financials.revenue, currency)], ["YoY Growth", deal.financials.growth], ["Gross Margin", deal.financials.margin], ["Monthly Burn", deal.financials.burnRate > 0 ? fmt(deal.financials.burnRate, currency) : "Cash-flow positive"]].map(([l, v]) => (
+                    <div key={l} className="flex justify-between p-4 border border-border rounded-xl bg-white text-sm">
+                      <span className="text-muted-foreground">{l}</span>
+                      <span className="font-mono font-bold" style={{ color: B.navy }}>{v}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="p-5 border border-border rounded-xl bg-white">
+                <div className="text-sm font-semibold mb-1" style={{ color: B.navy }}>Note on Financials</div>
+                <p className="text-xs text-muted-foreground leading-relaxed mt-2">
+                  Full audited financials, cap table, and financial model are available in the Virtual Data Room. Sign the NDA to access detailed documents — all downloads are dynamically watermarked with your identity, IP address, and timestamp.
+                </p>
+                {!deal.ndaSigned && (
+                  <button className="w-full mt-4 py-2.5 rounded-lg text-white text-sm font-medium" style={{ backgroundColor: B.navy }}>
+                    Sign NDA to Access VDR
+                  </button>
+                )}
+                {deal.ndaSigned && (
+                  <div className="flex items-center gap-2 mt-4 text-xs text-emerald-600">
+                    <CheckCircle2 className="w-4 h-4" />NDA signed · VDR access granted
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          {tab === "documents" && (
+            <div>
+              {!deal.ndaSigned ? (
+                <div className="text-center py-20">
+                  <Lock className="w-10 h-10 mx-auto mb-4" style={{ color: B.navy }} />
+                  <h3 className="font-semibold text-lg mb-2" style={{ color: B.navy }}>NDA Required</h3>
+                  <p className="text-muted-foreground text-sm mb-6 max-w-sm mx-auto">Please sign the Non-Disclosure Agreement to gain access to the Virtual Data Room documents.</p>
+                  <button className="px-8 py-3 rounded-lg text-white font-semibold text-sm" style={{ backgroundColor: B.orange }}>
+                    Review & Sign NDA
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-6 p-3 rounded-lg bg-secondary">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" style={{ color: B.orange }} />
+                    All documents are dynamically watermarked with your identity (WTC-JP-8841), IP address, and download timestamp.
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-3">
+                    {["Executive Summary", "Financial Model FY24", "Cap Table", "Pitch Deck v4", "Term Sheet Template", "Audited Accounts 2023"].map((doc) => (
+                      <div key={doc} className="flex items-center justify-between p-4 border border-border rounded-xl bg-white hover:shadow-sm transition-all">
+                        <div className="flex items-center gap-3">
+                          <FileText className="w-5 h-5" style={{ color: B.navy }} />
+                          <div>
+                            <div className="text-sm font-medium" style={{ color: B.navy }}>{doc}</div>
+                            <div className="text-xs text-muted-foreground">PDF · Watermarked</div>
+                          </div>
+                        </div>
+                        <button className="flex items-center gap-1.5 text-xs font-medium" style={{ color: B.orange }}>
+                          <Download className="w-3.5 h-3.5" />Download
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {tab === "bid" && (
+            <div className="grid md:grid-cols-2 gap-8">
+              <div>
+                <h3 className="font-semibold text-base mb-6" style={{ color: B.navy }}>Submit a Bid</h3>
+                <div className="space-y-4">
+                  {[["Bid Amount (USD)", "number", "500000"], ["Equity Requested (%)", "number", "3.5"], ["Investment Horizon (years)", "number", "5"], ["Escrow Account Reference", "text", "ESC-2024-XXXX"]].map(([l, t, p]) => (
+                    <div key={l as string}>
+                      <label className="text-xs font-medium text-muted-foreground block mb-1.5">{l}</label>
+                      <input type={t as string} placeholder={p as string}
+                        className="w-full px-3.5 py-2.5 text-sm border border-border rounded-lg bg-white focus:outline-none focus:border-primary" />
+                    </div>
+                  ))}
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1.5">Bid Type</label>
+                    <select className="w-full px-3.5 py-2.5 text-sm border border-border rounded-lg bg-white focus:outline-none focus:border-primary">
+                      <option>Hard Bid (Escrow-backed)</option>
+                      <option>Soft Commit (Non-binding)</option>
+                    </select>
+                  </div>
+                  <button className="w-full py-3 rounded-lg text-white font-semibold text-sm" style={{ backgroundColor: B.navy }}>
+                    Submit Bid →
+                  </button>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Hard bids require an active escrow hold via a licensed third-party provider. WTC Investors Hub holds no capital at any stage of the transaction.
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="p-5 border border-border rounded-xl bg-secondary/30">
+                  <h4 className="font-semibold text-sm mb-4" style={{ color: B.navy }}>Current Bid Pipeline</h4>
+                  {FOUNDER_BIDS.map((b) => (
+                    <div key={b.id} className="flex justify-between items-center py-2.5 border-b border-border last:border-0 text-xs">
+                      <div>
+                        <span className="font-medium text-foreground">{b.investor}</span>
+                        <span className="text-muted-foreground ml-2">{b.type}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-semibold" style={{ color: B.navy }}>{fmt(b.amount, currency)}</span>
+                        <StatusBadge status={b.status} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="p-5 border border-border rounded-xl bg-white">
+                  <h4 className="font-semibold text-sm mb-2" style={{ color: B.navy }}>Escrow Partners</h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">WTC Investors Hub integrates with Qualified.com and Escrow.com. All capital holds are managed by licensed escrow providers — the platform is zero-custody.</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── INVESTOR DASHBOARD PAGES ─────────────────────────────────────────────────
+
+function InvDealFlow({ currency, onViewDeal }: { currency: Currency; onViewDeal: (d: Deal) => void }) {
+  const [sector, setSector] = useState("All");
+  const sectors = ["All", "Technology", "Real Estate", "Energy", "Healthcare", "FinTech"];
+  const filtered = sector === "All" ? DEALS : DEALS.filter((d) => d.sector === sector);
+  return (
+    <div>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 className="text-lg font-bold mb-0.5" style={{ color: B.navy }}>Deal Flow Intelligence</h2>
+          <p className="text-xs text-muted-foreground">AI-matched opportunities ranked by your preference profile</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {sectors.map((s) => (
+            <button key={s} onClick={() => setSector(s)}
+              className={`text-xs font-mono px-3 py-1.5 rounded-lg border transition-all ${sector === s ? "text-white border-transparent" : "border-border text-muted-foreground hover:text-foreground"}`}
+              style={sector === s ? { backgroundColor: B.navy } : {}}>
+              {s}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {[["23", "AI-Matched Deals", "+4 this week", Zap], ["$1.85M", "Committed Capital", "Across 7 deals", DollarSign], ["24.8%", "Avg Portfolio IRR", "+2.1% vs benchmark", TrendingUp], ["9.4/10", "Trust Score", "8 verified reviews", Star]].map(([v, l, d, Icon]) => (
+          <KPICard key={l as string} label={l as string} value={v as string} delta={d as string} up Icon={Icon as React.ElementType} />
+        ))}
+      </div>
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {filtered.map((d) => <DealCard key={d.id} deal={d} currency={currency} onViewDeal={onViewDeal} />)}
+      </div>
+    </div>
+  );
+}
+
+function InvPortfolio({ currency }: { currency: Currency }) {
+  const total = MY_INVESTMENTS.reduce((s, i) => s + i.invested, 0);
+  const totalVal = MY_INVESTMENTS.reduce((s, i) => s + i.currentVal, 0);
+  return (
+    <div>
+      <h2 className="text-lg font-bold mb-6" style={{ color: B.navy }}>My Portfolio</h2>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {[[fmt(total, currency), "Total Invested", "5 deals", DollarSign], [fmt(totalVal, currency), "Current Value", "+17.6% overall", TrendingUp], ["24.8%", "Blended IRR", "Across active deals", Activity], ["$380K", "Realized Returns", "1 exit closed", Award]].map(([v, l, d, Icon]) => (
+          <KPICard key={l as string} label={l as string} value={v as string} delta={d as string} up Icon={Icon as React.ElementType} />
+        ))}
+      </div>
+      <div className="grid lg:grid-cols-3 gap-6 mb-6">
+        <div className="lg:col-span-2 bg-white border border-border rounded-xl p-5 shadow-sm">
+          <div className="text-sm font-semibold mb-1" style={{ color: B.navy }}>Portfolio Value Over Time</div>
+          <div className="text-xs text-muted-foreground mb-4">Committed capital (USD 000s)</div>
+          <ResponsiveContainer width="100%" height={160}>
+            <AreaChart data={PORTFOLIO_DATA}>
+              <defs>
+                <linearGradient id="navyGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={B.navy} stopOpacity={0.15} />
+                  <stop offset="95%" stopColor={B.navy} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="m" tick={{ fontSize: 10, fill: "#6B7280", fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={{ backgroundColor: "#fff", border: `1px solid ${B.navy}25`, borderRadius: "8px", fontSize: "11px", fontFamily: "JetBrains Mono" }}
+                formatter={(v: number) => [fmt(v * 1000, currency), "Committed"]} />
+              <Area type="monotone" dataKey="c" stroke={B.navy} strokeWidth={2} fill="url(#navyGrad)" dot={false} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="bg-white border border-border rounded-xl p-5 shadow-sm">
+          <div className="text-sm font-semibold mb-4" style={{ color: B.navy }}>Sector Allocation</div>
+          {[["Technology", 35, B.navy], ["Real Estate", 40, B.blue], ["Healthcare", 14, B.teal], ["Energy", 7, B.orange], ["Other", 4, B.mgray]].map(([sec, pct, col]) => (
+            <div key={sec as string} className="mb-3">
+              <div className="flex justify-between text-xs mb-1">
+                <span className="text-muted-foreground">{sec}</span>
+                <span className="font-mono font-semibold" style={{ color: B.navy }}>{pct}%</span>
+              </div>
+              <div className="h-1.5 bg-secondary rounded-full">
+                <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: col as string }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-border"><span className="text-sm font-semibold" style={{ color: B.navy }}>Investment Holdings</span></div>
+        <table className="w-full text-xs">
+          <thead><tr className="border-b border-border bg-secondary/30">
+            {["Company", "Sector", "Invested", "Current Value", "IRR", "Status", "Date"].map((h) => (
+              <th key={h} className="text-left px-4 py-3 font-mono text-muted-foreground uppercase tracking-wider font-normal">{h}</th>
+            ))}
+          </tr></thead>
+          <tbody>
+            {MY_INVESTMENTS.map((inv) => (
+              <tr key={inv.deal} className="border-b border-border last:border-0 hover:bg-secondary/20 transition-colors">
+                <td className="px-4 py-3 font-semibold" style={{ color: B.navy }}>{inv.deal}</td>
+                <td className="px-4 py-3 text-muted-foreground">{inv.sector}</td>
+                <td className="px-4 py-3 font-mono">{fmt(inv.invested, currency)}</td>
+                <td className="px-4 py-3 font-mono font-semibold" style={{ color: inv.currentVal > inv.invested ? "#059669" : "#DC2626" }}>{fmt(inv.currentVal, currency)}</td>
+                <td className="px-4 py-3 font-mono" style={{ color: B.orange }}>{inv.irr}%</td>
+                <td className="px-4 py-3"><StatusBadge status={inv.status} /></td>
+                <td className="px-4 py-3 font-mono text-muted-foreground">{inv.date}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function InvMyBids({ currency }: { currency: Currency }) {
+  const [tab, setTab] = useState("all");
+  const filtered = tab === "hard" ? MY_BIDS.filter((b) => b.type === "Hard Bid") : tab === "soft" ? MY_BIDS.filter((b) => b.type === "Soft Commit") : MY_BIDS;
+  return (
+    <div>
+      <h2 className="text-lg font-bold mb-6" style={{ color: B.navy }}>My Bids</h2>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {[["4", "Active Bids", "Across 4 deals", Gavel], [fmt(1_750_000, currency), "In Escrow", "2 hard bids", Shield], [fmt(1_100_000, currency), "Soft Commits", "2 commitments", FileText], [fmt(380_000, currency), "Realized", "1 successful exit", Award]].map(([v, l, d, Icon]) => (
+          <KPICard key={l as string} label={l as string} value={v as string} delta={d as string} up Icon={Icon as React.ElementType} />
+        ))}
+      </div>
+      <div className="flex gap-2 mb-5">
+        {[["all", "All Bids"], ["hard", "Hard Bids"], ["soft", "Soft Commits"]].map(([id, label]) => (
+          <button key={id} onClick={() => setTab(id)}
+            className={`text-xs font-mono px-4 py-2 rounded-lg border transition-all ${tab === id ? "text-white border-transparent" : "border-border text-muted-foreground hover:text-foreground"}`}
+            style={tab === id ? { backgroundColor: B.navy } : {}}>
+            {label}
+          </button>
+        ))}
+      </div>
+      <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
+        <table className="w-full text-xs">
+          <thead><tr className="border-b border-border bg-secondary/30">
+            {["Deal", "Amount", "Type", "Equity", "Status", "Escrow Ref", "Submitted", "Actions"].map((h) => (
+              <th key={h} className="text-left px-4 py-3 font-mono text-muted-foreground uppercase tracking-wider font-normal">{h}</th>
+            ))}
+          </tr></thead>
+          <tbody>
+            {filtered.map((b) => (
+              <tr key={b.id} className="border-b border-border last:border-0 hover:bg-secondary/20 transition-colors">
+                <td className="px-4 py-3 font-semibold" style={{ color: B.navy }}>{b.deal}</td>
+                <td className="px-4 py-3 font-mono font-semibold">{fmt(b.amount, currency)}</td>
+                <td className="px-4 py-3 font-mono text-muted-foreground">{b.type}</td>
+                <td className="px-4 py-3 font-mono">{b.equity}</td>
+                <td className="px-4 py-3"><StatusBadge status={b.status} /></td>
+                <td className="px-4 py-3 font-mono text-muted-foreground">{b.escrow}</td>
+                <td className="px-4 py-3 font-mono text-muted-foreground">{b.submitted}</td>
+                <td className="px-4 py-3">
+                  <button className="text-xs font-medium" style={{ color: B.orange }}>Edit</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function InvVDRAccess({ currency }: { currency: Currency }) {
+  return (
+    <div>
+      <h2 className="text-lg font-bold mb-6" style={{ color: B.navy }}>VDR Access</h2>
+      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-6 p-3 rounded-lg bg-amber-50 border border-amber-200">
+        <AlertCircle className="w-4 h-4 flex-shrink-0 text-amber-500" />
+        All documents you access are dynamically watermarked with your Watermark ID <span className="font-mono font-bold text-foreground">WTC-JP-8841</span>, your IP, and the exact download timestamp.
+      </div>
+      <div className="space-y-4">
+        {VDR_ROOMS.map((room) => (
+          <div key={room.deal} className="bg-white border border-border rounded-xl p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <div className="font-semibold text-sm mb-1" style={{ color: B.navy }}>{room.deal}</div>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <span>NDA signed: {room.ndaDate}</span>
+                  <span>· Last accessed: {room.lastAccess}</span>
+                  <span>· Watermark: <span className="font-mono">{room.watermarkId}</span></span>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-emerald-600">
+                <CheckCircle2 className="w-3.5 h-3.5" />Access granted
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {room.docs.map((doc) => (
+                <div key={doc} className="flex items-center gap-2 bg-secondary px-3 py-2 rounded-lg">
+                  <FileText className="w-3.5 h-3.5" style={{ color: B.navy }} />
+                  <span className="text-xs font-medium" style={{ color: B.navy }}>{doc}</span>
+                  <button><Download className="w-3 h-3" style={{ color: B.orange }} /></button>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-6 p-5 border border-dashed border-border rounded-xl text-center">
+        <Lock className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+        <p className="text-sm text-muted-foreground mb-3">Sign NDAs to access more data rooms</p>
+        <button className="text-sm font-medium px-4 py-2 rounded-lg text-white" style={{ backgroundColor: B.navy }}>Browse Deals →</button>
+      </div>
+    </div>
+  );
+}
+
+function InvWallet({ currency }: { currency: Currency }) {
+  return (
+    <div>
+      <h2 className="text-lg font-bold mb-6" style={{ color: B.navy }}>Wallet & Funds</h2>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {[[fmt(980_000, currency), "Available Balance", "Plaid connected", Wallet], [fmt(1_750_000, currency), "Escrow Holds", "2 active bids", Shield], [fmt(380_000, currency), "Realized Returns", "From exits", TrendingUp], ["USDT 45,000", "Crypto Balance", "WalletConnect", CreditCard]].map(([v, l, d, Icon]) => (
+          <KPICard key={l as string} label={l as string} value={v as string} delta={d as string} up Icon={Icon as React.ElementType} />
+        ))}
+      </div>
+      <div className="grid lg:grid-cols-2 gap-6">
+        <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+            <span className="text-sm font-semibold" style={{ color: B.navy }}>Connected Accounts</span>
+            <button className="text-xs font-medium flex items-center gap-1" style={{ color: B.orange }}><Plus className="w-3.5 h-3.5" />Add Account</button>
+          </div>
+          {[{ name: "Meridian Capital · Chase Business", type: "Fiat · Plaid", bal: fmt(980_000, currency), status: "Connected" }, { name: "MetaMask · 0x8841...E4D2", type: "Web3 · WalletConnect", bal: "USDT 45,000", status: "Connected" }, { name: "Escrow.com · ESC-2024-0041", type: "Escrow Hold", bal: fmt(1_200_000, currency), status: "Active" }, { name: "Escrow.com · ESC-2024-0078", type: "Escrow Hold", bal: fmt(550_000, currency), status: "Active" }].map((a) => (
+            <div key={a.name} className="px-5 py-4 border-b border-border last:border-0 flex items-center justify-between text-sm">
+              <div>
+                <div className="font-medium" style={{ color: B.navy }}>{a.name}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">{a.type}</div>
+              </div>
+              <div className="text-right">
+                <div className="font-mono font-semibold text-xs">{a.bal}</div>
+                <StatusBadge status={a.status} />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-border"><span className="text-sm font-semibold" style={{ color: B.navy }}>Recent Transactions</span></div>
+          {[{ desc: "Escrow hold placed — Nexus AI Bid", date: "Feb 28, 2024", amount: -1_200_000, type: "Escrow" }, { desc: "Escrow hold placed — MediCore Bid", date: "Mar 18, 2024", amount: -550_000, type: "Escrow" }, { desc: "Realized return — TechBridge exit", date: "Aug 14, 2023", amount: +380_000, type: "Return" }, { desc: "Wallet funded — Chase transfer", date: "Jan 5, 2024", amount: +2_000_000, type: "Deposit" }].map((t) => (
+            <div key={t.desc} className="px-5 py-4 border-b border-border last:border-0 flex items-center justify-between text-xs">
+              <div>
+                <div className="font-medium text-foreground">{t.desc}</div>
+                <div className="text-muted-foreground mt-0.5 font-mono">{t.date} · {t.type}</div>
+              </div>
+              <span className={`font-mono font-semibold ${t.amount > 0 ? "text-emerald-600" : "text-foreground"}`}>
+                {t.amount > 0 ? "+" : ""}{fmt(Math.abs(t.amount), currency)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InvProfileKYC() {
+  return (
+    <div>
+      <h2 className="text-lg font-bold mb-6" style={{ color: B.navy }}>Profile & KYC</h2>
+      <div className="grid lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-5">
+          <div className="bg-white border border-border rounded-xl p-5 shadow-sm">
+            <div className="text-sm font-semibold mb-4" style={{ color: B.navy }}>Personal Information</div>
+            <div className="grid md:grid-cols-2 gap-4">
+              {[["First Name", "James"], ["Last Name", "Pemberton"], ["Email", "james@meridian.capital"], ["Phone", "+44 20 7946 0088"], ["Nationality", "British"], ["Date of Birth", "12 / 03 / 1978"], ["Residential Country", "United Kingdom"], ["WTC Chapter", "WTC London"]].map(([l, v]) => (
+                <div key={l}>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">{l}</label>
+                  <input defaultValue={v} className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-white focus:outline-none focus:border-primary" />
+                </div>
+              ))}
+            </div>
+            <button className="mt-4 px-5 py-2 rounded-lg text-white text-sm font-medium" style={{ backgroundColor: B.navy }}>Save Changes</button>
+          </div>
+          <div className="bg-white border border-border rounded-xl p-5 shadow-sm">
+            <div className="text-sm font-semibold mb-4" style={{ color: B.navy }}>Investment Preferences</div>
+            <div className="grid md:grid-cols-2 gap-4">
+              {[["Preferred Sectors", "Technology, Healthcare, FinTech"], ["Preferred Geographies", "MENA, Europe, Asia-Pacific"], ["Typical Check Size", "$250K – $2M"], ["Stage Focus", "Series A, Series B"], ["Min Target IRR", "20%+"], ["Investment Horizon", "5–7 years"]].map(([l, v]) => (
+                <div key={l}>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">{l}</label>
+                  <input defaultValue={v} className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-white focus:outline-none focus:border-primary" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="space-y-4">
+          <div className="bg-white border border-border rounded-xl p-5 shadow-sm">
+            <div className="text-sm font-semibold mb-4" style={{ color: B.navy }}>Verification Status</div>
+            {[["Identity KYC", true, "Persona verified · Jan 2024"], ["Accreditation", true, "Qualified purchaser · Valid until Jan 2025"], ["AML Screening", true, "Cleared · Updated Apr 2024"], ["WTC Membership", true, "WTC London · Member #8841"], ["Wallet Link", false, "Connect a wallet to continue"], ["MFA Enabled", true, "TOTP authenticator active"]].map(([l, ok, note]) => (
+              <div key={l as string} className="flex items-start gap-3 py-3 border-b border-border last:border-0">
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${ok ? "bg-emerald-100" : "bg-amber-100"}`}>
+                  {ok ? <Check className="w-3 h-3 text-emerald-600" /> : <Clock className="w-3 h-3 text-amber-600" />}
+                </div>
+                <div>
+                  <div className="text-xs font-medium" style={{ color: B.navy }}>{l}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{note}</div>
                 </div>
               </div>
             ))}
           </div>
-
-          {/* Two-column layout */}
-          <div className="grid lg:grid-cols-3 gap-6">
-
-            {/* Deal feed */}
-            <div className="lg:col-span-2 space-y-3">
-              <div className="flex items-center justify-between mb-1">
-                <div className="text-sm font-medium text-foreground">AI-Matched Opportunities</div>
-                <div className="flex items-center gap-1.5 text-xs font-mono text-primary">
-                  <RefreshCw className="w-3 h-3" />Updated 6m ago
-                </div>
-              </div>
-              {DEALS.slice(0, 5).map((d) => {
-                const pct = Math.round((d.committed / d.target) * 100);
-                return (
-                  <div key={d.id} className="bg-card border border-border rounded p-4 hover:border-primary/20 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded flex items-center justify-center text-xs font-mono font-medium text-foreground flex-shrink-0" style={{ backgroundColor: d.accentBg }}>
-                        {d.initials}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2 mb-0.5">
-                          <span className="text-sm font-medium text-foreground truncate">{d.name}</span>
-                          <MatchPill score={d.matchScore} />
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-                          <span>{d.sector}</span><span>·</span><span>{d.stage}</span><span>·</span><span>{d.city}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-0.5 bg-secondary rounded-full">
-                            <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
-                          </div>
-                          <span className="text-xs font-mono text-muted-foreground flex-shrink-0">{fmt(d.target, currency)}</span>
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-1.5 flex-shrink-0 ml-2">
-                        <button className="text-xs border border-primary/30 text-primary px-2.5 py-1 rounded hover:bg-primary/10 transition-colors">
-                          {d.ndaSigned ? "VDR" : "NDA"}
-                        </button>
-                        <button className="text-xs border border-border text-muted-foreground px-2.5 py-1 rounded hover:text-foreground transition-colors">
-                          Bid
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+          <div className="bg-white border border-border rounded-xl p-5 shadow-sm">
+            <div className="text-sm font-semibold mb-3" style={{ color: B.navy }}>Trust Score</div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="text-3xl font-mono font-bold" style={{ color: B.navy }}>9.4</div>
+              <div className="text-muted-foreground text-xs">/ 10 · Based on 8 KYC-verified reviews</div>
             </div>
-
-            {/* Right column */}
-            <div className="space-y-4">
-              {/* Portfolio chart */}
-              <div className="bg-card border border-border rounded p-4">
-                <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-1">Portfolio Commitment</div>
-                <div className="text-xl font-mono font-medium text-foreground mb-4">{fmt(1_850_000, currency)}</div>
-                <ResponsiveContainer width="100%" height={120}>
-                  <AreaChart data={PORTFOLIO_DATA}>
-                    <defs>
-                      <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#C8A96E" stopOpacity={0.25} />
-                        <stop offset="95%" stopColor="#C8A96E" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="m" tick={{ fontSize: 10, fill: "#8B9CB8", fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: "#0D1427", border: "1px solid rgba(200,169,110,0.2)", borderRadius: "4px", fontSize: "11px", fontFamily: "JetBrains Mono" }}
-                      labelStyle={{ color: "#8B9CB8" }}
-                      itemStyle={{ color: "#C8A96E" }}
-                      formatter={(v: number) => [fmt(v * 1000, currency), "Committed"]}
-                    />
-                    <Area type="monotone" dataKey="c" stroke="#C8A96E" strokeWidth={1.5} fill="url(#goldGrad)" dot={false} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* KYC / Accreditation */}
-              <div className="bg-card border border-border rounded p-4">
-                <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Verification Status</div>
-                {[
-                  { l: "Identity KYC", ok: true },
-                  { l: "Accreditation", ok: true },
-                  { l: "AML Screening", ok: true },
-                  { l: "WTC Membership", ok: true },
-                  { l: "Wallet Linked", ok: false },
-                ].map(({ l, ok }) => (
-                  <div key={l} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
-                    <span className="text-xs text-muted-foreground">{l}</span>
-                    {ok ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Clock className="w-3.5 h-3.5 text-amber-400" />}
-                  </div>
-                ))}
-              </div>
-
-              {/* Recent activity */}
-              <div className="bg-card border border-border rounded p-4">
-                <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Recent Activity</div>
-                {[
-                  { e: "NDA Signed", d: "VoltEdge Energy", t: "2h ago" },
-                  { e: "Bid Submitted", d: "Nexus AI", t: "Yesterday" },
-                  { e: "VDR Accessed", d: "MediCore Systems", t: "2 days ago" },
-                  { e: "AI Matched", d: "PayPath FinTech", t: "3 days ago" },
-                ].map((a) => (
-                  <div key={a.d} className="flex items-center justify-between text-xs py-1.5 border-b border-border last:border-0">
-                    <div>
-                      <span className="text-foreground">{a.e}</span>
-                      <span className="text-muted-foreground ml-1.5">{a.d}</span>
-                    </div>
-                    <span className="font-mono text-muted-foreground">{a.t}</span>
-                  </div>
-                ))}
-              </div>
+            <div className="h-2 bg-secondary rounded-full">
+              <div className="h-full rounded-full" style={{ width: "94%", backgroundColor: B.teal }} />
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InvSettings() {
+  const [notifs, setNotifs] = useState({ deals: true, bids: true, vdr: true, newsletter: false });
+  return (
+    <div>
+      <h2 className="text-lg font-bold mb-6" style={{ color: B.navy }}>Settings</h2>
+      <div className="grid lg:grid-cols-2 gap-6">
+        <div className="space-y-5">
+          <div className="bg-white border border-border rounded-xl p-5 shadow-sm">
+            <div className="text-sm font-semibold mb-4" style={{ color: B.navy }}>Notification Preferences</div>
+            {([["deals", "New AI-matched deals"], ["bids", "Bid status updates"], ["vdr", "VDR access alerts"], ["newsletter", "Weekly deal digest"]] as [keyof typeof notifs, string][]).map(([key, label]) => (
+              <div key={key} className="flex items-center justify-between py-3 border-b border-border last:border-0">
+                <span className="text-sm text-foreground">{label}</span>
+                <button onClick={() => setNotifs((p) => ({ ...p, [key]: !p[key] }))}
+                  className="flex items-center gap-1.5 text-xs font-mono transition-colors"
+                  style={{ color: notifs[key] ? B.teal : B.mgray }}>
+                  {notifs[key] ? <CheckCircle2 className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                  {notifs[key] ? "On" : "Off"}
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="bg-white border border-border rounded-xl p-5 shadow-sm">
+            <div className="text-sm font-semibold mb-4" style={{ color: B.navy }}>Display Preferences</div>
+            {[["Default Currency", "USD"], ["Platform Language", "English (UK)"], ["Timezone", "GMT+0 · London"]].map(([l, v]) => (
+              <div key={l} className="flex items-center justify-between py-3 border-b border-border last:border-0">
+                <span className="text-sm text-muted-foreground">{l}</span>
+                <span className="text-sm font-medium" style={{ color: B.navy }}>{v}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-5">
+          <div className="bg-white border border-border rounded-xl p-5 shadow-sm">
+            <div className="text-sm font-semibold mb-4" style={{ color: B.navy }}>Security</div>
+            {[["Two-Factor Authentication", "TOTP Enabled · Authenticator app", true], ["Session Management", "2 active sessions", false], ["Password", "Last changed 45 days ago", false]].map(([l, v, ok]) => (
+              <div key={l as string} className="flex items-center justify-between py-3 border-b border-border last:border-0">
+                <div>
+                  <div className="text-sm font-medium" style={{ color: B.navy }}>{l}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{v}</div>
+                </div>
+                <button className="text-xs font-medium" style={{ color: B.orange }}>
+                  {ok ? "Manage" : "Update"}
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="bg-white border border-border rounded-xl p-5 shadow-sm">
+            <div className="text-sm font-semibold mb-4" style={{ color: B.navy }}>Account</div>
+            {["Export My Data", "Close Account"].map((action) => (
+              <div key={action} className="flex items-center justify-between py-3 border-b border-border last:border-0">
+                <span className="text-sm text-muted-foreground">{action}</span>
+                <button className="text-xs font-medium" style={{ color: action === "Close Account" ? "#DC2626" : B.orange }}>{action === "Close Account" ? "Danger →" : "Request →"}</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── INVESTOR DASHBOARD SHELL ─────────────────────────────────────────────────
+
+function InvestorDashboard({ setView, onViewDeal }: { setView: (v: View) => void; onViewDeal: (d: Deal) => void }) {
+  const [currency, setCurrency] = useState<Currency>("USD");
+  const [tab, setTab] = useState("deal-flow");
+  const navItems: NavItem[] = [
+    { id: "deal-flow", label: "Deal Flow", icon: TrendingUp },
+    { id: "portfolio", label: "Portfolio", icon: BarChart2 },
+    { id: "bids", label: "My Bids", icon: Gavel },
+    { id: "vdr", label: "VDR Access", icon: Lock },
+    { id: "wallet", label: "Wallet", icon: Wallet },
+    { id: "kyc", label: "Profile & KYC", icon: User },
+    { id: "settings", label: "Settings", icon: Settings },
+  ];
+  const titles: Record<string, string> = { "deal-flow": "Deal Flow", portfolio: "Portfolio", bids: "My Bids", vdr: "VDR Access", wallet: "Wallet", kyc: "Profile & KYC", settings: "Settings" };
+  return (
+    <div className="flex h-screen bg-secondary/30 overflow-hidden">
+      <Sidebar items={navItems} active={tab} setActive={setTab} onBack={() => setView("home")} userInitials="JP" userName="James Pemberton" userRole="Accredited Investor" />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <DashTopBar title={titles[tab] || "Dashboard"} currency={currency} setCurrency={setCurrency} />
+        <main className="flex-1 overflow-y-auto p-6">
+          {tab === "deal-flow" && <InvDealFlow currency={currency} onViewDeal={onViewDeal} />}
+          {tab === "portfolio" && <InvPortfolio currency={currency} />}
+          {tab === "bids" && <InvMyBids currency={currency} />}
+          {tab === "vdr" && <InvVDRAccess currency={currency} />}
+          {tab === "wallet" && <InvWallet currency={currency} />}
+          {tab === "kyc" && <InvProfileKYC />}
+          {tab === "settings" && <InvSettings />}
         </main>
       </div>
     </div>
   );
 }
 
-// ─── FOUNDER DASHBOARD ────────────────────────────────────────────────────────
+// ─── FOUNDER DASHBOARD PAGES ──────────────────────────────────────────────────
+
+function FndOverview({ currency }: { currency: Currency }) {
+  const project = DEALS[0];
+  const pct = Math.round((project.committed / project.target) * 100);
+  const milestones = ["WTC Chapter Verified", "Subscription Activated", "VDR Published", "First Investor NDA", "Term Sheets Received", "Escrow Holds Active", "Round Closed", "Funds Disbursed"];
+  return (
+    <div>
+      <div className="bg-white border border-border rounded-xl p-5 shadow-sm mb-6">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-base font-bold text-white" style={{ backgroundColor: project.bg }}>{project.initials}</div>
+            <div>
+              <div className="font-bold text-base" style={{ color: B.navy }}>{project.name}</div>
+              <div className="text-sm text-muted-foreground mt-0.5">{project.stage} · {project.sector} · {project.wtcChapter}</div>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {["Active Listing", "VDR Live", "Professional Plan"].map((badge, i) => (
+                  <span key={badge} className="text-xs font-mono px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: [B.teal, B.navy, B.orange][i] }}>{badge}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="md:text-right">
+            <div className="text-2xl font-mono font-bold" style={{ color: B.navy }}>{fmt(project.committed, currency)}</div>
+            <div className="text-xs text-muted-foreground">of {fmt(project.target, currency)} target</div>
+            <div className="w-40 h-2 bg-secondary rounded-full mt-2 md:ml-auto">
+              <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: B.navy }} />
+            </div>
+            <div className="text-xs font-mono font-semibold mt-1" style={{ color: B.orange }}>{pct}% raised</div>
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {[["184", "Investor Views", "+12 this week", Eye], ["23", "NDAs Signed", "3 new today", FileText], ["4", "Active Bids", fmt(2_750_000, currency) + " total", Gavel], [fmt(project.committed, currency), "Committed", `${pct}% of target`, DollarSign]].map(([v, l, d, Icon]) => (
+          <KPICard key={l as string} label={l as string} value={v as string} delta={d as string} up Icon={Icon as React.ElementType} />
+        ))}
+      </div>
+      <div className="grid lg:grid-cols-5 gap-6">
+        <div className="lg:col-span-3">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-semibold" style={{ color: B.navy }}>VDR Access Log</span>
+            <span className="text-xs font-mono text-muted-foreground">Watermarked · Identity-tracked</span>
+          </div>
+          <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
+            <table className="w-full text-xs">
+              <thead><tr className="border-b border-border bg-secondary/30">
+                {["Investor / Firm", "Documents", "Status", "Time"].map((h) => <th key={h} className="text-left px-4 py-3 font-mono text-muted-foreground uppercase tracking-wider font-normal">{h}</th>)}
+              </tr></thead>
+              <tbody>
+                {VDR_ACCESS_LOG.map((row) => (
+                  <tr key={row.investor} className="border-b border-border last:border-0 hover:bg-secondary/20 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="font-semibold" style={{ color: B.navy }}>{row.investor}</div>
+                      <div className="text-muted-foreground">{row.firm} · {row.location}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1">{row.docs.map((d) => <span key={d} className="border border-border text-muted-foreground px-1.5 py-0.5 rounded bg-secondary">{d}</span>)}</div>
+                    </td>
+                    <td className="px-4 py-3">{row.verified ? <span className="flex items-center gap-1 text-emerald-600"><CheckCircle2 className="w-3 h-3" />KYC</span> : <span className="flex items-center gap-1 text-amber-600"><Clock className="w-3 h-3" />Pending</span>}</td>
+                    <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">{row.time}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div className="lg:col-span-2 space-y-4">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-semibold" style={{ color: B.navy }}>Bid Pipeline</span>
+              <span className="text-xs font-mono font-bold" style={{ color: B.orange }}>{fmt(2_750_000, currency)} total</span>
+            </div>
+            <div className="space-y-2.5">
+              {FOUNDER_BIDS.map((b) => (
+                <div key={b.id} className="bg-white border border-border rounded-xl p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="text-sm font-semibold" style={{ color: B.navy }}>{b.investor}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{b.type} · {b.equity} equity · {b.submitted}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-mono font-bold" style={{ color: B.navy }}>{fmt(b.amount, currency)}</div>
+                      <div className="mt-1"><StatusBadge status={b.status} /></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="bg-white border border-border rounded-xl p-4 shadow-sm">
+            <div className="text-sm font-semibold mb-3" style={{ color: B.navy }}>Deal Milestones</div>
+            <div className="space-y-2">
+              {milestones.map((m, i) => (
+                <div key={m} className="flex items-center gap-3 text-xs">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${i < 6 ? "bg-emerald-100" : "border border-border"}`}>
+                    {i < 6 && <Check className="w-3 h-3 text-emerald-600" />}
+                  </div>
+                  <span className={i < 6 ? "" : "text-muted-foreground"} style={i < 6 ? { color: B.navy } : {}}>{m}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FndVDRManager({ currency }: { currency: Currency }) {
+  return (
+    <div>
+      <h2 className="text-lg font-bold mb-6" style={{ color: B.navy }}>VDR Manager</h2>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {[["6", "Documents", "In active VDR", FileText], ["23", "NDA Signers", "Investors granted access", Users], ["184", "Views This Month", "+12 this week", Eye], ["0", "Unauthorized Shares", "Watermark integrity", Shield]].map(([v, l, d, Icon]) => (
+          <KPICard key={l as string} label={l as string} value={v as string} delta={d as string} up Icon={Icon as React.ElementType} />
+        ))}
+      </div>
+      <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden mb-5">
+        <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+          <span className="text-sm font-semibold" style={{ color: B.navy }}>Published Documents</span>
+          <button className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg text-white" style={{ backgroundColor: B.orange }}>
+            <Upload className="w-3.5 h-3.5" />Upload Document
+          </button>
+        </div>
+        <table className="w-full text-xs">
+          <thead><tr className="border-b border-border bg-secondary/30">
+            {["Document", "Category", "Uploaded", "Downloads", "Watermarks", "Access"].map((h) => <th key={h} className="text-left px-4 py-3 font-mono text-muted-foreground uppercase tracking-wider font-normal">{h}</th>)}
+          </tr></thead>
+          <tbody>
+            {[["Pitch Deck v4.pdf", "Marketing", "Apr 1, 2024", 18, 18, "All NDA signers"], ["Financial Model FY24.xlsx", "Financial", "Mar 15, 2024", 12, 12, "All NDA signers"], ["Cap Table.pdf", "Legal", "Feb 20, 2024", 8, 8, "Tier 2 investors only"], ["Term Sheet Template.docx", "Legal", "Mar 1, 2024", 5, 5, "All NDA signers"], ["Business Plan 2024.pdf", "Strategy", "Jan 10, 2024", 22, 22, "All NDA signers"], ["Audited Accounts 2023.pdf", "Financial", "Feb 5, 2024", 9, 9, "Tier 2 investors only"]].map(([name, cat, date, dl, wm, access]) => (
+              <tr key={name as string} className="border-b border-border last:border-0 hover:bg-secondary/20 transition-colors">
+                <td className="px-4 py-3"><div className="flex items-center gap-2"><FileText className="w-3.5 h-3.5" style={{ color: B.navy }} /><span className="font-medium" style={{ color: B.navy }}>{name}</span></div></td>
+                <td className="px-4 py-3 text-muted-foreground">{cat}</td>
+                <td className="px-4 py-3 font-mono text-muted-foreground">{date}</td>
+                <td className="px-4 py-3 font-mono">{dl}</td>
+                <td className="px-4 py-3 font-mono">{wm}</td>
+                <td className="px-4 py-3 text-muted-foreground">{access}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function FndBidPipeline({ currency }: { currency: Currency }) {
+  return (
+    <div>
+      <h2 className="text-lg font-bold mb-6" style={{ color: B.navy }}>Bid Pipeline</h2>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {[["4", "Active Bids", "Across 4 investors", Gavel], [fmt(2_000_000, currency), "Escrow-Backed", "2 hard bids", Shield], [fmt(750_000, currency), "Soft Commits", "2 commitments", FileText], ["61%", "Round Progress", fmt(9_200_000, currency) + " committed", TrendingUp]].map(([v, l, d, Icon]) => (
+          <KPICard key={l as string} label={l as string} value={v as string} delta={d as string} up Icon={Icon as React.ElementType} />
+        ))}
+      </div>
+      <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-border"><span className="text-sm font-semibold" style={{ color: B.navy }}>All Bids</span></div>
+        <table className="w-full text-xs">
+          <thead><tr className="border-b border-border bg-secondary/30">
+            {["Investor", "Amount", "Type", "Equity Ask", "Status", "Submitted", "Action"].map((h) => <th key={h} className="text-left px-4 py-3 font-mono text-muted-foreground uppercase tracking-wider font-normal">{h}</th>)}
+          </tr></thead>
+          <tbody>
+            {FOUNDER_BIDS.map((b) => (
+              <tr key={b.id} className="border-b border-border last:border-0 hover:bg-secondary/20 transition-colors">
+                <td className="px-4 py-3 font-semibold" style={{ color: B.navy }}>{b.investor}</td>
+                <td className="px-4 py-3 font-mono font-semibold">{fmt(b.amount, currency)}</td>
+                <td className="px-4 py-3 text-muted-foreground">{b.type}</td>
+                <td className="px-4 py-3 font-mono">{b.equity}</td>
+                <td className="px-4 py-3"><StatusBadge status={b.status} /></td>
+                <td className="px-4 py-3 font-mono text-muted-foreground">{b.submitted}</td>
+                <td className="px-4 py-3 flex gap-2">
+                  <button className="text-xs font-medium" style={{ color: B.teal }}>Accept</button>
+                  <button className="text-xs font-medium" style={{ color: B.orange }}>Counter</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function FndNDAManager() {
+  return (
+    <div>
+      <h2 className="text-lg font-bold mb-6" style={{ color: B.navy }}>NDA Manager</h2>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {[["23", "NDAs Signed", "All active", CheckCircle2], ["3", "Pending Review", "Awaiting execution", Clock], ["0", "Revoked", "No revocations", Shield], ["18", "VDR Accesses", "Post-NDA views", Eye]].map(([v, l, d, Icon]) => (
+          <KPICard key={l as string} label={l as string} value={v as string} delta={d as string} up Icon={Icon as React.ElementType} />
+        ))}
+      </div>
+      <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+          <span className="text-sm font-semibold" style={{ color: B.navy }}>NDA Log</span>
+          <span className="text-xs font-mono text-muted-foreground">Dynamic NDAs — auto-executed on investor signature</span>
+        </div>
+        <table className="w-full text-xs">
+          <thead><tr className="border-b border-border bg-secondary/30">
+            {["Investor", "Firm", "Signed Date", "Expiry", "Status", "Action"].map((h) => <th key={h} className="text-left px-4 py-3 font-mono text-muted-foreground uppercase tracking-wider font-normal">{h}</th>)}
+          </tr></thead>
+          <tbody>
+            {[...VDR_ACCESS_LOG, { investor: "Thomas Adler", firm: "Alpine Capital", location: "Zurich, CH", time: "1 week ago", docs: [], verified: true }, { investor: "Mei Lin Zhang", firm: "Horizon PE", location: "Beijing, CN", time: "2 weeks ago", docs: [], verified: true }].slice(0, 6).map((row, i) => (
+              <tr key={row.investor} className="border-b border-border last:border-0 hover:bg-secondary/20 transition-colors">
+                <td className="px-4 py-3 font-semibold" style={{ color: B.navy }}>{row.investor}</td>
+                <td className="px-4 py-3 text-muted-foreground">{row.firm}</td>
+                <td className="px-4 py-3 font-mono text-muted-foreground">{["Apr 2, 2024", "Apr 1, 2024", "Mar 22, 2024", "Mar 18, 2024", "Mar 10, 2024", "Feb 28, 2024"][i]}</td>
+                <td className="px-4 py-3 font-mono text-muted-foreground">{["Apr 2, 2025", "Apr 1, 2025", "Mar 22, 2025", "Mar 18, 2025", "Mar 10, 2025", "Feb 28, 2025"][i]}</td>
+                <td className="px-4 py-3">{row.verified ? <span className="flex items-center gap-1 text-emerald-600"><CheckCircle2 className="w-3 h-3" />Executed</span> : <span className="flex items-center gap-1 text-amber-600"><Clock className="w-3 h-3" />Pending</span>}</td>
+                <td className="px-4 py-3"><button className="text-xs font-medium" style={{ color: B.orange }}>Revoke</button></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function FndEscrow({ currency }: { currency: Currency }) {
+  return (
+    <div>
+      <h2 className="text-lg font-bold mb-6" style={{ color: B.navy }}>Escrow</h2>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {[[fmt(2_000_000, currency), "Funds in Escrow", "2 hard bids", Shield], [fmt(12_200_000, currency), "Total Committed", "61% of target", DollarSign], ["0", "Disbursements", "Pre-close", CheckCircle2], ["Apr 30", "Target Close", "Estimated close date", Clock]].map(([v, l, d, Icon]) => (
+          <KPICard key={l as string} label={l as string} value={v as string} delta={d as string} up Icon={Icon as React.ElementType} />
+        ))}
+      </div>
+      <div className="grid lg:grid-cols-2 gap-6">
+        <div className="bg-white border border-border rounded-xl p-5 shadow-sm">
+          <div className="text-sm font-semibold mb-4" style={{ color: B.navy }}>Active Escrow Holds</div>
+          {[{ ref: "ESC-2024-0041", investor: "Meridian Capital", amount: 1_200_000, provider: "Qualified.com", status: "Active Hold", released: "On close" }, { ref: "ESC-2024-0078", investor: "Gulf Ventures", amount: 800_000, provider: "Escrow.com", status: "Active Hold", released: "On close" }].map((e) => (
+            <div key={e.ref} className="p-4 border border-border rounded-xl mb-3 last:mb-0">
+              <div className="flex justify-between mb-2">
+                <span className="font-mono text-xs" style={{ color: B.navy }}>{e.ref}</span>
+                <StatusBadge status={e.status} />
+              </div>
+              <div className="flex justify-between items-end">
+                <div>
+                  <div className="font-semibold text-sm" style={{ color: B.navy }}>{fmt(e.amount, currency)}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{e.investor} · {e.provider}</div>
+                </div>
+                <div className="text-xs text-muted-foreground">Release: {e.released}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="bg-white border border-border rounded-xl p-5 shadow-sm">
+          <div className="text-sm font-semibold mb-4" style={{ color: B.navy }}>Milestone-Based Disbursement</div>
+          {[["Seed documentation complete", true], ["Due diligence approved", true], ["Term sheets countersigned", true], ["Regulatory filings submitted", false], ["Final close — wires authorized", false], ["Funds disbursed to company", false]].map(([m, done]) => (
+            <div key={m as string} className="flex items-center gap-3 py-2.5 border-b border-border last:border-0 text-xs">
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${done ? "bg-emerald-100" : "border border-border"}`}>
+                {done && <Check className="w-3 h-3 text-emerald-600" />}
+              </div>
+              <span className={done ? "" : "text-muted-foreground"} style={done ? { color: B.navy } : {}}>{m}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FndAnalytics({ currency }: { currency: Currency }) {
+  const barData = [{ m: "Jan", v: 12 }, { m: "Feb", v: 28 }, { m: "Mar", v: 45 }, { m: "Apr", v: 62 }, { m: "May", v: 84 }, { m: "Jun", v: 110 }, { m: "Jul", v: 148 }, { m: "Aug", v: 184 }];
+  return (
+    <div>
+      <h2 className="text-lg font-bold mb-6" style={{ color: B.navy }}>Analytics</h2>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {[["184", "Total VDR Views", "+12 this week", Eye], ["23", "NDAs Signed", "18.8% conversion", FileText], ["61%", "Round Progress", fmt(9_200_000, currency) + " raised", TrendingUp], ["94", "Match Score Avg", "Top 8% of listings", Zap]].map(([v, l, d, Icon]) => (
+          <KPICard key={l as string} label={l as string} value={v as string} delta={d as string} up Icon={Icon as React.ElementType} />
+        ))}
+      </div>
+      <div className="grid lg:grid-cols-2 gap-6">
+        <div className="bg-white border border-border rounded-xl p-5 shadow-sm">
+          <div className="text-sm font-semibold mb-1" style={{ color: B.navy }}>Investor Views Over Time</div>
+          <div className="text-xs text-muted-foreground mb-4">Monthly VDR access count</div>
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={barData}>
+              <XAxis dataKey="m" tick={{ fontSize: 10, fill: "#6B7280", fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={{ backgroundColor: "#fff", border: `1px solid ${B.navy}25`, borderRadius: "8px", fontSize: "11px", fontFamily: "JetBrains Mono" }}
+                formatter={(v: number) => [v, "Views"]} />
+              <Bar dataKey="v" fill={B.navy} radius={[3, 3, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="bg-white border border-border rounded-xl p-5 shadow-sm">
+          <div className="text-sm font-semibold mb-4" style={{ color: B.navy }}>Investor Geography</div>
+          {[["Middle East", 38, B.orange], ["Europe", 32, B.navy], ["Asia Pacific", 18, B.teal], ["Americas", 9, B.blue], ["Africa", 3, B.yellow]].map(([region, pct, col]) => (
+            <div key={region as string} className="mb-3">
+              <div className="flex justify-between text-xs mb-1">
+                <span className="text-muted-foreground">{region}</span>
+                <span className="font-mono font-semibold" style={{ color: B.navy }}>{pct}%</span>
+              </div>
+              <div className="h-1.5 bg-secondary rounded-full">
+                <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: col as string }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── FOUNDER DASHBOARD SHELL ──────────────────────────────────────────────────
 
 function FounderDashboard({ setView }: { setView: (v: View) => void }) {
   const [currency, setCurrency] = useState<Currency>("AED");
   const [tab, setTab] = useState("overview");
-
   const navItems: NavItem[] = [
     { id: "overview", label: "Overview", icon: Home },
     { id: "vdr", label: "VDR Manager", icon: Lock },
@@ -791,188 +2014,23 @@ function FounderDashboard({ setView }: { setView: (v: View) => void }) {
     { id: "nda", label: "NDA Manager", icon: FileText },
     { id: "escrow", label: "Escrow", icon: Shield },
     { id: "analytics", label: "Analytics", icon: BarChart2 },
+    { id: "settings", label: "Settings", icon: Settings },
   ];
-
-  const project = DEALS[0];
-  const fundingPct = Math.round((project.committed / project.target) * 100);
-
-  const kpis = [
-    { l: "Investor Views", v: "184", d: "+12 this week", Icon: Eye },
-    { l: "NDAs Signed", v: "23", d: "3 new today", Icon: FileText },
-    { l: "Active Bids", v: "4", d: fmt(2_750_000, currency) + " total", Icon: Gavel },
-    { l: "Committed", v: fmt(project.committed, currency), d: `${fundingPct}% of target`, Icon: DollarSign },
-  ];
-
-  const milestones = [
-    { label: "WTC Chapter Verified", done: true },
-    { label: "Subscription Activated", done: true },
-    { label: "VDR Published", done: true },
-    { label: "First Investor NDA", done: true },
-    { label: "Term Sheets Received", done: true },
-    { label: "Escrow Holds Active", done: true },
-    { label: "Round Closed", done: false },
-    { label: "Funds Disbursed", done: false },
-  ];
-
+  const titles: Record<string, string> = { overview: "Overview", vdr: "VDR Manager", bids: "Bid Pipeline", nda: "NDA Manager", escrow: "Escrow", analytics: "Analytics", settings: "Settings" };
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
-      <Sidebar items={navItems} active={tab} setActive={setTab} onBack={() => setView("landing")} />
+    <div className="flex h-screen bg-secondary/30 overflow-hidden">
+      <Sidebar items={navItems} active={tab} setActive={setTab} onBack={() => setView("home")} userInitials="AK" userName="Amira Khalil" userRole="Founder · Nexus AI" />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <DashTopBar title="Founder Portal" currency={currency} setCurrency={setCurrency} initials="AK" name="Amira Khalil" />
+        <DashTopBar title={titles[tab] || "Founder Portal"} currency={currency} setCurrency={setCurrency} badge="Professional Plan" />
         <main className="flex-1 overflow-y-auto p-6">
-
-          {/* Project header card */}
-          <div className="bg-card border border-border rounded p-5 mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded flex items-center justify-center text-sm font-mono font-medium text-foreground flex-shrink-0" style={{ backgroundColor: project.accentBg }}>
-                  {project.initials}
-                </div>
-                <div>
-                  <div className="font-medium text-foreground">{project.name}</div>
-                  <div className="text-sm text-muted-foreground mt-0.5">{project.stage} · {project.sector} · {project.wtcChapter}</div>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="text-xs font-mono text-emerald-400 border border-emerald-800/40 bg-emerald-900/20 px-2 py-0.5 rounded">Active Listing</span>
-                    <span className="text-xs font-mono text-primary border border-primary/25 bg-primary/5 px-2 py-0.5 rounded">VDR Live</span>
-                    <span className="text-xs font-mono text-blue-400 border border-blue-800/40 bg-blue-900/20 px-2 py-0.5 rounded">Professional Plan</span>
-                  </div>
-                </div>
-              </div>
-              <div className="sm:text-right">
-                <div className="text-xs font-mono text-muted-foreground mb-1">Funding Progress</div>
-                <div className="text-2xl font-mono font-medium text-foreground">{fmt(project.committed, currency)}</div>
-                <div className="text-xs text-muted-foreground">of {fmt(project.target, currency)} target</div>
-                <div className="w-36 h-1 bg-secondary rounded-full mt-2 sm:ml-auto">
-                  <div className="h-full bg-primary rounded-full" style={{ width: `${fundingPct}%` }} />
-                </div>
-                <div className="text-xs font-mono text-primary mt-1">{fundingPct}% raised</div>
-              </div>
-            </div>
-          </div>
-
-          {/* KPIs */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            {kpis.map(({ l, v, d, Icon }) => (
-              <div key={l} className="bg-card border border-border rounded p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider leading-snug">{l}</span>
-                  <Icon className="w-4 h-4 text-primary/50 flex-shrink-0" />
-                </div>
-                <div className="text-xl font-mono font-medium text-foreground mb-1">{v}</div>
-                <div className="text-xs font-mono text-muted-foreground">{d}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Three-column bottom */}
-          <div className="grid lg:grid-cols-5 gap-6">
-
-            {/* VDR Access Log */}
-            <div className="lg:col-span-3">
-              <div className="flex items-center justify-between mb-3">
-                <div className="text-sm font-medium text-foreground">VDR Access Log</div>
-                <span className="text-xs font-mono text-muted-foreground">Watermarked · Identity-tracked</span>
-              </div>
-              <div className="bg-card border border-border rounded overflow-hidden">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-border bg-background/30">
-                      {["Investor / Firm", "Documents", "Time"].map((h) => (
-                        <th key={h} className="text-left px-4 py-2.5 font-mono text-muted-foreground uppercase tracking-wider font-normal">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {VDR_LOG.map((row) => (
-                      <tr key={row.investor} className="border-b border-border last:border-0 hover:bg-accent/20 transition-colors">
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            {row.verified
-                              ? <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />
-                              : <Clock className="w-3 h-3 text-amber-400 flex-shrink-0" />}
-                            <div>
-                              <div className="text-foreground">{row.investor}</div>
-                              <div className="text-muted-foreground">{row.firm}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex flex-wrap gap-1">
-                            {row.docs.map((doc) => (
-                              <span key={doc} className="text-xs border border-border text-muted-foreground px-1.5 py-0.5 rounded">{doc}</span>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">{row.time}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Right: Bids + Milestones */}
-            <div className="lg:col-span-2 space-y-4">
-              {/* Active bids */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="text-sm font-medium text-foreground">Bid Pipeline</div>
-                  <span className="text-xs font-mono text-primary">{fmt(2_750_000, currency)}</span>
-                </div>
-                <div className="space-y-2.5">
-                  {ACTIVE_BIDS.map((bid) => (
-                    <div key={bid.id} className="bg-card border border-border rounded p-3 hover:border-primary/20 transition-colors">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <div className="text-xs font-medium text-foreground">{bid.investor}</div>
-                          <div className="text-xs text-muted-foreground mt-0.5">{bid.type} · {bid.equity} · {bid.submitted}</div>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <div className="text-xs font-mono font-medium text-foreground mb-1">{fmt(bid.amount, currency)}</div>
-                          <StatusBadge status={bid.status} />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Milestone tracker */}
-              <div className="bg-card border border-border rounded p-4">
-                <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Deal Milestones</div>
-                <div className="space-y-2">
-                  {milestones.map(({ label, done }) => (
-                    <div key={label} className="flex items-center gap-3 text-xs">
-                      <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 ${done ? "bg-emerald-900/40 border border-emerald-700" : "border border-border"}`}>
-                        {done && <Check className="w-2.5 h-2.5 text-emerald-400" />}
-                      </div>
-                      <span className={done ? "text-foreground" : "text-muted-foreground"}>{label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+          {tab === "overview" && <FndOverview currency={currency} />}
+          {tab === "vdr" && <FndVDRManager currency={currency} />}
+          {tab === "bids" && <FndBidPipeline currency={currency} />}
+          {tab === "nda" && <FndNDAManager />}
+          {tab === "escrow" && <FndEscrow currency={currency} />}
+          {tab === "analytics" && <FndAnalytics currency={currency} />}
+          {tab === "settings" && <InvSettings />}
         </main>
-      </div>
-    </div>
-  );
-}
-
-// ─── LANDING PAGE ─────────────────────────────────────────────────────────────
-
-function LandingPage({ setView }: { setView: (v: View) => void }) {
-  return (
-    <div>
-      <NavBar setView={setView} />
-      <div className="pt-16">
-        <HeroSection setView={setView} />
-        <StatsBar />
-        <DealsSection currency="USD" />
-        <WorkflowSection />
-        <FeaturesSection />
-        <PricingSection />
-        <FooterSection setView={setView} />
       </div>
     </div>
   );
@@ -981,12 +2039,39 @@ function LandingPage({ setView }: { setView: (v: View) => void }) {
 // ─── APP ROOT ─────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [view, setView] = useState<View>("landing");
+  const [view, setView] = useState<View>("home");
+  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  const [prevView, setPrevView] = useState<View>("home");
+
+  function navigateTo(v: View) {
+    setPrevView(view);
+    setView(v);
+  }
+
+  function handleViewDeal(deal: Deal) {
+    setSelectedDeal(deal);
+    setPrevView(view);
+    setView("project-detail");
+  }
+
+  function handleBack() {
+    setView(prevView === "project-detail" ? "deals" : prevView);
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {view === "landing" && <LandingPage setView={setView} />}
-      {view === "investor" && <InvestorDashboard setView={setView} />}
-      {view === "founder" && <FounderDashboard setView={setView} />}
+      {view === "home" && <HomePage setView={navigateTo} onViewDeal={handleViewDeal} />}
+      {view === "platform" && <PlatformPage setView={navigateTo} />}
+      {view === "deals" && <DealsPage setView={navigateTo} onViewDeal={handleViewDeal} />}
+      {view === "chapters" && <ChaptersPage setView={navigateTo} />}
+      {view === "about" && <AboutPage setView={navigateTo} />}
+      {view === "login" && <LoginPage setView={navigateTo} />}
+      {view === "list-project" && <ListProjectPage setView={navigateTo} />}
+      {view === "project-detail" && selectedDeal && (
+        <ProjectDetailPage deal={selectedDeal} setView={navigateTo} onBack={handleBack} currency="USD" />
+      )}
+      {view === "investor" && <InvestorDashboard setView={navigateTo} onViewDeal={handleViewDeal} />}
+      {view === "founder" && <FounderDashboard setView={navigateTo} />}
     </div>
   );
 }
