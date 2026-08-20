@@ -79,8 +79,8 @@
 }
 
 @theme inline {
-  --font-display: "DM Serif Display", serif;
-  --font-sans: "Manrope", sans-serif;
+  --font-display: "Open Sans", sans-serif;
+  --font-sans: "Open Sans", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -131,6 +131,10 @@
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
   }
+
+  html { scroll-behavior: smooth; }
+
+  button, a, input, select, textarea { transition-duration: 180ms; }
 
   /**
   * Default typography styles for HTML elements (h1-h4, p, label, button, input).

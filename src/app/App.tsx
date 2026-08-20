@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import {
   Globe, Shield, Lock, Zap, TrendingUp, DollarSign, ChevronRight, Bell,
@@ -13,7 +13,7 @@ import {
 
 type View =
   | "home" | "platform" | "deals" | "chapters" | "about"
-  | "login" | "list-project" | "project-detail"
+  | "login" | "register" | "list-project" | "project-detail"
   | "investor" | "founder";
 
 type Currency = "USD" | "EUR" | "AED" | "JPY" | "GBP" | "SGD";
@@ -49,46 +49,46 @@ function fmt(usd: number, ccy: Currency = "USD"): string {
 
 const DEALS = [
   {
-    id: "d1", name: "Nexus AI", sector: "Technology", stage: "Series A",
-    country: "UAE", city: "Dubai", founder: "Amira Khalil", founderTitle: "CEO & Co-founder",
+    id: "d1", name: "NovaPay Solutions", sector: "FinTech", stage: "Series A",
+    country: "Kenya", city: "Nairobi", founder: "Amara Otieno", founderTitle: "CEO & Co-founder",
     founded: 2021, employees: 48,
-    target: 15_000_000, committed: 9_200_000, matchScore: 94,
+    target: 5_000_000, committed: 3_100_000, matchScore: 84,
     minTicket: 250_000, irr: "24–32%", ndaSigned: true,
-    description: "AI supply chain optimization for MENA logistics. 3× YoY growth, $4.2M ARR, 180 enterprise clients.",
-    longDesc: "Nexus AI has developed a proprietary logistics intelligence platform that integrates with existing ERP systems to reduce supply chain inefficiencies across Gulf, Levant, and North Africa regions.",
-    wtcChapter: "WTC Dubai", initials: "NA", bg: B.navy,
-    team: [{ n: "Amira Khalil", r: "CEO & Co-founder" }, { n: "Rami Farhat", r: "CTO & Co-founder" }, { n: "Nadia Singh", r: "CFO" }],
-    financials: { revenue: 4_200_000, growth: "312%", margin: "68%", burnRate: 280_000 },
-    milestones: ["$1M ARR Q2 2022", "Seed — $2.5M closed", "WTC Dubai recognition", "Series A launch Q1 2024"],
-    useOfFunds: [["Product R&D", "40%"], ["Sales & Marketing", "30%"], ["Ops & Infra", "20%"], ["Legal", "10%"]],
+    description: "Pan-African mobile payments infrastructure processing 1.2 million monthly transactions.",
+    longDesc: "NovaPay provides interoperable payment rails for merchants and financial institutions across African markets, with API based collections, settlement and reconciliation built for fragmented payment environments.",
+    wtcChapter: "East Africa", initials: "NP", bg: B.navy,
+    team: [{ n: "Amara Otieno", r: "CEO & Co-founder" }, { n: "David Kamau", r: "Chief Technology Officer" }, { n: "Lindiwe Mensah", r: "Chief Risk Officer" }],
+    financials: { revenue: 2_600_000, growth: "186%", margin: "61%", burnRate: 190_000 },
+    milestones: ["1.2M monthly transactions", "Three regulated market integrations", "Enterprise API launched", "Series A data room opened"],
+    useOfFunds: [["Market expansion", "35%"], ["Product and security", "30%"], ["Regulatory licensing", "20%"], ["Working capital", "15%"]],
   },
   {
-    id: "d2", name: "GreenHaven Realty", sector: "Real Estate", stage: "Growth",
-    country: "Singapore", city: "Singapore", founder: "Lucas Tan", founderTitle: "Managing Director",
+    id: "d2", name: "GreenHarvest AgriTech", sector: "AgriTech", stage: "Seed",
+    country: "Nigeria", city: "Lagos", founder: "Chidi Adebayo", founderTitle: "Founder & CEO",
     founded: 2018, employees: 124,
-    target: 50_000_000, committed: 31_500_000, matchScore: 87,
+    target: 1_500_000, committed: 620_000, matchScore: 71,
     minTicket: 500_000, irr: "14–19%", ndaSigned: true,
-    description: "Institutional-grade green commercial portfolio across Singapore and KL. LEED Platinum certified.",
-    longDesc: "GreenHaven operates a portfolio of premium green commercial properties with strong ESG credentials targeting institutional-grade yield with capital appreciation through LEED certification.",
-    wtcChapter: "WTC Singapore", initials: "GH", bg: B.blue,
-    team: [{ n: "Lucas Tan", r: "Managing Director" }, { n: "Priscilla Ng", r: "Head of Acquisitions" }, { n: "David Lim", r: "Finance Director" }],
-    financials: { revenue: 8_200_000, growth: "45%", margin: "52%", burnRate: 0 },
-    milestones: ["First LEED Platinum asset 2019", "SGD 120M AUM 2021", "KL expansion 2022", "Growth round 2024"],
-    useOfFunds: [["Asset Acquisition", "70%"], ["Capex", "20%"], ["Working Capital", "10%"]],
+    description: "A digital marketplace linking smallholder farmers directly to urban retailers and processors.",
+    longDesc: "GreenHarvest connects verified farmer groups with urban retailers and food processors, improving price discovery, aggregating demand and coordinating reliable last mile collection.",
+    wtcChapter: "West Africa", initials: "GH", bg: B.teal,
+    team: [{ n: "Chidi Adebayo", r: "Founder & CEO" }, { n: "Amina Bello", r: "Head of Supply" }, { n: "Tunde Okafor", r: "Chief Product Officer" }],
+    financials: { revenue: 740_000, growth: "142%", margin: "38%", burnRate: 64_000 },
+    milestones: ["4,800 farmers onboarded", "320 retail buyers active", "Two aggregation hubs launched", "Seed round opened"],
+    useOfFunds: [["Aggregation hubs", "40%"], ["Product", "25%"], ["Farmer acquisition", "20%"], ["Working capital", "15%"]],
   },
   {
-    id: "d3", name: "VoltEdge Energy", sector: "Energy", stage: "Series B",
-    country: "Germany", city: "Berlin", founder: "Katrin Müller", founderTitle: "CEO",
+    id: "d3", name: "MediTrust Health", sector: "Healthcare", stage: "Series B",
+    country: "Egypt", city: "Cairo", founder: "Dr. Mariam Hassan", founderTitle: "CEO",
     founded: 2019, employees: 87,
-    target: 30_000_000, committed: 12_000_000, matchScore: 78,
+    target: 12_000_000, committed: 7_400_000, matchScore: 91,
     minTicket: 1_000_000, irr: "18–27%", ndaSigned: false,
-    description: "Next-gen solid-state battery storage for industrial grid balancing. EU Horizon grant, 12 pilot deployments.",
-    longDesc: "VoltEdge has developed proprietary solid-state battery technology with 3× energy density of conventional lithium-ion, addressing large-scale renewable energy storage challenges.",
-    wtcChapter: "WTC Berlin", initials: "VE", bg: B.orange,
-    team: [{ n: "Katrin Müller", r: "CEO" }, { n: "Dr. Hans Weber", r: "CTO" }, { n: "Andrea Richter", r: "COO" }],
-    financials: { revenue: 2_800_000, growth: "180%", margin: "74%", burnRate: 450_000 },
-    milestones: ["EU Horizon grant €2.1M", "First commercial pilot 2022", "12 deployments live 2023", "Series B 2024"],
-    useOfFunds: [["Manufacturing Scale", "50%"], ["R&D", "30%"], ["Market Expansion", "20%"]],
+    description: "A vertically integrated outpatient care platform serving patients across four major cities.",
+    longDesc: "MediTrust operates technology enabled outpatient clinics with shared diagnostics, central procurement and a unified patient record, improving care consistency across four cities.",
+    wtcChapter: "North Africa", initials: "MH", bg: B.orange,
+    team: [{ n: "Dr. Mariam Hassan", r: "Chief Executive Officer" }, { n: "Omar El Sayed", r: "Chief Operating Officer" }, { n: "Dr. Salma Nabil", r: "Medical Director" }],
+    financials: { revenue: 9_400_000, growth: "78%", margin: "54%", burnRate: 330_000 },
+    milestones: ["18 clinics operational", "Unified patient record deployed", "Four city network completed", "Series B diligence launched"],
+    useOfFunds: [["Clinic expansion", "45%"], ["Diagnostics", "25%"], ["Technology", "20%"], ["Working capital", "10%"]],
   },
   {
     id: "d4", name: "MediCore Systems", sector: "Healthcare", stage: "Series A",
@@ -198,31 +198,17 @@ const CHAPTERS_DATA = [
 
 // ─── LOGO ─────────────────────────────────────────────────────────────────────
 
-function WTCGlobe({ size = 36 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="20" cy="20" r="19.5" fill={B.navy} />
-      <ellipse cx="20" cy="20" rx="19.5" ry="9" stroke="rgba(255,255,255,0.25)" strokeWidth="0.8" fill="none" />
-      <line x1="0.5" y1="20" x2="39.5" y2="20" stroke="rgba(255,255,255,0.25)" strokeWidth="0.8" />
-      <line x1="20" y1="0.5" x2="20" y2="39.5" stroke="rgba(255,255,255,0.2)" strokeWidth="0.8" />
-      <ellipse cx="20" cy="20" rx="9.5" ry="19.5" stroke="rgba(255,255,255,0.18)" strokeWidth="0.8" fill="none" />
-      <circle cx="20" cy="20" r="5.5" fill={B.orange} />
-      <circle cx="20" cy="20" r="2.5" fill="white" />
-    </svg>
-  );
-}
-
 function BrandLogo({ collapsed = false }: { collapsed?: boolean }) {
   return (
-    <div className="flex items-center gap-2.5">
-      <WTCGlobe size={34} />
+    <div className="flex items-center gap-3" aria-label="World Trade Centre Accra Investment Exchange">
+      <div className="w-1 h-9 rounded-full" style={{ backgroundColor: B.orange }} aria-hidden="true" />
       {!collapsed && (
-        <div className="leading-none">
-          <div className="text-sm font-bold tracking-wide" style={{ color: B.navy, fontFamily: '"Manrope", sans-serif' }}>
-            WTC <span style={{ color: B.orange }}>Investors</span>
+        <div className="leading-tight text-left">
+          <div className="text-[13px] font-bold tracking-wide" style={{ color: B.navy }}>
+            WTC ACCRA
           </div>
-          <div className="text-xs tracking-widest mt-0.5" style={{ color: B.mgray, fontFamily: '"JetBrains Mono", monospace' }}>
-            HUB
+          <div className="text-[10px] tracking-[0.16em]" style={{ color: B.mgray }}>
+            INVESTMENT EXCHANGE
           </div>
         </div>
       )}
@@ -266,7 +252,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function PageTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h2 style={{ fontFamily: '"DM Serif Display", serif', fontSize: "2rem", lineHeight: 1.2, color: B.navy }}>
+    <h2 style={{ fontSize: "2rem", lineHeight: 1.2, color: B.navy, fontWeight: 700 }}>
       {children}
     </h2>
   );
@@ -376,7 +362,7 @@ function DealCard({ deal, currency, onViewDeal }: { deal: Deal; currency: Curren
 // ─── NAV BAR ─────────────────────────────────────────────────────────────────
 
 function NavBar({ view, setView }: { view: View; setView: (v: View) => void }) {
-  const links: [string, View][] = [["Platform", "platform"], ["Deals", "deals"], ["Chapters", "chapters"], ["About", "about"]];
+  const links: [string, View][] = [["How it works", "platform"], ["Opportunities", "deals"], ["Trade network", "chapters"], ["About", "about"]];
   return (
     <nav className="fixed top-0 inset-x-0 z-50 bg-white border-b border-border">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -396,12 +382,12 @@ function NavBar({ view, setView }: { view: View; setView: (v: View) => void }) {
           <button onClick={() => setView("login")}
             className="hidden md:block text-sm font-medium border border-border px-4 py-1.5 rounded-lg hover:border-primary transition-all"
             style={{ color: B.navy }}>
-            Investor Login
+            Sign in
           </button>
-          <button onClick={() => setView("list-project")}
+          <button onClick={() => setView("register")}
             className="text-sm font-semibold px-4 py-1.5 rounded-lg text-white transition-opacity hover:opacity-90"
             style={{ backgroundColor: B.orange }}>
-            List a Project
+            Join
           </button>
         </div>
       </div>
@@ -416,7 +402,7 @@ function PublicFooter({ setView }: { setView: (v: View) => void }) {
         <div className="grid md:grid-cols-4 gap-8 mb-10">
           <div>
             <BrandLogo />
-            <p className="text-xs text-muted-foreground mt-3 leading-relaxed">The official WTCA digital investment marketplace. Connecting capital with opportunity across 94 chapters worldwide.</p>
+            <p className="text-xs text-muted-foreground mt-3 leading-relaxed">A curated deal discovery platform by World Trade Centre Accra, connecting credible opportunities in Ghana and Africa with qualified global investors.</p>
           </div>
           {[
             ["Platform", ["Features", "How It Works", "Security", "Pricing"]],
@@ -432,7 +418,7 @@ function PublicFooter({ setView }: { setView: (v: View) => void }) {
           ))}
         </div>
         <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-muted-foreground">© 2025 WTC Investors Hub. Official WTCA Digital Platform.</p>
+          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} World Trade Centre Accra. Connecting Businesses, Globally.</p>
           <div className="flex gap-6">
             {["Privacy", "Terms", "Compliance", "Contact"].map((l) => (
               <a key={l} href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">{l}</a>
@@ -521,43 +507,48 @@ function HomePage({ setView, onViewDeal }: { setView: (v: View) => void; onViewD
       <NavBar view="home" setView={setView} />
       <div className="pt-16">
         {/* Hero */}
-        <section className="py-24 px-6 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #F0F4FA 0%, #FFFFFF 50%, #FFF5F0 100%)" }}>
-          <div className="max-w-6xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 text-xs font-mono border px-4 py-1.5 rounded-full mb-10" style={{ color: B.navy, borderColor: `${B.navy}30`, backgroundColor: `${B.navy}08` }}>
+        <section className="relative overflow-hidden bg-[#09294f] text-white min-h-[660px] flex items-center">
+          <img src="/images/accra-investment-market-hero.webp" alt="Accra connected to global capital markets and trade routes" className="absolute inset-0 w-full h-full object-cover object-center" fetchPriority="high" />
+          <div className="absolute inset-0 bg-[#09294f]/45" aria-hidden="true" />
+          <div className="max-w-7xl mx-auto w-full px-6 py-24 relative z-10">
+            <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 text-xs border px-4 py-1.5 rounded-full mb-8 bg-white/10 border-white/25 text-white">
               <Award className="w-3.5 h-3.5" style={{ color: B.orange }} />
-              Official WTCA Digital Capital Platform · 94 Chapters · 47 Countries
+              Curated by World Trade Centre Accra
             </div>
-            <h1 className="mb-6" style={{ fontFamily: '"DM Serif Display", serif', fontSize: "clamp(2.8rem, 6vw, 5rem)", lineHeight: 1.08, color: B.navy }}>
-              Where Capital Meets<br />
-              <em style={{ color: B.orange, fontStyle: "italic" }}>Global Opportunity</em>
+            <h1 className="mb-6 font-bold" style={{ fontSize: "clamp(2.8rem, 6vw, 5rem)", lineHeight: 1.02 }}>
+              Invest in Africa's<br />
+              <span style={{ color: B.peach }}>next growth story.</span>
             </h1>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-12 leading-relaxed">
-              The verified private capital marketplace for accredited investors and audited founders — across 94 World Trade Center chapters worldwide.
+            <p className="text-white/80 text-lg max-w-xl mb-9 leading-relaxed">
+              Discover vetted, investment ready opportunities from Ghana and across Africa, or present your deal to a trusted global business network.
             </p>
-            <div className="grid sm:grid-cols-2 gap-4 max-w-xl mx-auto">
-              {[
-                { Icon: Building2, title: "I'm a Founder", sub: "List your project, manage a VDR, attract global capital", action: () => setView("list-project"), color: B.navy },
-                { Icon: TrendingUp, title: "I'm an Investor", sub: "Discover AI-matched deals, review VDRs, place bids", action: () => setView("login"), color: B.orange },
-              ].map(({ Icon, title, sub, action, color }) => (
-                <button key={title} onClick={action}
-                  className="group flex flex-col items-start p-5 border border-border rounded-xl bg-white hover:shadow-md transition-all text-left">
-                  <div className="flex items-center justify-between w-full mb-3">
-                    <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}12` }}>
-                      <Icon className="w-5 h-5" style={{ color }} />
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
-                  </div>
-                  <div className="font-semibold text-sm mb-1" style={{ color: B.navy }}>{title}</div>
-                  <div className="text-xs text-muted-foreground">{sub}</div>
-                </button>
-              ))}
+            <div className="flex flex-wrap gap-3">
+              <button onClick={() => setView("deals")} className="px-6 py-3 rounded-lg text-sm font-bold text-white hover:-translate-y-0.5 transition-all" style={{ backgroundColor: B.orange }}>
+                Explore opportunities
+              </button>
+              <button onClick={() => setView("list-project")} className="px-6 py-3 rounded-lg text-sm font-bold border border-white/40 bg-white/10 text-white hover:bg-white/15 transition-all">
+                Post a deal
+              </button>
+            </div>
+            <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3 text-xs text-white/70">
+              <span className="flex items-center gap-2"><Shield className="w-4 h-4 text-[#09D0AC]" /> Due diligence workflow</span>
+              <span className="flex items-center gap-2"><Lock className="w-4 h-4 text-[#09D0AC]" /> Secure data rooms</span>
+              <span className="flex items-center gap-2"><Globe className="w-4 h-4 text-[#09D0AC]" /> Global investor reach</span>
+            </div>
             </div>
           </div>
         </section>
+        <div className="bg-[#0b2342] border-t border-white/10 overflow-hidden" aria-label="Market focus sectors">
+          <div className="max-w-7xl mx-auto px-6 py-3 flex flex-wrap items-center gap-x-7 gap-y-2 text-[11px] font-mono text-white/70">
+            <span className="uppercase tracking-widest text-[#F9A25E]">Market focus</span>
+            {["FinTech +2.8%", "AgriTech +1.6%", "Healthcare +3.2%", "Energy +2.1%", "Infrastructure +1.4%"].map((item) => <span key={item} className="flex items-center gap-1.5"><ArrowUpRight className="w-3 h-3 text-[#09D0AC]" />{item}</span>)}
+          </div>
+        </div>
         {/* Stats */}
         <div className="border-y border-border">
           <div className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-2 md:grid-cols-5 gap-6">
-            {[["$2.4B", "Capital Deployed"], ["847", "Verified Projects"], ["12,400+", "Accredited Investors"], ["94", "WTC Chapters"], ["47", "Countries"]].map(([v, l]) => (
+            {[["128", "Active Deals"], ["340", "Verified Investors"], ["$1.4B", "Capital Sought"], ["37", "Closed Deals"], ["14", "Sectors"]].map(([v, l]) => (
               <div key={l} className="text-center">
                 <div className="text-2xl font-mono font-bold mb-1" style={{ color: B.navy }}>{v}</div>
                 <div className="text-xs font-mono text-muted-foreground uppercase tracking-widest">{l}</div>
@@ -565,6 +556,29 @@ function HomePage({ setView, onViewDeal }: { setView: (v: View) => void; onViewD
             ))}
           </div>
         </div>
+        <section className="py-20 px-6 bg-[#f7f9fc] border-b border-border">
+          <div className="max-w-7xl mx-auto">
+            <div className="max-w-2xl mb-10">
+              <SectionLabel>One trusted environment</SectionLabel>
+              <PageTitle>Built for both sides of the deal</PageTitle>
+              <p className="text-sm text-muted-foreground mt-3 leading-relaxed">Standardised profiles, controlled diligence and human curation reduce noise while helping serious opportunities and relevant capital find each other.</p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-5">
+              {[
+                [Building2, "For private companies", "List your funding round, assess deal readiness and present your opportunity to vetted investors actively deploying capital.", "Raise capital", "register"],
+                [TrendingUp, "For investors", "Define sector, ticket size, geography and stage preferences, then receive deal flow aligned to your mandate.", "Source deals", "deals"],
+                [Shield, "Secure and curated", "Use digital NDAs, permissioned data rooms, access logs and WTC Accra supported introductions.", "How it works", "platform"],
+              ].map(([Icon, title, copy, action, target]) => (
+                <article key={title as string} className="bg-white border border-border rounded-xl p-6 hover:-translate-y-1 hover:shadow-md transition-all">
+                  {React.createElement(Icon as React.ElementType, { className: "w-6 h-6 mb-5", style: { color: B.orange } })}
+                  <h3 className="font-bold mb-2" style={{ color: B.navy }}>{title as string}</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed min-h-16">{copy as string}</p>
+                  <button onClick={() => setView(target as View)} className="mt-5 text-xs font-bold" style={{ color: B.orange }}>{action as string} →</button>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
         {/* Featured deals */}
         <section className="py-20 px-6">
           <div className="max-w-7xl mx-auto">
@@ -591,10 +605,10 @@ function HomePage({ setView, onViewDeal }: { setView: (v: View) => void; onViewD
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {[
-                [Shield, "01", "Register & Verify", "KYC/AML via Persona. Identity and investor accreditation confirmed."],
-                [Zap, "02", "AI Matchmaking", "Python vector engine scores 40+ attributes for highest-confidence deals."],
-                [Lock, "03", "VDR Access", "Sign NDA. Access documents watermarked with your identity and IP."],
-                [Gavel, "04", "Bid & Close", "Submit escrow-backed bids. Milestone-based funds release on success."],
+                [Shield, "01", "Submit & verify", "Deal owners complete identity, company and beneficial ownership checks."],
+                [CheckCircle2, "02", "Curate & prepare", "WTC Accra reviews the opportunity and prepares it for investor discovery."],
+                [Lock, "03", "Review securely", "Qualified investors sign an NDA before accessing controlled due diligence files."],
+                [Gavel, "04", "Connect & progress", "Both parties move from interest to meetings, diligence and documented next steps."],
               ].map(([Icon, step, title, desc]) => (
                 <div key={title as string} className="p-5 border border-border rounded-xl bg-white">
                   <div className="flex items-center gap-3 mb-4">
@@ -629,10 +643,10 @@ function PlatformPage({ setView }: { setView: (v: View) => void }) {
     <div>
       <NavBar view="platform" setView={setView} />
       <div className="pt-16">
-        <section className="py-20 px-6" style={{ background: `linear-gradient(135deg, ${B.navy}08 0%, white 60%)` }}>
+        <section className="py-20 px-6 bg-secondary/20">
           <div className="max-w-4xl mx-auto text-center">
             <SectionLabel>The Platform</SectionLabel>
-            <h1 style={{ fontFamily: '"DM Serif Display", serif', fontSize: "3rem", lineHeight: 1.1, color: B.navy }} className="mb-6">
+            <h1 style={{ fontSize: "3rem", lineHeight: 1.1, color: B.navy, fontWeight: 700 }} className="mb-6">
               Institutional-Grade Infrastructure<br />for Private Markets
             </h1>
             <p className="text-muted-foreground text-lg leading-relaxed">End-to-end deal management — from KYC onboarding through AI matching, watermarked VDR access, escrow-linked bidding, and post-close reputation tracking.</p>
@@ -684,7 +698,7 @@ function DealsPage({ setView, onViewDeal }: { setView: (v: View) => void; onView
   const [stage, setStage] = useState("All");
   const [search, setSearch] = useState("");
   const [currency] = useState<Currency>("USD");
-  const sectors = ["All", "Technology", "Real Estate", "Energy", "Healthcare", "FinTech"];
+  const sectors = ["All", "FinTech", "AgriTech", "Healthcare", "Technology", "Real Estate", "Energy"];
   const stages = ["All", "Seed", "Series A", "Series B", "Growth"];
   const filtered = DEALS.filter((d) =>
     (sector === "All" || d.sector === sector) &&
@@ -695,8 +709,10 @@ function DealsPage({ setView, onViewDeal }: { setView: (v: View) => void; onView
     <div>
       <NavBar view="deals" setView={setView} />
       <div className="pt-16">
-        <section className="py-12 px-6 border-b border-border bg-secondary/20">
-          <div className="max-w-7xl mx-auto">
+        <section className="relative py-16 px-6 border-b border-border overflow-hidden">
+          <img src="/images/deal-review-boardroom.webp" alt="Investment team reviewing African private market opportunities" className="absolute inset-0 w-full h-full object-cover object-center" />
+          <div className="absolute inset-0 bg-white/88" aria-hidden="true" />
+          <div className="max-w-7xl mx-auto relative z-10">
             <div className="mb-6">
               <SectionLabel>Marketplace</SectionLabel>
               <PageTitle>Browse Verified Deals</PageTitle>
@@ -759,10 +775,10 @@ function ChaptersPage({ setView }: { setView: (v: View) => void }) {
     <div>
       <NavBar view="chapters" setView={setView} />
       <div className="pt-16">
-        <section className="py-14 px-6 border-b border-border" style={{ background: `linear-gradient(135deg, ${B.navy}08 0%, white 70%)` }}>
+        <section className="py-14 px-6 border-b border-border bg-secondary/20">
           <div className="max-w-4xl mx-auto text-center">
             <SectionLabel>Global Network</SectionLabel>
-            <h1 style={{ fontFamily: '"DM Serif Display", serif', fontSize: "2.75rem", lineHeight: 1.1, color: B.navy }} className="mb-4">94 WTC Chapters.<br />One Platform.</h1>
+            <h1 style={{ fontSize: "2.75rem", lineHeight: 1.1, color: B.navy, fontWeight: 700 }} className="mb-4">Local insight.<br />Global connections.</h1>
             <p className="text-muted-foreground leading-relaxed">Every deal on the platform is anchored by a verified World Trade Center chapter — your assurance of institutional membership and local due diligence.</p>
           </div>
         </section>
@@ -810,13 +826,15 @@ function AboutPage({ setView }: { setView: (v: View) => void }) {
     <div>
       <NavBar view="about" setView={setView} />
       <div className="pt-16">
-        <section className="py-20 px-6" style={{ backgroundColor: B.navy }}>
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 style={{ fontFamily: '"DM Serif Display", serif', fontSize: "3rem", lineHeight: 1.1, color: "white" }} className="mb-6">
-              Bridging the World's<br /><em style={{ color: B.peach }}>Trade Communities</em>
+        <section className="relative py-28 px-6 overflow-hidden bg-[#154074]">
+          <img src="/images/africa-trade-network.webp" alt="African trade and investment network connected through Accra" className="absolute inset-0 w-full h-full object-cover object-center" />
+          <div className="absolute inset-0 bg-[#154074]/65" aria-hidden="true" />
+          <div className="max-w-5xl mx-auto relative z-10">
+            <h1 style={{ fontSize: "3rem", lineHeight: 1.1, color: "white", fontWeight: 700 }} className="mb-6">
+              Where African opportunity<br /><span style={{ color: B.peach }}>meets institutional capital.</span>
             </h1>
-            <p className="text-blue-200 text-lg leading-relaxed max-w-2xl mx-auto">
-              WTC Investors Hub is the digital evolution of the World Trade Centers Association's mission — making trusted global commerce accessible, verified, and efficient.
+            <p className="text-white/80 text-lg leading-relaxed max-w-2xl">
+              WTC Accra Investment Exchange is a secure, curated deal sourcing environment for growth stage companies, private equity, venture capital, family offices and development finance institutions.
             </p>
           </div>
         </section>
@@ -824,16 +842,16 @@ function AboutPage({ setView }: { setView: (v: View) => void }) {
           <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-start">
             <div>
               <SectionLabel>Our Mission</SectionLabel>
-              <PageTitle>Democratizing Access to Global Capital</PageTitle>
+              <PageTitle>Making cross border capital more trusted</PageTitle>
               <p className="text-muted-foreground text-sm leading-relaxed mt-4 mb-4">
-                Since 1970, the World Trade Centers Association has facilitated global business through a network of 330+ member organizations across 100 countries. WTC Investors Hub extends this mission into the digital realm of private capital formation.
+                World Trade Centre Accra combines local market knowledge, a global business network and structured digital workflows to help credible companies become easier for qualified investors to discover and assess.
               </p>
               <p className="text-muted-foreground text-sm leading-relaxed">
-                We believe that geography should not determine access to capital. By anchoring every transaction to a verified WTC chapter membership, we bring institutional-grade trust to cross-border private investment — for both founders seeking capital and investors seeking uncorrelated global returns.
+                The platform does not replace professional advice or guarantee funding. It improves readiness, controlled information sharing and high quality introductions so both parties can move into diligence with clearer expectations.
               </p>
             </div>
             <div className="space-y-4">
-              {[["Founded", "2023"], ["WTCA Members on Platform", "847 verified founders"], ["Accredited Investors", "12,400+"], ["Chapters Active", "94 in 47 countries"], ["Capital Facilitated", "$2.4B"], ["Average Deal Size", "$8.5M"]].map(([l, v]) => (
+              {[["Company pathway", "Submit → review → publish"], ["Investor pathway", "Mandate → match → diligence"], ["Core controls", "KYC, NDA and access logs"], ["Coverage", "Ghana and African markets"], ["Deal stages", "Seed to growth equity"], ["Introductions", "Human led and confidential"]].map(([l, v]) => (
                 <div key={l} className="flex items-center justify-between p-4 border border-border rounded-xl bg-white">
                   <span className="text-sm text-muted-foreground">{l}</span>
                   <span className="text-sm font-semibold font-mono" style={{ color: B.navy }}>{v}</span>
@@ -845,25 +863,22 @@ function AboutPage({ setView }: { setView: (v: View) => void }) {
         <section className="py-16 px-6 border-t border-border bg-secondary/20">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-12">
-              <SectionLabel>Leadership</SectionLabel>
-              <PageTitle>Advisory Council</PageTitle>
+              <SectionLabel>Our principles</SectionLabel>
+              <PageTitle>Trust before transaction</PageTitle>
             </div>
             <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5">
               {[
-                ["Dr. Sarah Chen", "Chief Executive Officer", "Former MD, Goldman Sachs Asia"],
-                ["James Whitfield", "President & Co-founder", "Ex-WTCA Board Director"],
-                ["Leila Al-Mansoori", "Chief Operating Officer", "Former Abu Dhabi Investment Authority"],
-                ["Prof. Klaus Bergmann", "Chief Risk Officer", "Former ECB Senior Advisor"],
-                ["Yuki Nakamura", "Head of Asia Pacific", "Serial founder, 3 exits"],
-                ["Amara Diallo", "Head of Africa & MEA", "Ex-IFC Principal Investment Officer"],
-              ].map(([name, role, note]) => (
-                <div key={name} className="p-5 border border-border rounded-xl bg-white">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white mb-3" style={{ backgroundColor: B.navy }}>
-                    {(name as string).split(" ").map((n) => n[0]).join("").slice(0, 2)}
-                  </div>
-                  <div className="font-semibold text-sm mb-0.5" style={{ color: B.navy }}>{name}</div>
-                  <div className="text-xs font-medium mb-1" style={{ color: B.orange }}>{role}</div>
-                  <div className="text-xs text-muted-foreground">{note}</div>
+                [Shield, "Curated access", "Submissions are reviewed before they become visible to the wider marketplace."],
+                [FileText, "Decision useful information", "Standardised deal profiles help investors compare opportunities more efficiently."],
+                [Lock, "Confidential by design", "Sensitive materials remain controlled through NDAs, permissions and access logs."],
+                [Users, "Human led introductions", "WTC Accra supports context rich connections rather than anonymous lead generation."],
+                [Globe, "Cross border perspective", "Local insight is presented in a format international capital providers can assess."],
+                [Activity, "Outcome tracking", "Introductions, meetings, diligence and next steps can be followed through a single pipeline."],
+              ].map(([Icon, title, note]) => (
+                <div key={title as string} className="p-6 border border-border rounded-xl bg-white">
+                  {React.createElement(Icon as React.ElementType, { className: "w-5 h-5 mb-4", style: { color: B.orange } })}
+                  <div className="font-semibold text-sm mb-2" style={{ color: B.navy }}>{title as string}</div>
+                  <div className="text-xs text-muted-foreground leading-relaxed">{note as string}</div>
                 </div>
               ))}
             </div>
@@ -880,13 +895,15 @@ function LoginPage({ setView }: { setView: (v: View) => void }) {
   const [password, setPassword] = useState("");
   return (
     <div className="min-h-screen flex">
-      <div className="hidden lg:flex flex-col justify-between w-1/2 p-12" style={{ backgroundColor: B.navy }}>
-        <BrandLogo />
-        <div>
-          <h2 style={{ fontFamily: '"DM Serif Display", serif', fontSize: "2.5rem", lineHeight: 1.15, color: "white" }} className="mb-4">
+      <div className="hidden lg:flex flex-col justify-between w-1/2 p-12 relative overflow-hidden" style={{ backgroundColor: B.navy }}>
+        <img src="/images/deal-review-boardroom.webp" alt="Institutional investors reviewing a deal" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-[#154074]/82" aria-hidden="true" />
+        <div className="relative z-10"><BrandLogo /></div>
+        <div className="relative z-10">
+          <h2 style={{ fontSize: "2.5rem", lineHeight: 1.15, color: "white", fontWeight: 700 }} className="mb-4">
             Your gateway to<br /><em style={{ color: B.peach }}>verified global deals</em>
           </h2>
-          <p className="text-blue-200 text-sm leading-relaxed mb-8">Access AI-matched investment opportunities across 94 WTC chapters. KYC-verified, escrow-backed, and fully audited.</p>
+          <p className="text-blue-200 text-sm leading-relaxed mb-8">Access curated African investment opportunities with structured verification, secure diligence and trusted introductions.</p>
           <div className="grid grid-cols-2 gap-4">
             {[["$2.4B", "Capital deployed"], ["847", "Verified projects"], ["94", "WTC Chapters"], ["9.4/10", "Avg trust score"]].map(([v, l]) => (
               <div key={l} className="p-4 rounded-xl" style={{ backgroundColor: "rgba(255,255,255,0.08)" }}>
@@ -896,7 +913,7 @@ function LoginPage({ setView }: { setView: (v: View) => void }) {
             ))}
           </div>
         </div>
-        <p className="text-xs text-blue-300">© 2025 WTC Investors Hub · Official WTCA Platform</p>
+        <p className="text-xs text-blue-300 relative z-10">© {new Date().getFullYear()} World Trade Centre Accra</p>
       </div>
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
@@ -933,15 +950,66 @@ function LoginPage({ setView }: { setView: (v: View) => void }) {
           </button>
           <div className="text-center">
             <p className="text-xs text-muted-foreground mb-3">Not registered yet?</p>
-            <button onClick={() => setView("list-project")} className="text-xs font-medium" style={{ color: B.orange }}>
-              Register as Founder →
-            </button>
-            <span className="text-muted-foreground text-xs mx-2">·</span>
-            <button className="text-xs font-medium" style={{ color: B.orange }}>
-              Apply as Investor →
+            <button onClick={() => setView("register")} className="text-xs font-medium" style={{ color: B.orange }}>
+              Create an account →
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function RegisterPage({ setView }: { setView: (v: View) => void }) {
+  const [role, setRole] = useState<"company" | "investor">("company");
+  return (
+    <div className="min-h-screen bg-[#f7f9fc]">
+      <NavBar view="register" setView={setView} />
+      <div className="pt-16 grid lg:grid-cols-[0.9fr_1.1fr] min-h-screen">
+        <section className="relative hidden lg:flex items-end p-12 overflow-hidden bg-[#154074]">
+          <img src="/images/africa-trade-network.webp" alt="African markets connected to global trade" className="absolute inset-0 w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-[#154074]/72" aria-hidden="true" />
+          <div className="relative z-10 text-white max-w-lg">
+            <div className="text-xs uppercase tracking-[0.2em] text-[#F9A25E] mb-4">Join the exchange</div>
+            <h1 className="text-4xl font-bold leading-tight mb-5">Build the right connections around your mandate.</h1>
+            <p className="text-white/75 text-sm leading-relaxed">Create a company or investor profile, complete verification and access a curated environment designed for serious private market conversations.</p>
+          </div>
+        </section>
+        <section className="flex items-center justify-center px-6 py-14">
+          <div className="w-full max-w-xl bg-white border border-border rounded-2xl p-7 md:p-9 shadow-sm">
+            <SectionLabel>Account application</SectionLabel>
+            <h2 className="text-2xl font-bold mb-2" style={{ color: B.navy }}>How will you use the platform?</h2>
+            <p className="text-sm text-muted-foreground mb-7">Choose a pathway. Every account is reviewed before marketplace access is activated.</p>
+            <div className="grid sm:grid-cols-2 gap-3 mb-7">
+              {[
+                { id: "company", Icon: Building2, title: "Private company", copy: "Raise capital, assess readiness and manage investor diligence." },
+                { id: "investor", Icon: TrendingUp, title: "Investor", copy: "Define your mandate and receive relevant, curated deal flow." },
+              ].map(({ id, Icon, title, copy }) => (
+                <button key={id} onClick={() => setRole(id as "company" | "investor")} className="p-4 rounded-xl border-2 text-left transition-all" style={{ borderColor: role === id ? B.orange : "#ECECEF", backgroundColor: role === id ? "#fff8f3" : "white" }}>
+                  <Icon className="w-5 h-5 mb-3" style={{ color: role === id ? B.orange : B.navy }} />
+                  <div className="font-semibold text-sm mb-1" style={{ color: B.navy }}>{title}</div>
+                  <div className="text-xs text-muted-foreground leading-relaxed">{copy}</div>
+                </button>
+              ))}
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {["Full name", "Work email", "Organisation", "Country"].map((label) => (
+                <label key={label} className="text-xs font-medium text-muted-foreground">
+                  {label}
+                  <input className="mt-1.5 w-full px-3.5 py-2.5 text-sm border border-border rounded-lg bg-white focus:outline-none focus:border-primary" placeholder={label} type={label === "Work email" ? "email" : "text"} />
+                </label>
+              ))}
+            </div>
+            <label className="flex items-start gap-3 mt-5 text-xs text-muted-foreground leading-relaxed">
+              <input type="checkbox" className="mt-0.5" />
+              I confirm that the information supplied is accurate and agree to the platform terms, privacy notice and verification checks.
+            </label>
+            <button onClick={() => setView(role === "company" ? "list-project" : "investor")} className="w-full mt-6 py-3 rounded-lg text-white text-sm font-bold" style={{ backgroundColor: B.orange }}>
+              Continue as {role === "company" ? "a company" : "an investor"} →
+            </button>
+            <p className="text-center text-xs text-muted-foreground mt-5">Already registered? <button onClick={() => setView("login")} style={{ color: B.navy }} className="font-semibold">Sign in</button></p>
+          </div>
+        </section>
       </div>
     </div>
   );
@@ -962,7 +1030,7 @@ function ListProjectPage({ setView }: { setView: (v: View) => void }) {
         <div className="max-w-3xl mx-auto px-6 py-12">
           <div className="mb-10">
             <SectionLabel>Get Started</SectionLabel>
-            <h1 style={{ fontFamily: '"DM Serif Display", serif', fontSize: "2.25rem", color: B.navy }}>List Your Project</h1>
+            <h1 style={{ fontSize: "2.25rem", color: B.navy, fontWeight: 700 }}>Post Your Deal</h1>
             <p className="text-muted-foreground text-sm mt-2">Connect with 12,400+ accredited investors through the WTC global network.</p>
           </div>
           {/* Step indicator */}
@@ -1061,7 +1129,7 @@ function ProjectDetailPage({ deal, setView, onBack, currency }: { deal: Deal; se
       <NavBar view="deals" setView={setView} />
       <div className="pt-16">
         {/* Hero */}
-        <div className="border-b border-border py-8 px-6" style={{ background: `linear-gradient(135deg, ${deal.bg}12 0%, white 70%)` }}>
+        <div className="border-b border-border py-8 px-6 bg-secondary/20">
           <div className="max-w-6xl mx-auto">
             <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6">
               <ChevronLeft className="w-4 h-4" /> Back to Deals
@@ -2039,23 +2107,37 @@ function FounderDashboard({ setView }: { setView: (v: View) => void }) {
 // ─── APP ROOT ─────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [view, setView] = useState<View>("home");
+  const routeViews: Record<string, View> = {
+    "/": "home", "/marketplace": "deals", "/about": "about", "/sign-in": "login",
+    "/join": "register", "/post-deal": "list-project", "/how-it-works": "platform", "/trade-network": "chapters",
+  };
+  const viewRoutes: Partial<Record<View, string>> = Object.fromEntries(Object.entries(routeViews).map(([path, routeView]) => [routeView, path]));
+  const [view, setView] = useState<View>(() => routeViews[window.location.pathname] || "home");
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
   const [prevView, setPrevView] = useState<View>("home");
+
+  useEffect(() => {
+    const syncRoute = () => setView(routeViews[window.location.pathname] || "home");
+    window.addEventListener("popstate", syncRoute);
+    return () => window.removeEventListener("popstate", syncRoute);
+  }, []);
 
   function navigateTo(v: View) {
     setPrevView(view);
     setView(v);
+    const path = viewRoutes[v];
+    if (path && window.location.pathname !== path) window.history.pushState({}, "", path);
   }
 
   function handleViewDeal(deal: Deal) {
     setSelectedDeal(deal);
     setPrevView(view);
     setView("project-detail");
+    window.history.pushState({}, "", `/marketplace/${deal.id}`);
   }
 
   function handleBack() {
-    setView(prevView === "project-detail" ? "deals" : prevView);
+    navigateTo(prevView === "project-detail" ? "deals" : prevView);
   }
 
   return (
@@ -2066,6 +2148,7 @@ export default function App() {
       {view === "chapters" && <ChaptersPage setView={navigateTo} />}
       {view === "about" && <AboutPage setView={navigateTo} />}
       {view === "login" && <LoginPage setView={navigateTo} />}
+      {view === "register" && <RegisterPage setView={navigateTo} />}
       {view === "list-project" && <ListProjectPage setView={navigateTo} />}
       {view === "project-detail" && selectedDeal && (
         <ProjectDetailPage deal={selectedDeal} setView={navigateTo} onBack={handleBack} currency="USD" />
