@@ -14,7 +14,9 @@ import {
 type View =
   | "home" | "platform" | "deals" | "chapters" | "about"
   | "login" | "register" | "list-project" | "project-detail"
-  | "investor" | "founder";
+  | "investor" | "founder" | "pricing" | "news" | "contact" | "legal";
+
+type AccessIntent = "post" | "bid" | null;
 
 type Currency = "USD" | "EUR" | "AED" | "JPY" | "GBP" | "SGD";
 
@@ -198,20 +200,11 @@ const CHAPTERS_DATA = [
 
 // ─── LOGO ─────────────────────────────────────────────────────────────────────
 
-function BrandLogo({ collapsed = false }: { collapsed?: boolean }) {
+function BrandLogo({ collapsed = false, inverse = false }: { collapsed?: boolean; inverse?: boolean }) {
   return (
     <div className="flex items-center gap-3" aria-label="World Trade Centre Accra Investment Exchange">
-      <div className="w-1 h-9 rounded-full" style={{ backgroundColor: B.orange }} aria-hidden="true" />
-      {!collapsed && (
-        <div className="leading-tight text-left">
-          <div className="text-[13px] font-bold tracking-wide" style={{ color: B.navy }}>
-            WTC ACCRA
-          </div>
-          <div className="text-[10px] tracking-[0.16em]" style={{ color: B.mgray }}>
-            INVESTMENT EXCHANGE
-          </div>
-        </div>
-      )}
+      <img src={inverse ? "/brand/wtc-accra-logo-white.png" : "/brand/wtc-accra-logo-black.png"} alt="World Trade Centre Accra" className={collapsed ? "h-9 w-9 object-contain object-left" : "h-9 w-auto max-w-[210px] object-contain object-left"} />
+      {!collapsed && <span className="hidden xl:block text-[10px] tracking-[0.14em] font-semibold border-l pl-3" style={{ color: inverse ? "white" : B.navy, borderColor: inverse ? "rgba(255,255,255,.25)" : B.lgray }}>INVESTMENT EXCHANGE</span>}
     </div>
   );
 }
@@ -362,7 +355,7 @@ function DealCard({ deal, currency, onViewDeal }: { deal: Deal; currency: Curren
 // ─── NAV BAR ─────────────────────────────────────────────────────────────────
 
 function NavBar({ view, setView }: { view: View; setView: (v: View) => void }) {
-  const links: [string, View][] = [["How it works", "platform"], ["Opportunities", "deals"], ["Trade network", "chapters"], ["About", "about"]];
+  const links: [string, View][] = [["How it works", "platform"], ["Opportunities", "deals"], ["News", "news"], ["Pricing", "pricing"], ["About", "about"]];
   return (
     <nav className="fixed top-0 inset-x-0 z-50 bg-white border-b border-border">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -405,14 +398,14 @@ function PublicFooter({ setView }: { setView: (v: View) => void }) {
             <p className="text-xs text-muted-foreground mt-3 leading-relaxed">A curated deal discovery platform by World Trade Centre Accra, connecting credible opportunities in Ghana and Africa with qualified global investors.</p>
           </div>
           {[
-            ["Platform", ["Features", "How It Works", "Security", "Pricing"]],
-            ["Company", ["About", "Chapters", "Press", "Careers"]],
-            ["Legal", ["Privacy Policy", "Terms of Service", "Compliance", "KYC Policy"]],
+            ["Platform", [["Opportunities", "deals"], ["How It Works", "platform"], ["Pricing", "pricing"], ["News", "news"]]],
+            ["Company", [["About", "about"], ["Trade Network", "chapters"], ["Contact", "contact"], ["Join", "register"]]],
+            ["Legal", [["Privacy Policy", "legal"], ["Terms of Service", "legal"], ["Compliance", "legal"], ["KYC Policy", "legal"]]],
           ].map(([heading, items]) => (
             <div key={heading as string}>
               <div className="text-xs font-mono uppercase tracking-widest mb-3" style={{ color: B.navy }}>{heading}</div>
               <ul className="space-y-2">
-                {(items as string[]).map((i) => <li key={i}><a href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">{i}</a></li>)}
+                {(items as [string, View][]).map(([label, target]) => <li key={label}><button onClick={() => setView(target)} className="text-xs text-muted-foreground hover:text-foreground transition-colors">{label}</button></li>)}
               </ul>
             </div>
           ))}
@@ -420,9 +413,8 @@ function PublicFooter({ setView }: { setView: (v: View) => void }) {
         <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} World Trade Centre Accra. Connecting Businesses, Globally.</p>
           <div className="flex gap-6">
-            {["Privacy", "Terms", "Compliance", "Contact"].map((l) => (
-              <a key={l} href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">{l}</a>
-            ))}
+            <button onClick={() => setView("legal")} className="text-xs text-muted-foreground hover:text-foreground">Privacy & Terms</button>
+            <button onClick={() => setView("contact")} className="text-xs text-muted-foreground hover:text-foreground">Contact</button>
           </div>
         </div>
       </div>
@@ -890,7 +882,45 @@ function AboutPage({ setView }: { setView: (v: View) => void }) {
   );
 }
 
-function LoginPage({ setView }: { setView: (v: View) => void }) {
+function PricingPage({ setView, onChoose }: { setView: (v: View) => void; onChoose: (plan: string, role: "company" | "investor") => void }) {
+  const [role, setRole] = useState<"company" | "investor">("company");
+  const companyPlans = [
+    { name: "Starter", price: "$299", copy: "For first time fundraisers validating investor interest.", features: ["1 active deal", "Standard data room", "20 NDA requests", "Readiness checklist"] },
+    { name: "Professional", price: "$799", copy: "For transaction ready companies running an active raise.", features: ["3 active deals", "Advanced VDR and audit logs", "Unlimited NDAs", "Priority matching", "Sponsored news eligibility"] },
+    { name: "Enterprise", price: "Custom", copy: "For groups, advisers and multi company portfolios.", features: ["Unlimited listings", "Dedicated deal manager", "Custom diligence workflow", "Featured placement options"] },
+  ];
+  const investorPlans = [
+    { name: "Explorer", price: "$0", copy: "Build a mandate and review public deal summaries.", features: ["Public deal discovery", "Saved opportunities", "Weekly market brief", "Investor profile"] },
+    { name: "Investor Pro", price: "$399", copy: "For active investors sourcing and bidding on deals.", features: ["Create bids", "NDA and VDR access", "Advanced mandate matching", "Direct introductions"] },
+    { name: "Institutional", price: "Custom", copy: "For funds, family offices, DFIs and syndicates.", features: ["Team seats", "Portfolio pipeline", "Custom screening", "Priority WTC introductions"] },
+  ];
+  const plans = role === "company" ? companyPlans : investorPlans;
+  return <div className="min-h-screen bg-[#f7f9fc]">
+    <NavBar view="pricing" setView={setView} />
+    <main className="pt-28 pb-20 px-6 max-w-7xl mx-auto">
+      <div className="text-center max-w-2xl mx-auto mb-9"><SectionLabel>Simple membership</SectionLabel><h1 className="text-4xl font-bold mb-3" style={{ color: B.navy }}>Choose how you participate</h1><p className="text-sm text-muted-foreground leading-relaxed">Every participant creates a verified account. Select a plan now and we will return you to the deal post or bid you started after registration.</p></div>
+      <div className="flex justify-center mb-9"><div className="p-1 bg-white border rounded-xl flex">{(["company", "investor"] as const).map(r => <button key={r} onClick={() => setRole(r)} className="px-5 py-2 rounded-lg text-sm font-semibold capitalize" style={role === r ? { backgroundColor: B.navy, color: "white" } : { color: B.navy }}>{r === "company" ? "Private company" : "Investor"}</button>)}</div></div>
+      <div className="grid md:grid-cols-3 gap-5">{plans.map((p, i) => <article key={p.name} className={`bg-white rounded-2xl border p-6 ${i === 1 ? "shadow-lg ring-2" : ""}`} style={i === 1 ? { borderColor: B.orange, boxShadow: `0 18px 50px ${B.navy}16` } : {}}>{i === 1 && <span className="text-[10px] uppercase tracking-widest text-white px-2 py-1 rounded-full" style={{ backgroundColor: B.orange }}>Recommended</span>}<h2 className="text-xl font-bold mt-4" style={{ color: B.navy }}>{p.name}</h2><div className="text-3xl font-mono font-bold my-3" style={{ color: B.orange }}>{p.price}<span className="text-xs text-muted-foreground font-sans">{p.price.startsWith("$") && p.price !== "$0" ? "/month" : ""}</span></div><p className="text-xs text-muted-foreground min-h-12 leading-relaxed">{p.copy}</p><ul className="space-y-2 my-6">{p.features.map(f => <li key={f} className="flex gap-2 text-xs"><Check className="w-4 h-4 flex-shrink-0" style={{ color: B.teal }} />{f}</li>)}</ul><button onClick={() => onChoose(p.name, role)} className="w-full py-3 rounded-lg text-white text-sm font-bold" style={{ backgroundColor: i === 1 ? B.orange : B.navy }}>Choose {p.name}</button></article>)}</div>
+      <div className="mt-10 p-5 bg-white border rounded-xl text-center text-sm text-muted-foreground">All paid listings are reviewed before publication. Featured positions and sponsored news placements are clearly labelled and never influence verification scores. <button onClick={() => setView("login")} className="font-bold ml-1" style={{ color: B.orange }}>Already have an account? Sign in.</button></div>
+    </main><PublicFooter setView={setView} />
+  </div>;
+}
+
+const NEWS_ITEMS = [
+  { tag: "Market Intelligence", title: "African private capital shifts toward resilient, revenue backed businesses", date: "20 August 2026", copy: "What investors are prioritising across technology, healthcare, logistics and climate aligned infrastructure.", image: "/images/accra-investment-market-hero.webp" },
+  { tag: "Trade & Investment", title: "Ghana strengthens its position as a gateway for regional expansion", date: "18 August 2026", copy: "A practical look at market entry, partnerships and the role of credible local networks in West Africa.", image: "/images/africa-trade-network.webp" },
+  { tag: "Deal Readiness", title: "Seven documents investors expect before opening diligence", date: "15 August 2026", copy: "Prepare your financial model, cap table, governance records and evidence of customer traction before outreach begins.", image: "/images/deal-review-boardroom.webp" },
+];
+
+function NewsPage({ setView }: { setView: (v: View) => void }) {
+  return <div className="min-h-screen bg-[#f7f9fc]"><NavBar view="news" setView={setView} /><main className="pt-28 pb-20 px-6 max-w-7xl mx-auto"><div className="grid lg:grid-cols-[1fr_340px] gap-8"><section><SectionLabel>Newsroom</SectionLabel><h1 className="text-4xl font-bold mb-3" style={{ color: B.navy }}>Markets, trade and investable growth</h1><p className="text-sm text-muted-foreground max-w-2xl mb-9">WTC Accra insights, global investment developments, member announcements and clearly labelled sponsored stories from verified paid accounts.</p><div className="grid md:grid-cols-2 gap-5">{NEWS_ITEMS.map((n, i) => <article key={n.title} className={`bg-white border rounded-2xl overflow-hidden ${i === 0 ? "md:col-span-2 md:grid md:grid-cols-2" : ""}`}><img src={n.image} alt="" className="w-full h-52 object-cover"/><div className="p-6"><div className="text-[10px] uppercase tracking-widest font-bold mb-2" style={{ color: B.orange }}>{n.tag}</div><h2 className="text-xl font-bold leading-snug mb-3" style={{ color: B.navy }}>{n.title}</h2><p className="text-xs text-muted-foreground leading-relaxed mb-5">{n.copy}</p><div className="flex justify-between items-center"><span className="text-[11px] text-muted-foreground">{n.date}</span><button onClick={() => setView("register")} className="text-xs font-bold" style={{ color: B.orange }}>Read briefing →</button></div></div></article>)}</div></section><aside className="space-y-5"><div className="bg-white border rounded-2xl p-6"><span className="text-[10px] uppercase tracking-widest text-muted-foreground">Sponsored · Verified account</span><h2 className="text-lg font-bold mt-3 mb-2" style={{ color: B.navy }}>Put your opportunity in front of the right audience</h2><p className="text-xs text-muted-foreground leading-relaxed mb-5">Professional and Enterprise members can apply for sponsored company announcements, funding round features and event promotions. Every placement is reviewed and labelled.</p><button onClick={() => setView("pricing")} className="w-full py-2.5 rounded-lg text-white text-sm font-bold" style={{ backgroundColor: B.orange }}>View advertising options</button></div><div className="rounded-2xl p-6 text-white" style={{ backgroundColor: B.navy }}><BookOpen className="w-6 h-6 mb-4" style={{ color: B.peach }}/><h3 className="font-bold mb-2">Weekly Deal Brief</h3><p className="text-xs text-white/70 mb-4">Curated opportunities, investment policy updates and upcoming WTC Accra events.</p><button onClick={() => setView("register")} className="text-xs font-bold" style={{ color: B.peach }}>Create an account to subscribe →</button></div></aside></div></main><PublicFooter setView={setView}/></div>;
+}
+
+function InfoPage({ setView, kind }: { setView: (v: View) => void; kind: "contact" | "legal" }) {
+  return <div className="min-h-screen bg-[#f7f9fc]"><NavBar view={kind} setView={setView}/><main className="pt-28 pb-20 px-6 max-w-4xl mx-auto"><SectionLabel>{kind === "contact" ? "Speak with us" : "Trust centre"}</SectionLabel><h1 className="text-4xl font-bold mb-4" style={{ color: B.navy }}>{kind === "contact" ? "Contact WTC Accra Investment Exchange" : "Privacy, terms and compliance"}</h1><p className="text-sm text-muted-foreground leading-relaxed mb-8">{kind === "contact" ? "Contact our team for membership, deal listing, investor onboarding, sponsorship and partnership enquiries." : "The platform uses proportionate verification, controlled data room access, audit trails and clearly disclosed sponsored content. Users must provide accurate information and complete applicable KYC or KYB checks before restricted activity."}</p>{kind === "contact" ? <div className="grid sm:grid-cols-2 gap-4">{[[Mail,"General enquiries","info@wtcaccra.com"],[Phone,"WTC Accra","Accra, Ghana"]].map(([Icon,t,c]) => <div key={t as string} className="bg-white border rounded-xl p-5"><Icon className="w-5 h-5 mb-3" style={{ color: B.orange }}/><div className="font-bold text-sm" style={{ color: B.navy }}>{t as string}</div><div className="text-xs text-muted-foreground mt-1">{c as string}</div></div>)}</div> : <div className="space-y-4">{[["Privacy","Personal and company information is used for account administration, verification, marketplace matching, security and authorised transaction workflows."],["Platform terms","Listings and bids are subject to review. The platform does not guarantee funding, returns or transaction completion and does not hold investor capital."],["KYC and KYB","Restricted documents, bidding and publishing require identity or business verification appropriate to the participant and transaction."],["Sponsored content","Paid news and advertisements are labelled. Payment does not change verification, readiness or matching scores."]].map(([h,c]) => <section key={h} className="bg-white border rounded-xl p-6"><h2 className="font-bold mb-2" style={{ color: B.navy }}>{h}</h2><p className="text-xs text-muted-foreground leading-relaxed">{c}</p></section>)}</div>}</main><PublicFooter setView={setView}/></div>;
+}
+
+function LoginPage({ setView, onLogin }: { setView: (v: View) => void; onLogin: () => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   return (
@@ -898,7 +928,7 @@ function LoginPage({ setView }: { setView: (v: View) => void }) {
       <div className="hidden lg:flex flex-col justify-between w-1/2 p-12 relative overflow-hidden" style={{ backgroundColor: B.navy }}>
         <img src="/images/deal-review-boardroom.webp" alt="Institutional investors reviewing a deal" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-[#154074]/82" aria-hidden="true" />
-        <div className="relative z-10"><BrandLogo /></div>
+        <div className="relative z-10"><BrandLogo inverse /></div>
         <div className="relative z-10">
           <h2 style={{ fontSize: "2.5rem", lineHeight: 1.15, color: "white", fontWeight: 700 }} className="mb-4">
             Your gateway to<br /><em style={{ color: B.peach }}>verified global deals</em>
@@ -940,7 +970,7 @@ function LoginPage({ setView }: { setView: (v: View) => void }) {
               </div>
             </div>
           </div>
-          <button onClick={() => setView("investor")}
+          <button onClick={onLogin} disabled={!email || !password}
             className="w-full py-3 rounded-lg text-white font-semibold text-sm hover:opacity-90 transition-opacity mb-4"
             style={{ backgroundColor: B.navy }}>
             Sign In
@@ -960,8 +990,8 @@ function LoginPage({ setView }: { setView: (v: View) => void }) {
   );
 }
 
-function RegisterPage({ setView }: { setView: (v: View) => void }) {
-  const [role, setRole] = useState<"company" | "investor">("company");
+function RegisterPage({ setView, initialRole = "company", selectedPlan, onRegister }: { setView: (v: View) => void; initialRole?: "company" | "investor"; selectedPlan?: string; onRegister: (role: "company" | "investor") => void }) {
+  const [role, setRole] = useState<"company" | "investor">(initialRole);
   return (
     <div className="min-h-screen bg-[#f7f9fc]">
       <NavBar view="register" setView={setView} />
@@ -980,6 +1010,7 @@ function RegisterPage({ setView }: { setView: (v: View) => void }) {
             <SectionLabel>Account application</SectionLabel>
             <h2 className="text-2xl font-bold mb-2" style={{ color: B.navy }}>How will you use the platform?</h2>
             <p className="text-sm text-muted-foreground mb-7">Choose a pathway. Every account is reviewed before marketplace access is activated.</p>
+            {selectedPlan && <div className="mb-6 p-3 rounded-lg border text-xs" style={{ borderColor: `${B.orange}55`, backgroundColor: "#fff8f3", color: B.navy }}><strong>{selectedPlan}</strong> selected. Create your account to continue the procedure you started.</div>}
             <div className="grid sm:grid-cols-2 gap-3 mb-7">
               {[
                 { id: "company", Icon: Building2, title: "Private company", copy: "Raise capital, assess readiness and manage investor diligence." },
@@ -1004,7 +1035,7 @@ function RegisterPage({ setView }: { setView: (v: View) => void }) {
               <input type="checkbox" className="mt-0.5" />
               I confirm that the information supplied is accurate and agree to the platform terms, privacy notice and verification checks.
             </label>
-            <button onClick={() => setView(role === "company" ? "list-project" : "investor")} className="w-full mt-6 py-3 rounded-lg text-white text-sm font-bold" style={{ backgroundColor: B.orange }}>
+            <button onClick={() => onRegister(role)} className="w-full mt-6 py-3 rounded-lg text-white text-sm font-bold" style={{ backgroundColor: B.orange }}>
               Continue as {role === "company" ? "a company" : "an investor"} →
             </button>
             <p className="text-center text-xs text-muted-foreground mt-5">Already registered? <button onClick={() => setView("login")} style={{ color: B.navy }} className="font-semibold">Sign in</button></p>
@@ -1120,8 +1151,8 @@ function ListProjectPage({ setView }: { setView: (v: View) => void }) {
 
 // ─── PROJECT DETAIL PAGE ──────────────────────────────────────────────────────
 
-function ProjectDetailPage({ deal, setView, onBack, currency }: { deal: Deal; setView: (v: View) => void; onBack: () => void; currency: Currency }) {
-  const [tab, setTab] = useState("overview");
+function ProjectDetailPage({ deal, setView, onBack, currency, canBid, onRequireBid, openBid = false }: { deal: Deal; setView: (v: View) => void; onBack: () => void; currency: Currency; canBid: boolean; onRequireBid: () => void; openBid?: boolean }) {
+  const [tab, setTab] = useState(openBid ? "bid" : "overview");
   const pct = Math.round((deal.committed / deal.target) * 100);
   const tabs = ["overview", "team", "financials", "documents", "bid"];
   return (
@@ -1215,7 +1246,7 @@ function ProjectDetailPage({ deal, setView, onBack, currency }: { deal: Deal; se
                     <span className="font-mono font-semibold" style={{ color: B.navy }}>{v}</span>
                   </div>
                 ))}
-                <button onClick={() => setTab("bid")} className="w-full py-3 rounded-lg text-white font-semibold text-sm mt-2" style={{ backgroundColor: B.orange }}>
+                <button onClick={() => canBid ? setTab("bid") : onRequireBid()} className="w-full py-3 rounded-lg text-white font-semibold text-sm mt-2" style={{ backgroundColor: B.orange }}>
                   {deal.ndaSigned ? "Submit a Bid" : "Sign NDA to Proceed"}
                 </button>
               </div>
@@ -1324,7 +1355,7 @@ function ProjectDetailPage({ deal, setView, onBack, currency }: { deal: Deal; se
                       <option>Soft Commit (Non-binding)</option>
                     </select>
                   </div>
-                  <button className="w-full py-3 rounded-lg text-white font-semibold text-sm" style={{ backgroundColor: B.navy }}>
+                  <button onClick={() => alert("Your bid has been submitted for compliance review.")} className="w-full py-3 rounded-lg text-white font-semibold text-sm" style={{ backgroundColor: B.navy }}>
                     Submit Bid →
                   </button>
                   <p className="text-xs text-muted-foreground leading-relaxed">
@@ -2110,11 +2141,17 @@ export default function App() {
   const routeViews: Record<string, View> = {
     "/": "home", "/marketplace": "deals", "/about": "about", "/sign-in": "login",
     "/join": "register", "/post-deal": "list-project", "/how-it-works": "platform", "/trade-network": "chapters",
+    "/pricing": "pricing", "/news": "news", "/contact": "contact", "/legal": "legal",
   };
   const viewRoutes: Partial<Record<View, string>> = Object.fromEntries(Object.entries(routeViews).map(([path, routeView]) => [routeView, path]));
   const [view, setView] = useState<View>(() => routeViews[window.location.pathname] || "home");
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
   const [prevView, setPrevView] = useState<View>("home");
+  const [isAuthenticated, setIsAuthenticated] = useState(() => localStorage.getItem("wtc-session") === "active");
+  const [intent, setIntent] = useState<AccessIntent>(() => (localStorage.getItem("wtc-intent") as AccessIntent) || null);
+  const [selectedPlan, setSelectedPlan] = useState(localStorage.getItem("wtc-plan") || "");
+  const [registrationRole, setRegistrationRole] = useState<"company" | "investor">((localStorage.getItem("wtc-role") as "company" | "investor") || "company");
+  const [openBid, setOpenBid] = useState(false);
 
   useEffect(() => {
     const syncRoute = () => setView(routeViews[window.location.pathname] || "home");
@@ -2123,14 +2160,37 @@ export default function App() {
   }, []);
 
   function navigateTo(v: View) {
+    if (v === "list-project" && !isAuthenticated) {
+      setIntent("post"); localStorage.setItem("wtc-intent", "post"); v = "pricing";
+    }
     setPrevView(view);
     setView(v);
     const path = viewRoutes[v];
     if (path && window.location.pathname !== path) window.history.pushState({}, "", path);
   }
 
+  function choosePlan(plan: string, role: "company" | "investor") {
+    setSelectedPlan(plan); setRegistrationRole(role);
+    localStorage.setItem("wtc-plan", plan); localStorage.setItem("wtc-role", role);
+    navigateTo("register");
+  }
+
+  function finishAccess(role: "company" | "investor") {
+    setIsAuthenticated(true); localStorage.setItem("wtc-session", "active");
+    const next = intent;
+    setIntent(null); localStorage.removeItem("wtc-intent");
+    if (next === "post") navigateTo("list-project");
+    else if (next === "bid" && selectedDeal) { setOpenBid(true); setView("project-detail"); }
+    else navigateTo(role === "company" ? "founder" : "investor");
+  }
+
+  function requireBid() {
+    setIntent("bid"); localStorage.setItem("wtc-intent", "bid"); navigateTo("pricing");
+  }
+
   function handleViewDeal(deal: Deal) {
     setSelectedDeal(deal);
+    setOpenBid(false);
     setPrevView(view);
     setView("project-detail");
     window.history.pushState({}, "", `/marketplace/${deal.id}`);
@@ -2147,11 +2207,15 @@ export default function App() {
       {view === "deals" && <DealsPage setView={navigateTo} onViewDeal={handleViewDeal} />}
       {view === "chapters" && <ChaptersPage setView={navigateTo} />}
       {view === "about" && <AboutPage setView={navigateTo} />}
-      {view === "login" && <LoginPage setView={navigateTo} />}
-      {view === "register" && <RegisterPage setView={navigateTo} />}
+      {view === "news" && <NewsPage setView={navigateTo} />}
+      {view === "pricing" && <PricingPage setView={navigateTo} onChoose={choosePlan} />}
+      {view === "contact" && <InfoPage setView={navigateTo} kind="contact" />}
+      {view === "legal" && <InfoPage setView={navigateTo} kind="legal" />}
+      {view === "login" && <LoginPage setView={navigateTo} onLogin={() => finishAccess(registrationRole)} />}
+      {view === "register" && <RegisterPage setView={navigateTo} initialRole={registrationRole} selectedPlan={selectedPlan} onRegister={finishAccess} />}
       {view === "list-project" && <ListProjectPage setView={navigateTo} />}
       {view === "project-detail" && selectedDeal && (
-        <ProjectDetailPage deal={selectedDeal} setView={navigateTo} onBack={handleBack} currency="USD" />
+        <ProjectDetailPage deal={selectedDeal} setView={navigateTo} onBack={handleBack} currency="USD" canBid={isAuthenticated} onRequireBid={requireBid} openBid={openBid} />
       )}
       {view === "investor" && <InvestorDashboard setView={navigateTo} onViewDeal={handleViewDeal} />}
       {view === "founder" && <FounderDashboard setView={navigateTo} />}

@@ -29,6 +29,15 @@ const dealSchema = z.object({
   contactEmail: z.string().email(),
 });
 
+const bidSchema = z.object({
+  dealId: z.string().uuid(), investorId: z.string().uuid(),
+  amount: z.number().positive(), currency: z.string().length(3).default("USD"),
+  equityRequested: z.number().min(0).max(100).optional(),
+  bidType: z.enum(["soft_commit", "hard_bid"]),
+  investmentHorizonYears: z.number().int().min(1).max(30).optional(),
+  escrowReference: z.string().trim().max(120).optional(),
+});
+
 app.get("/api/health", async (_req, res) => {
   if (!pool) return res.status(503).json({ ok: false, database: "not_configured" });
   try {
@@ -68,6 +77,23 @@ app.post("/api/deals", async (req, res) => {
      values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'submitted') returning id, slug, status, created_at as "createdAt"`,
     [d.title, slug, d.summary, d.sector, d.stage, d.country, d.city ?? null, d.targetAmount, d.minimumTicket ?? 0, d.currency.toUpperCase(), d.contactName, d.contactEmail.toLowerCase()],
   );
+  res.status(201).json(result.rows[0]);
+});
+
+app.get("/api/news", async (_req, res) => {
+  if (!pool) return res.status(503).json({ error: "Database is not configured" });
+  const result = await pool.query(`select id, title, slug, excerpt, category, image_url as "imageUrl", is_sponsored as "isSponsored", sponsor_name as "sponsorName", published_at as "publishedAt" from news_posts where status = 'published' order by published_at desc limit 50`);
+  res.json({ posts: result.rows });
+});
+
+app.post("/api/bids", async (req, res) => {
+  if (!pool) return res.status(503).json({ error: "Database is not configured" });
+  const parsed = bidSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: "Invalid bid", details: parsed.error.flatten() });
+  const b = parsed.data;
+  const access = await pool.query(`select 1 from memberships where user_id = $1 and participant_type = 'investor' and status in ('trial','active')`, [b.investorId]);
+  if (!access.rowCount) return res.status(403).json({ error: "An active investor membership is required to create a bid" });
+  const result = await pool.query(`insert into bids (deal_id, investor_id, amount, currency, equity_requested, bid_type, investment_horizon_years, escrow_reference) values ($1,$2,$3,$4,$5,$6,$7,$8) returning id, status, created_at as "createdAt"`, [b.dealId,b.investorId,b.amount,b.currency.toUpperCase(),b.equityRequested ?? null,b.bidType,b.investmentHorizonYears ?? null,b.escrowReference ?? null]);
   res.status(201).json(result.rows[0]);
 });
 
