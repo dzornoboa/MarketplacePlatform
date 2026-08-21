@@ -4,25 +4,43 @@ create table if not exists users (
   id uuid primary key default gen_random_uuid(),
   email text not null unique,
   full_name text not null,
-  role text not null check (role in ('investor','deal_owner','reviewer','administrator')),
+  role text not null check (role in ('investor','deal_owner','wtca_member','reviewer','administrator')),
   organisation text,
   country text,
+  wtca_membership_number text,
+  wtca_chapter text,
+  wtca_chapter_country text,
+  job_title text,
   kyc_status text not null default 'pending' check (kyc_status in ('pending','in_review','verified','rejected')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
+alter table users add column if not exists wtca_membership_number text;
+alter table users add column if not exists wtca_chapter text;
+alter table users add column if not exists wtca_chapter_country text;
+alter table users add column if not exists job_title text;
+alter table users drop constraint if exists users_role_check;
+alter table users add constraint users_role_check check (role in ('investor','deal_owner','wtca_member','reviewer','administrator'));
+
+create unique index if not exists users_wtca_membership_number_idx
+  on users (wtca_membership_number)
+  where wtca_membership_number is not null;
+
 create table if not exists memberships (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references users(id) on delete cascade,
   plan_name text not null,
-  participant_type text not null check (participant_type in ('investor','company')),
+  participant_type text not null check (participant_type in ('investor','company','wtca_member')),
   status text not null default 'pending' check (status in ('pending','trial','active','past_due','cancelled')),
   starts_at timestamptz,
   renews_at timestamptz,
   created_at timestamptz not null default now(),
   unique (user_id)
 );
+
+alter table memberships drop constraint if exists memberships_participant_type_check;
+alter table memberships add constraint memberships_participant_type_check check (participant_type in ('investor','company','wtca_member'));
 
 create table if not exists deals (
   id uuid primary key default gen_random_uuid(),

@@ -17,6 +17,7 @@ type View =
   | "investor" | "founder" | "pricing" | "news" | "contact" | "legal";
 
 type AccessIntent = "post" | "bid" | null;
+type AccountRole = "company" | "investor" | "wtca_member";
 
 type Currency = "USD" | "EUR" | "AED" | "JPY" | "GBP" | "SGD";
 
@@ -990,8 +991,9 @@ function LoginPage({ setView, onLogin }: { setView: (v: View) => void; onLogin: 
   );
 }
 
-function RegisterPage({ setView, initialRole = "company", selectedPlan, onRegister }: { setView: (v: View) => void; initialRole?: "company" | "investor"; selectedPlan?: string; onRegister: (role: "company" | "investor") => void }) {
-  const [role, setRole] = useState<"company" | "investor">(initialRole);
+function RegisterPage({ setView, initialRole = "company", selectedPlan, onRegister }: { setView: (v: View) => void; initialRole?: AccountRole; selectedPlan?: string; onRegister: (role: AccountRole) => void }) {
+  const [role, setRole] = useState<AccountRole>(initialRole);
+  const memberFields = ["WTCA membership number", "World Trade Center name", "Chapter country", "Position / job title"];
   return (
     <div className="min-h-screen bg-[#f7f9fc]">
       <NavBar view="register" setView={setView} />
@@ -1009,14 +1011,16 @@ function RegisterPage({ setView, initialRole = "company", selectedPlan, onRegist
           <div className="w-full max-w-xl bg-white border border-border rounded-2xl p-7 md:p-9 shadow-sm">
             <SectionLabel>Account application</SectionLabel>
             <h2 className="text-2xl font-bold mb-2" style={{ color: B.navy }}>How will you use the platform?</h2>
-            <p className="text-sm text-muted-foreground mb-7">Choose a pathway. Every account is reviewed before marketplace access is activated.</p>
+            <p className="text-sm text-muted-foreground mb-7">Choose a pathway. Every account, including WTCA member accounts, is reviewed before marketplace access is activated.</p>
+            <form onSubmit={(event) => { event.preventDefault(); onRegister(role); }}>
             {selectedPlan && <div className="mb-6 p-3 rounded-lg border text-xs" style={{ borderColor: `${B.orange}55`, backgroundColor: "#fff8f3", color: B.navy }}><strong>{selectedPlan}</strong> selected. Create your account to continue the procedure you started.</div>}
-            <div className="grid sm:grid-cols-2 gap-3 mb-7">
+            <div className="grid sm:grid-cols-3 gap-3 mb-7">
               {[
                 { id: "company", Icon: Building2, title: "Private company", copy: "Raise capital, assess readiness and manage investor diligence." },
                 { id: "investor", Icon: TrendingUp, title: "Investor", copy: "Define your mandate and receive relevant, curated deal flow." },
+                { id: "wtca_member", Icon: Globe, title: "WTCA member", copy: "Join through your World Trade Center and access the global member network." },
               ].map(({ id, Icon, title, copy }) => (
-                <button key={id} onClick={() => setRole(id as "company" | "investor")} className="p-4 rounded-xl border-2 text-left transition-all" style={{ borderColor: role === id ? B.orange : "#ECECEF", backgroundColor: role === id ? "#fff8f3" : "white" }}>
+                <button key={id} onClick={() => setRole(id as AccountRole)} className="p-4 rounded-xl border-2 text-left transition-all" style={{ borderColor: role === id ? B.orange : "#ECECEF", backgroundColor: role === id ? "#fff8f3" : "white" }}>
                   <Icon className="w-5 h-5 mb-3" style={{ color: role === id ? B.orange : B.navy }} />
                   <div className="font-semibold text-sm mb-1" style={{ color: B.navy }}>{title}</div>
                   <div className="text-xs text-muted-foreground leading-relaxed">{copy}</div>
@@ -1027,17 +1031,30 @@ function RegisterPage({ setView, initialRole = "company", selectedPlan, onRegist
               {["Full name", "Work email", "Organisation", "Country"].map((label) => (
                 <label key={label} className="text-xs font-medium text-muted-foreground">
                   {label}
-                  <input className="mt-1.5 w-full px-3.5 py-2.5 text-sm border border-border rounded-lg bg-white focus:outline-none focus:border-primary" placeholder={label} type={label === "Work email" ? "email" : "text"} />
+                  <input required className="mt-1.5 w-full px-3.5 py-2.5 text-sm border border-border rounded-lg bg-white focus:outline-none focus:border-primary" placeholder={label} type={label === "Work email" ? "email" : "text"} />
                 </label>
               ))}
             </div>
+            {role === "wtca_member" && (
+              <div className="mt-6 p-5 rounded-xl border" style={{ borderColor: `${B.navy}25`, backgroundColor: `${B.navy}05` }}>
+                <div className="flex items-start gap-3 mb-4">
+                  <Shield className="w-5 h-5 mt-0.5" style={{ color: B.navy }} />
+                  <div><div className="text-sm font-semibold" style={{ color: B.navy }}>WTCA membership verification</div><p className="text-xs text-muted-foreground mt-1 leading-relaxed">Use the details registered with your World Trade Center. WTC Accra will verify the application with the relevant chapter before activating member access.</p></div>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {memberFields.map((label) => <label key={label} className="text-xs font-medium text-muted-foreground">{label}<input required className="mt-1.5 w-full px-3.5 py-2.5 text-sm border border-border rounded-lg bg-white focus:outline-none focus:border-primary" placeholder={label} /></label>)}
+                  <label className="text-xs font-medium text-muted-foreground sm:col-span-2">Official WTCA or WTC work email<input required type="email" className="mt-1.5 w-full px-3.5 py-2.5 text-sm border border-border rounded-lg bg-white focus:outline-none focus:border-primary" placeholder="name@yourworldtradecenter.com" /></label>
+                </div>
+              </div>
+            )}
             <label className="flex items-start gap-3 mt-5 text-xs text-muted-foreground leading-relaxed">
-              <input type="checkbox" className="mt-0.5" />
+              <input required type="checkbox" className="mt-0.5" />
               I confirm that the information supplied is accurate and agree to the platform terms, privacy notice and verification checks.
             </label>
-            <button onClick={() => onRegister(role)} className="w-full mt-6 py-3 rounded-lg text-white text-sm font-bold" style={{ backgroundColor: B.orange }}>
-              Continue as {role === "company" ? "a company" : "an investor"} →
+            <button type="submit" className="w-full mt-6 py-3 rounded-lg text-white text-sm font-bold" style={{ backgroundColor: B.orange }}>
+              Continue as {role === "company" ? "a company" : role === "investor" ? "an investor" : "a WTCA member"} →
             </button>
+            </form>
             <p className="text-center text-xs text-muted-foreground mt-5">Already registered? <button onClick={() => setView("login")} style={{ color: B.navy }} className="font-semibold">Sign in</button></p>
           </div>
         </section>
@@ -2150,7 +2167,7 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => localStorage.getItem("wtc-session") === "active");
   const [intent, setIntent] = useState<AccessIntent>(() => (localStorage.getItem("wtc-intent") as AccessIntent) || null);
   const [selectedPlan, setSelectedPlan] = useState(localStorage.getItem("wtc-plan") || "");
-  const [registrationRole, setRegistrationRole] = useState<"company" | "investor">((localStorage.getItem("wtc-role") as "company" | "investor") || "company");
+  const [registrationRole, setRegistrationRole] = useState<AccountRole>((localStorage.getItem("wtc-role") as AccountRole) || "company");
   const [openBid, setOpenBid] = useState(false);
 
   useEffect(() => {
@@ -2175,13 +2192,13 @@ export default function App() {
     navigateTo("register");
   }
 
-  function finishAccess(role: "company" | "investor") {
+  function finishAccess(role: AccountRole) {
     setIsAuthenticated(true); localStorage.setItem("wtc-session", "active");
     const next = intent;
     setIntent(null); localStorage.removeItem("wtc-intent");
     if (next === "post") navigateTo("list-project");
     else if (next === "bid" && selectedDeal) { setOpenBid(true); setView("project-detail"); }
-    else navigateTo(role === "company" ? "founder" : "investor");
+    else navigateTo(role === "company" ? "founder" : role === "investor" ? "investor" : "chapters");
   }
 
   function requireBid() {
