@@ -181,6 +181,17 @@ const VDR_ACCESS_LOG = [
   { investor: "Aditi Chopra", firm: "IndoTech Capital", location: "Mumbai, IN", time: "3 days ago", docs: ["Business Plan", "Financial Model"], verified: true },
 ];
 
+const DEAL_STAGES = ["Sourced", "Reviewed", "Engaged", "Due Diligence", "Term Sheet", "Closed"];
+const PLATFORM_PROCESS = [
+  [Shield, "Registration & Verification", "KYC, business registration and investor accreditation checks establish who is participating."],
+  [FileText, "Deal Submission", "Companies submit their profiles, financial information, funding requirement and proposed use of proceeds."],
+  [CheckCircle2, "Screening & Curation", "A structured readiness assessment is followed by review and curation from the WTC Accra team."],
+  [Search, "Investor Matching", "Opportunities are matched against investor mandates, including sector, geography, stage and ticket size."],
+  [Lock, "Secure Engagement", "Digital NDAs and permission based data rooms support confidential discussions and document review."],
+  [Layers, "Deal Progression", "Each opportunity is tracked from Sourced through Reviewed, Engaged, Due Diligence, Term Sheet and Closed."],
+  [Gavel, "Transaction Closure", "Legal completion takes place off platform, while the platform records outcomes and transaction analytics."],
+] as const;
+
 const CHAPTERS_DATA = [
   { region: "Middle East", name: "WTC Dubai", city: "Dubai, UAE", active: 12 },
   { region: "Middle East", name: "WTC Abu Dhabi", city: "Abu Dhabi, UAE", active: 7 },
@@ -626,7 +637,7 @@ function HomePage({ setView, onViewDeal }: { setView: (v: View) => void; onViewD
 function PlatformPage({ setView }: { setView: (v: View) => void }) {
   const features = [
     [Lock, "Virtual Data Room", "Dynamic watermarking stamps every document with the downloader's identity, IP address, and timestamp. Full immutable audit trail maintained per file."],
-    [Zap, "AI Match Engine", "Python cosine-similarity microservice matches across check size, sector, stage, and geographic mandate — serving highest-confidence opportunities first."],
+    [Search, "Mandate-Based Matching", "Investor preferences are compared with ticket size, sector, stage and geographic focus, then reviewed before introductions are made."],
     [Shield, "Escrow-Linked Bids", "Zero platform custody. All capital holds and milestone releases are fully delegated to licensed third-party escrow providers via secure API."],
     [DollarSign, "Multi-Currency FX", "60-second Redis-cached live rates enable real-time recalculation across USD, EUR, AED, JPY, GBP, SGD, and 20+ additional currencies."],
     [CheckCircle2, "KYC/AML Compliance", "Integrated Persona/Sumsub identity verification, investor accreditation audits, and mandatory WTC chapter membership validation."],
@@ -642,7 +653,15 @@ function PlatformPage({ setView }: { setView: (v: View) => void }) {
             <h1 style={{ fontSize: "3rem", lineHeight: 1.1, color: B.navy, fontWeight: 700 }} className="mb-6">
               Institutional-Grade Infrastructure<br />for Private Markets
             </h1>
-            <p className="text-muted-foreground text-lg leading-relaxed">End-to-end deal management — from KYC onboarding through AI matching, watermarked VDR access, escrow-linked bidding, and post-close reputation tracking.</p>
+            <p className="text-muted-foreground text-lg leading-relaxed">A clear, professionally managed process from participant verification and deal submission through secure diligence, documented engagement and transaction reporting.</p>
+          </div>
+        </section>
+        <section className="py-16 px-6 bg-white border-b border-border">
+          <div className="max-w-7xl mx-auto">
+            <div className="max-w-2xl mb-10"><SectionLabel>Process Flow</SectionLabel><PageTitle>From Registration to Transaction Closure</PageTitle><p className="text-sm text-muted-foreground mt-3 leading-relaxed">Every opportunity follows the same controlled process, with clear responsibilities and visibility at each stage.</p></div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {PLATFORM_PROCESS.map(([Icon, title, copy], index) => <article key={title} className="relative p-5 border border-border rounded-xl bg-[#fbfcfe]"><span className="text-xs font-mono font-bold" style={{ color: B.orange }}>{String(index + 1).padStart(2, "0")}</span><Icon className="w-5 h-5 my-4" style={{ color: B.navy }}/><h3 className="text-sm font-semibold mb-2" style={{ color: B.navy }}>{title}</h3><p className="text-xs text-muted-foreground leading-relaxed">{copy}</p></article>)}
+            </div>
           </div>
         </section>
         <section className="py-16 px-6">
@@ -667,11 +686,11 @@ function PlatformPage({ setView }: { setView: (v: View) => void }) {
         <section className="py-16 px-6 border-t border-border bg-secondary/30">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-12">
-              <SectionLabel>Integration Partners</SectionLabel>
-              <PageTitle>Enterprise Stack</PageTitle>
+              <SectionLabel>Operational Controls</SectionLabel>
+              <PageTitle>Built for Trusted Transactions</PageTitle>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[["Persona / Sumsub", "KYC & AML"], ["Plaid / Stripe Connect", "Fiat Wallet"], ["WalletConnect", "Web3 Proof of Funds"], ["Qualified / Escrow.com", "Escrow API"], ["Redis Cloud", "FX Rate Cache"], ["PostgreSQL + Prisma", "Database ORM"], ["FastAPI (Python)", "Matching Engine"], ["Socket.io", "Real-time Events"]].map(([name, cat]) => (
+              {[["Identity Checks", "KYC & AML"], ["Business Verification", "KYB Review"], ["Investor Accreditation", "Eligibility"], ["Licensed Escrow", "Third Party Custody"], ["Controlled Data Rooms", "Permissions"], ["Audit Records", "Activity History"], ["Mandate Screening", "Deal Relevance"], ["Stage Tracking", "Progress Updates"]].map(([name, cat]) => (
                 <div key={name} className="p-4 border border-border rounded-xl bg-white text-center">
                   <div className="font-medium text-sm mb-1" style={{ color: B.navy }}>{name}</div>
                   <div className="text-xs font-mono text-muted-foreground">{cat}</div>
@@ -1067,8 +1086,8 @@ function ListProjectPage({ setView }: { setView: (v: View) => void }) {
   const [step, setStep] = useState(1);
   const [plan, setPlan] = useState("Professional");
   const plans = [
-    { name: "Starter", price: 299, features: ["1 project listing", "Standard VDR", "20 NDA requests", "Basic AI matching"] },
-    { name: "Professional", price: 799, features: ["3 project listings", "Advanced VDR + audit logs", "Unlimited NDAs", "Priority AI matching", "Syndicate pool access"] },
+    { name: "Starter", price: 299, features: ["1 project listing", "Standard VDR", "20 NDA requests", "Mandate based matching"] },
+    { name: "Professional", price: 799, features: ["3 project listings", "Advanced VDR + audit logs", "Unlimited NDAs", "Priority investor matching", "Syndicate pool access"] },
     { name: "Enterprise", price: 2499, features: ["Unlimited projects", "White-glove onboarding", "Custom NDAs", "Exclusive chapter matching", "24/7 priority support"] },
   ];
   return (
@@ -1171,7 +1190,7 @@ function ListProjectPage({ setView }: { setView: (v: View) => void }) {
 function ProjectDetailPage({ deal, setView, onBack, currency, canBid, onRequireBid, openBid = false }: { deal: Deal; setView: (v: View) => void; onBack: () => void; currency: Currency; canBid: boolean; onRequireBid: () => void; openBid?: boolean }) {
   const [tab, setTab] = useState(openBid ? "bid" : "overview");
   const pct = Math.round((deal.committed / deal.target) * 100);
-  const tabs = ["overview", "team", "financials", "documents", "bid"];
+  const tabs = ["overview", "process", "team", "financials", "documents", "bid"];
   return (
     <div className="min-h-screen bg-background">
       <NavBar view="deals" setView={setView} />
@@ -1209,6 +1228,18 @@ function ProjectDetailPage({ deal, setView, onBack, currency, canBid, onRequireB
             </div>
           </div>
         </div>
+        <section className="border-b border-border bg-white px-6 py-6">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5"><div><div className="text-[10px] uppercase tracking-[0.16em] font-bold" style={{ color: B.orange }}>Deal Process</div><h2 className="text-sm font-semibold mt-1" style={{ color: B.navy }}>Current stage: Engaged</h2></div><span className="text-xs text-muted-foreground">Last reviewed by WTC Accra · 18 August 2026</span></div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+              {DEAL_STAGES.map((stage, index) => {
+                const complete = index < 2, current = index === 2;
+                return <div key={stage} className="relative"><div className="flex items-center gap-2 mb-2"><div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2" style={{ backgroundColor: complete ? B.navy : current ? B.orange : "white", borderColor: complete ? B.navy : current ? B.orange : B.lgray, color: complete || current ? "white" : B.mgray }}>{complete ? <Check className="w-3.5 h-3.5"/> : index + 1}</div>{index < DEAL_STAGES.length - 1 && <div className="hidden lg:block flex-1 h-0.5" style={{ backgroundColor: complete ? B.navy : B.lgray }}/>}</div><div className="text-xs font-semibold" style={{ color: current ? B.orange : complete ? B.navy : B.mgray }}>{stage}</div>{current && <div className="text-[10px] text-muted-foreground mt-1">Active</div>}</div>;
+              })}
+            </div>
+            {!canBid && <div className="mt-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-secondary/50"><p className="text-xs text-muted-foreground">Sign in to follow stage updates, access approved documents and continue to engagement.</p><button onClick={() => setView("login")} className="text-xs font-bold whitespace-nowrap" style={{ color: B.orange }}>Sign in to continue →</button></div>}
+          </div>
+        </section>
         {/* Tabs */}
         <div className="border-b border-border bg-white">
           <div className="max-w-6xl mx-auto px-6 flex gap-1">
@@ -1266,6 +1297,14 @@ function ProjectDetailPage({ deal, setView, onBack, currency, canBid, onRequireB
                 <button onClick={() => canBid ? setTab("bid") : onRequireBid()} className="w-full py-3 rounded-lg text-white font-semibold text-sm mt-2" style={{ backgroundColor: B.orange }}>
                   {deal.ndaSigned ? "Submit a Bid" : "Sign NDA to Proceed"}
                 </button>
+              </div>
+            </div>
+          )}
+          {tab === "process" && (
+            <div>
+              <div className="max-w-2xl mb-7"><h3 className="font-semibold text-lg mb-2" style={{ color: B.navy }}>How this deal progresses</h3><p className="text-sm text-muted-foreground leading-relaxed">The platform records each controlled step while legal completion and the transfer of funds remain with the appointed professional advisers and licensed transaction partners.</p></div>
+              <div className="grid md:grid-cols-2 gap-4">
+                {PLATFORM_PROCESS.map(([Icon, title, copy], index) => <article key={title} className="flex gap-4 p-5 border border-border rounded-xl bg-white"><div className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-mono font-bold" style={{ backgroundColor: index < 5 ? `${B.navy}10` : `${B.orange}10`, color: index < 5 ? B.navy : B.orange }}>{index + 1}</div><div><div className="flex items-center gap-2 mb-1.5"><Icon className="w-4 h-4" style={{ color: B.navy }}/><h4 className="text-sm font-semibold" style={{ color: B.navy }}>{title}</h4></div><p className="text-xs text-muted-foreground leading-relaxed">{copy}</p></div></article>)}
               </div>
             </div>
           )}
@@ -1420,7 +1459,7 @@ function InvDealFlow({ currency, onViewDeal }: { currency: Currency; onViewDeal:
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <h2 className="text-lg font-bold mb-0.5" style={{ color: B.navy }}>Deal Flow Intelligence</h2>
-          <p className="text-xs text-muted-foreground">AI-matched opportunities ranked by your preference profile</p>
+          <p className="text-xs text-muted-foreground">Curated opportunities ranked against your investment mandate</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {sectors.map((s) => (
@@ -1433,7 +1472,7 @@ function InvDealFlow({ currency, onViewDeal }: { currency: Currency; onViewDeal:
         </div>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {[["23", "AI-Matched Deals", "+4 this week", Zap], ["$1.85M", "Committed Capital", "Across 7 deals", DollarSign], ["24.8%", "Avg Portfolio IRR", "+2.1% vs benchmark", TrendingUp], ["9.4/10", "Trust Score", "8 verified reviews", Star]].map(([v, l, d, Icon]) => (
+        {[["23", "Relevant Deals", "+4 this week", Search], ["$1.85M", "Committed Capital", "Across 7 deals", DollarSign], ["24.8%", "Avg Portfolio IRR", "+2.1% vs benchmark", TrendingUp], ["9.4/10", "Trust Score", "8 verified reviews", Star]].map(([v, l, d, Icon]) => (
           <KPICard key={l as string} label={l as string} value={v as string} delta={d as string} up Icon={Icon as React.ElementType} />
         ))}
       </div>
@@ -1727,7 +1766,7 @@ function InvSettings() {
         <div className="space-y-5">
           <div className="bg-white border border-border rounded-xl p-5 shadow-sm">
             <div className="text-sm font-semibold mb-4" style={{ color: B.navy }}>Notification Preferences</div>
-            {([["deals", "New AI-matched deals"], ["bids", "Bid status updates"], ["vdr", "VDR access alerts"], ["newsletter", "Weekly deal digest"]] as [keyof typeof notifs, string][]).map(([key, label]) => (
+            {([["deals", "New mandate-matched deals"], ["bids", "Bid status updates"], ["vdr", "VDR access alerts"], ["newsletter", "Weekly deal digest"]] as [keyof typeof notifs, string][]).map(([key, label]) => (
               <div key={key} className="flex items-center justify-between py-3 border-b border-border last:border-0">
                 <span className="text-sm text-foreground">{label}</span>
                 <button onClick={() => setNotifs((p) => ({ ...p, [key]: !p[key] }))}
