@@ -1,0 +1,4 @@
+import Link from 'next/link'
+import { requireAdminProfile } from '@/lib/auth/guards'
+
+export default async function AdminPage(){const {supabase}=await requireAdminProfile();const {count}=await supabase.from('verification_requests').select('*',{count:'exact',head:true}).eq('status','pending_review');return <div className="page-stack"><div><p className="eyebrow">WTC Accra administration</p><h1>Platform control centre</h1><p className="muted">Manage verification and platform access from one protected workspace.</p></div><section className="dashboard-grid"><article className="metric-card"><span>Pending verification</span><strong>{count??0}</strong><p>Accounts awaiting review.</p><Link href="/admin/verification">Open queue →</Link></article><article className="metric-card"><span>Opportunity publishing</span><strong>Next phase</strong><p>Opportunity review and publication controls will be added after the auth foundation.</p></article></section></div>}
