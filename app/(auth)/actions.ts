@@ -5,10 +5,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { safeNextPath } from '@/lib/auth/redirects'
 import { validateEmail, validatePassword, validateSignupInput } from '@/lib/auth/validation'
-
-function siteUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/$/, '')
-}
+import { getSiteUrl } from '@/lib/supabase/config'
 
 function withMessage(path: string, key: 'error' | 'message', message: string) {
   const separator = path.includes('?') ? '&' : '?'
@@ -19,15 +16,10 @@ export async function login(formData: FormData) {
   const email = String(formData.get('email') ?? '').trim()
   const password = String(formData.get('password') ?? '')
   const next = safeNextPath(String(formData.get('next') ?? '/dashboard'))
-
-  if (validateEmail(email) || !password) {
-    redirect(withMessage('/login', 'error', 'Enter a valid email address and password.'))
-  }
-
+  if (validateEmail(email) || !password) redirect(withMessage('/login', 'error', 'Enter a valid email address and password.'))
   const supabase = await createClient()
   const { error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) redirect(withMessage('/login', 'error', 'Invalid email or password.'))
-
   revalidatePath('/', 'layout')
   redirect(next)
 }
@@ -37,47 +29,20 @@ export async function signup(formData: FormData) {
   const email = String(formData.get('email') ?? '').trim()
   const password = String(formData.get('password') ?? '')
   const participantType = String(formData.get('participantType') ?? '')
-
   const validation = validateSignupInput({ fullName, email, password, participantType })
-  if (!validation.ok) {
-    const firstError = Object.values(validation.errors)[0] ?? 'Check your registration details.'
-    redirect(withMessage('/register', 'error', firstError))
-  }
-
+  if (!validation.ok) redirect(withMessage('/register', 'error', Object.values(validation.errors)[0] ?? 'Check your registration details.'))
   const supabase = await createClient()
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        full_name: fullName,
-        participant_type: participantType,
-      },
-      emailRedirectTo: `${siteUrl()}/auth/confirm`,
-    },
-  })
-
+  const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, participant_type: participantType }, emailRedirectTo: `${getSiteUrl()}/auth/confirm` } })
   if (error) redirect(withMessage('/register', 'error', error.message))
-
-  if (data.session) {
-    revalidatePath('/', 'layout')
-    redirect('/dashboard')
-  }
-
+  if (data.session) { revalidatePath('/', 'layout'); redirect('/dashboard') }
   redirect(withMessage('/login', 'message', 'Check your email to confirm your account before signing in.'))
 }
 
 export async function requestPasswordReset(formData: FormData) {
   const email = String(formData.get('email') ?? '').trim()
-  if (validateEmail(email)) {
-    redirect(withMessage('/forgot-password', 'error', 'Enter a valid email address.'))
-  }
-
+  if (validateEmail(email)) redirect(withMessage('/forgot-password', 'error', 'Enter a valid email address.'))
   const supabase = await createClient()
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl()}/auth/confirm?next=/reset-password`,
-  })
-
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${getSiteUrl()}/auth/confirm?next=/reset-password` })
   if (error) redirect(withMessage('/forgot-password', 'error', 'Unable to send the reset email. Try again.'))
   redirect(withMessage('/login', 'message', 'If the account exists, a password reset email has been sent.'))
 }
@@ -86,19 +51,13 @@ export async function updatePassword(formData: FormData) {
   const password = String(formData.get('password') ?? '')
   const confirmPassword = String(formData.get('confirmPassword') ?? '')
   const passwordError = validatePassword(password)
-
   if (passwordError) redirect(withMessage('/reset-password', 'error', passwordError))
-  if (password !== confirmPassword) {
-    redirect(withMessage('/reset-password', 'error', 'Passwords do not match.'))
-  }
-
+  if (password !== confirmPassword) redirect(withMessage('/reset-password', 'error', 'Passwords do not match.'))
   const supabase = await createClient()
   const { data: claimsData } = await supabase.auth.getClaims()
   if (!claimsData?.claims) redirect('/login')
-
   const { error } = await supabase.auth.updateUser({ password })
   if (error) redirect(withMessage('/reset-password', 'error', 'Unable to update the password.'))
-
   await supabase.auth.signOut()
   revalidatePath('/', 'layout')
   redirect(withMessage('/login', 'message', 'Password updated. Sign in with your new password.'))
