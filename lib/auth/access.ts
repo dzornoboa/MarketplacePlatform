@@ -195,3 +195,50 @@ export function postingLock(state: AccessState): MarketplaceLock {
 export function hasAdminMfaAccess(role: string | null | undefined, aal: string | null | undefined): boolean {
   return isAdminRole(role) && aal === 'aal2'
 }
+
+/* How a listing is positioned. "Posting as an investor" and "seeking investment
+   for a project" are the two sides members most often mean. */
+export const listingIntents = [
+  'seeking_investment',
+  'offering_investment',
+  'offering_supply',
+  'seeking_supply',
+  'partnership',
+] as const
+
+export type ListingIntent = (typeof listingIntents)[number]
+
+export const listingIntentLabels: Record<ListingIntent, string> = {
+  seeking_investment: 'Seeking investment',
+  offering_investment: 'Investor — capital available',
+  offering_supply: 'Offering goods or services',
+  seeking_supply: 'Sourcing goods or services',
+  partnership: 'Seeking a partner',
+}
+
+export const listingIntentHelp: Record<ListingIntent, string> = {
+  seeking_investment: 'You have a project or business and are looking for capital.',
+  offering_investment: 'You are an investor and want qualified counterparties to approach you.',
+  offering_supply: 'You supply goods or services and want buyers to find you.',
+  seeking_supply: 'You are sourcing and want suppliers to approach you.',
+  partnership: 'You are looking for a joint venture, distribution or strategic partner.',
+}
+
+export function labelForIntent(value: string | null | undefined): string {
+  return value && value in listingIntentLabels ? listingIntentLabels[value as ListingIntent] : 'Listing'
+}
+
+/* WTC Accra staff work inside the marketplace to review and post on behalf of
+   the organisation, so they are not held behind the member subscription gate.
+   The database says the same thing: the opportunities SELECT policy ORs
+   private.is_staff(), and can_post_opportunities() now accepts the
+   opportunities capability. */
+export function marketplaceLockFor(state: AccessState, role: string | null | undefined): MarketplaceLock {
+  if (isStaffRole(role) && state.account_status === 'active') return { locked: false }
+  return marketplaceLock(state)
+}
+
+export function postingLockFor(state: AccessState, role: string | null | undefined): MarketplaceLock {
+  if (isStaffRole(role) && state.account_status === 'active') return { locked: false }
+  return postingLock(state)
+}

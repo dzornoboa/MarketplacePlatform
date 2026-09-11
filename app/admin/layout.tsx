@@ -11,6 +11,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const role = profile.system_role
   const links = [
     { href: '/admin', label: 'Overview', show: true },
+    { href: '/admin/super', label: 'Super admin', show: role === 'super_admin' },
     { href: '/admin/verification', label: 'Verification queue', show: hasCapability(role, 'verification') },
     { href: '/admin/users', label: 'Members', show: isAdminRole(role) },
     { href: '/admin/opportunities', label: 'Opportunities', show: hasCapability(role, 'opportunities') },

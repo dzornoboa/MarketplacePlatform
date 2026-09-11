@@ -20,6 +20,8 @@ export function DashboardNav({ profile, unreadCount = 0 }: { profile: Profile; u
       label: 'Marketplace',
       links: [
         { href: '/dashboard', label: 'Overview' },
+        { href: '/dashboard/feed', label: 'Home feed' },
+        { href: '/dashboard/network', label: 'Network', verifiedOnly: true },
         { href: '/dashboard/opportunities', label: 'Opportunities', verifiedOnly: true },
         { href: '/dashboard/matches', label: 'Matches', verifiedOnly: true },
         { href: '/dashboard/interests', label: 'Expressions of interest', verifiedOnly: true },

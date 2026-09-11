@@ -88,3 +88,14 @@ export async function requireStaffConsole() {
   }
   return context
 }
+
+/* Super administrator only. The database agrees: the profile-protection trigger
+   gives an unconditional pass to super_admin and refuses staff-role changes
+   from anyone else. */
+export async function requireSuperAdmin() {
+  const context = await requireUserProfile()
+  if (context.profile.system_role !== 'super_admin') redirect('/admin')
+  const aal = typeof context.claims.aal === 'string' ? context.claims.aal : null
+  if (!hasAdminMfaAccess(context.profile.system_role, aal)) redirect('/dashboard/security?required=admin-mfa')
+  return context
+}

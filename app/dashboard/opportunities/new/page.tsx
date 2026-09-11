@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
-import { postingLock } from '@/lib/auth/access'
+import { postingLockFor, listingIntents, listingIntentLabels, listingIntentHelp } from '@/lib/auth/access'
 import { createOpportunity } from '../actions'
 
 export const dynamic = 'force-dynamic'
@@ -9,10 +9,10 @@ export const dynamic = 'force-dynamic'
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
 export default async function NewOpportunityPage({ searchParams }: Props) {
-  const { supabase } = await requireUserProfile()
+  const { supabase, profile } = await requireUserProfile()
   const state = await readAccessState(supabase)
   if (!state) redirect('/dashboard/opportunities')
-  const lock = postingLock(state)
+  const lock = postingLockFor(state, profile.system_role)
   const params = await searchParams
   const error = typeof params.error === 'string' ? params.error : null
 
@@ -34,6 +34,16 @@ export default async function NewOpportunityPage({ searchParams }: Props) {
     </div>
     {error && <div className="alert alert-error">{error}</div>}
     <form action={createOpportunity} className="card form-stack">
+      <fieldset className="intent-picker">
+        <legend>What are you posting as?</legend>
+        {listingIntents.map((value, index) => <label className="intent-option" key={value}>
+          <input type="radio" name="intent" value={value} defaultChecked={index === 0} required />
+          <span>
+            <strong>{listingIntentLabels[value]}</strong>
+            <small>{listingIntentHelp[value]}</small>
+          </span>
+        </label>)}
+      </fieldset>
       <label>Title<input name="title" minLength={5} maxLength={180} required placeholder="Series A round for agri-processing facility" /></label>
       <label>Summary<textarea name="summary" rows={3} minLength={20} maxLength={700} required placeholder="One paragraph a reader can scan in the listing feed." /></label>
       <label>Full description<textarea name="description" rows={10} minLength={50} maxLength={12000} required placeholder="The opportunity, the counterparty profile you are looking for, use of funds, traction, and terms." /></label>

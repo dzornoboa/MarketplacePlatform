@@ -9,6 +9,7 @@ function to(path: string, key: 'error' | 'message', message: string) {
 }
 
 const KINDS = new Set(['investment', 'trade', 'procurement', 'partnership'])
+const INTENTS = new Set(['seeking_investment', 'offering_investment', 'offering_supply', 'seeking_supply', 'partnership'])
 
 function optionalNumber(value: FormDataEntryValue | null): number | null {
   const raw = String(value ?? '').trim()
@@ -32,6 +33,7 @@ export async function createOpportunity(formData: FormData) {
   const country = String(formData.get('country') ?? '').trim()
   const city = String(formData.get('city') ?? '').trim()
   const kind = String(formData.get('kind') ?? '')
+  const intent = String(formData.get('intent') ?? '')
   const currency = String(formData.get('currency') ?? 'USD').trim().toUpperCase()
   const deadline = String(formData.get('deadline') ?? '').trim()
   const tags = String(formData.get('tags') ?? '').split(',').map(t => t.trim()).filter(Boolean).slice(0, 12)
@@ -41,6 +43,7 @@ export async function createOpportunity(formData: FormData) {
   if (description.length < 50) redirect(to('/dashboard/opportunities/new', 'error', 'Description must be at least 50 characters.'))
   if (!sector || !country) redirect(to('/dashboard/opportunities/new', 'error', 'Sector and country are required.'))
   if (!KINDS.has(kind)) redirect(to('/dashboard/opportunities/new', 'error', 'Select an opportunity type.'))
+  if (!INTENTS.has(intent)) redirect(to('/dashboard/opportunities/new', 'error', 'Select what you are posting as.'))
   if (!/^[A-Z]{3}$/.test(currency)) redirect(to('/dashboard/opportunities/new', 'error', 'Currency must be a 3-letter code such as USD or GHS.'))
 
   const { data, error } = await supabase.from('opportunities').insert({
@@ -48,6 +51,7 @@ export async function createOpportunity(formData: FormData) {
     title, summary, description, sector, country,
     city: city || null,
     kind: kind as 'investment' | 'trade' | 'procurement' | 'partnership',
+    intent: intent as 'seeking_investment',
     capital_required: optionalNumber(formData.get('capitalRequired')),
     minimum_ticket: optionalNumber(formData.get('minimumTicket')),
     currency,

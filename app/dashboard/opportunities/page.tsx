@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
-import { marketplaceLock, postingLock, humanize } from '@/lib/auth/access'
+import { marketplaceLockFor, postingLockFor, humanize, labelForIntent } from '@/lib/auth/access'
 import { money, date, relativeDays } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
 import { submitOpportunity, expressInterest, toggleSaved } from './actions'
@@ -18,8 +18,8 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
   const kind = typeof params.kind === 'string' ? params.kind : ''
 
   const state = await readAccessState(supabase)
-  const browseLock = state ? marketplaceLock(state) : { locked: true as const, reason: 'Access state unavailable.', action: null }
-  const postLock = state ? postingLock(state) : { locked: true as const, reason: 'Access state unavailable.', action: null }
+  const browseLock = state ? marketplaceLockFor(state, profile.system_role) : { locked: true as const, reason: 'Access state unavailable.', action: null }
+  const postLock = state ? postingLockFor(state, profile.system_role) : { locked: true as const, reason: 'Access state unavailable.', action: null }
 
   // RLS returns only what this member may see; the filters are UX, not security.
   let query = supabase.from('opportunities').select('*').eq('status', 'published').order('published_at', { ascending: false }).limit(60)
@@ -109,7 +109,7 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
             <article className="card opportunity-card" key={item.id}>
               <div className="opportunity-head">
                 <div>
-                  <span className="eyebrow">{humanize(item.kind)}</span>
+                  <span className="eyebrow">{labelForIntent(item.intent)} · {humanize(item.kind)}</span>
                   <h3>{item.title}</h3>
                   <p className="muted">{item.sector} · {item.city ? `${item.city}, ` : ''}{item.country}{item.deadline ? ` · ${relativeDays(item.deadline)}` : ''}</p>
                 </div>
