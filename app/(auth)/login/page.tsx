@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { login } from '../actions'
+import { BrandCircle, Logo, LogoLink } from '@/components/brand'
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
@@ -12,7 +13,7 @@ export default async function LoginPage({ searchParams }: Props) {
   return (
     <main className="auth-page">
       <section className="auth-panel">
-        <Link className="brand brand-dark" href="/">WTC ACCRA <span>Hub</span></Link>
+        <LogoLink />
         <p className="eyebrow">Member access</p>
         <h1>Welcome back</h1>
         <p className="muted">Sign in to your verified business and investment network.</p>
@@ -30,9 +31,12 @@ export default async function LoginPage({ searchParams }: Props) {
         </div>
       </section>
       <aside className="auth-aside">
-        <p className="eyebrow light">World Trade Centre Accra</p>
-        <h2>Private opportunity access for verified members.</h2>
+        <BrandCircle className="motif motif-aside" stroke={2} />
+        <Logo variant="white" />
+        <p className="eyebrow light">Private marketplace</p>
+        <h2>Opportunity access for <strong>verified members</strong></h2>
         <p>Opportunities, match recommendations and deal documents stay protected until WTC Accra verifies your account.</p>
+        <p className="quote">Connecting Businesses, Globally.</p>
       </aside>
     </main>
   )

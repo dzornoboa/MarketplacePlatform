@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { requestPasswordReset } from '../actions'
+import { LogoLink } from '@/components/brand'
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
@@ -9,7 +10,7 @@ export default async function ForgotPasswordPage({ searchParams }: Props) {
   return (
     <main className="center-page">
       <section className="card auth-card">
-        <p className="eyebrow">Account recovery</p><h1>Reset your password</h1>
+        <LogoLink /><p className="eyebrow">Account recovery</p><h1>Reset your password</h1>
         <p className="muted">Enter the email address used for your WTC Accra Hub account.</p>
         {error && <div className="alert alert-error">{error}</div>}
         <form action={requestPasswordReset} className="form-stack">

@@ -1,61 +1,62 @@
-**Add your own guidelines here**
-<!--
+# WTC Accra Hub — design system guidelines
 
-System Guidelines
+Derived from the **WTCA Member Brand Guidelines** and the **WTCA Brand Editorial Guide**
+(`public/brand/Full Brand Assets/Brand Guidelines/`). These are brand rules, not preferences —
+WTCA brand compliance depends on them.
 
-Use this file to provide the AI with rules and guidelines you want it to follow.
-This template outlines a few examples of things you can add. You can add your own sections and format it to suit your needs
+## Non-negotiables
 
-TIP: More context isn't always better. It can confuse the LLM. Try and add the most important rules you need
+* **No gradients.** Anywhere. Solid colours only.
+* **Pure white first.** White backgrounds and generous white space are the default. Solid
+  colours from the palette below are the only approved alternative background.
+* **Logos are never recoloured**, angled, placed in a container, given effects, or laid over
+  imagery or busy backgrounds. Black, white, or brand colours only.
+* Keep ~35px of clear space around the logo; anchor it to a corner (top-left for digital).
+* Photography must not include minors, airplanes, country flags, or WTC New York.
 
-# General guidelines
+## Colour tokens (`app/globals.css`)
 
-Any general rules you want the AI to follow.
-For example:
+| Token | Hex | Role |
+|---|---|---|
+| `--wtc-navy` | `#154074` | Primary. Headings, active states, solid panels |
+| `--wtc-orange` | `#E4580A` | Primary accent. Primary CTA, eyebrows, rules |
+| `--wtc-sky` | `#4D8BBE` | Primary, supporting |
+| `--wtc-peach` | `#F9A25E` | Primary, supporting |
+| `--wtc-teal` | `#09D0AC` | Secondary. Circle motif, success accents |
+| `--wtc-gold` | `#E5C056` | Secondary. Circle motif, accents on navy |
+| `--wtc-mist` | `#ECECEF` | Secondary. Soft section and app-shell background |
+| `--wtc-grey` | `#A9A9AB` | Secondary. Hairlines and dividers only |
 
-* Only use absolute positioning when necessary. Opt for responsive and well structured layouts that use flexbox and grid by default
-* Refactor code as you go to keep code clean
-* Keep file sizes small and put helper functions and components in their own files.
+`--ink`, `--muted`, `--line`, `--danger`, `--success` and `--warning` are UI-only derivations
+of the above, darkened where body copy needs to clear WCAG AA. Do not introduce new hues —
+status colours are darkened brand hues, never a new red or green.
 
---------------
+## Typography
 
-# Design system guidelines
-Rules for how the AI should make generations look like your company's design system
+* **Open Sans** for everything (the brand font for both logo and copy), loaded in
+  `app/layout.tsx`.
+* Marketing headlines use the WTCA lockup: light weight (300) uppercase lead with a bold (800)
+  navy emphasis — `<h2>A business platform with <strong>verification at its core</strong></h2>`.
+  Use `.display` for the hero, `.section-head h2` elsewhere.
+* Eyebrows are 11px, uppercase, `.22em` tracking, orange.
+* Application UI (dashboard, admin) uses sentence-case bold headings for legibility.
 
-Additionally, if you select a design system to use in the prompt box, you can reference
-your design system's components, tokens, variables and components.
-For example:
+## The circle motif
 
-* Use a base font-size of 14px
-* Date formats should always be in the format “Jun 10”
-* The bottom toolbar should only ever have a maximum of 4 items
-* Never use the floating action button with the bottom toolbar
-* Chips should always come in sets of 3 or more
-* Don't use a dropdown if there are 2 or fewer options
+The brand circle represents the connections the network facilitates. Use `<BrandCircle>` /
+`<BrandArc>` from `components/brand.tsx` — four arcs in navy, gold, orange and teal, reproduced
+from `Large Circle 4 Colors`. It is decorative: park it behind content with `.motif`, never over
+the logo or text. Imagery is circle-masked (`.media-circle`).
 
-You can also create sub sections and add more specific details
-For example:
+## Components
 
+Brand marks live in `components/brand.tsx` (`Logo`, `LogoLink`, `MemberMark`, `BrandCircle`,
+`BrandArc`). Use them rather than re-importing image paths. `MemberMark` is the
+"A Member of World Trade Centers Association" lockup with the *Connecting Businesses, Globally.*
+tagline — footer only.
 
-## Button
-The Button component is a fundamental interactive element in our design system, designed to trigger actions or navigate
-users through the application. It provides visual feedback and clear affordances to enhance user experience.
+## Voice
 
-### Usage
-Buttons should be used for important actions that users need to take, such as form submissions, confirming choices,
-or initiating processes. They communicate interactivity and should have clear, action-oriented labels.
-
-### Variants
-* Primary Button
-  * Purpose : Used for the main action in a section or page
-  * Visual Style : Bold, filled with the primary brand color
-  * Usage : One primary button per section to guide users toward the most important action
-* Secondary Button
-  * Purpose : Used for alternative or supporting actions
-  * Visual Style : Outlined with the primary color, transparent background
-  * Usage : Can appear alongside a primary button for less important actions
-* Tertiary Button
-  * Purpose : Used for the least important actions
-  * Visual Style : Text-only with no border, using primary color
-  * Usage : For actions that should be available but not emphasized
--->
+Primary archetype **The Sage** (wise, trusted, mentoring), secondary **The Ruler** (organised,
+prestigious, secure). Tagline: *Connecting Businesses, Globally.* Approved headline language is
+in the editorial guide — prefer it over invented copy.

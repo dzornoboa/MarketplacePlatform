@@ -1,4 +1,5 @@
 import { updatePassword } from '../actions'
+import { LogoLink } from '@/components/brand'
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
@@ -8,7 +9,7 @@ export default async function ResetPasswordPage({ searchParams }: Props) {
   return (
     <main className="center-page">
       <section className="card auth-card">
-        <p className="eyebrow">Choose a new password</p><h1>Update password</h1>
+        <LogoLink /><p className="eyebrow">Choose a new password</p><h1>Update password</h1>
         {error && <div className="alert alert-error">{error}</div>}
         <form action={updatePassword} className="form-stack">
           <label>New password<input name="password" type="password" minLength={8} required /></label>
