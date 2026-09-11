@@ -62,3 +62,31 @@ export async function updatePassword(formData: FormData) {
   revalidatePath('/', 'layout')
   redirect(withMessage('/login', 'message', 'Password updated. Sign in with your new password.'))
 }
+
+/* First-time password for an account WTC Accra provisioned. The profile stays
+   flagged `password_change_required` until the member sets their own password,
+   and every dashboard guard holds them here until they do. */
+export async function setInitialPassword(formData: FormData) {
+  const password = String(formData.get('password') ?? '')
+  const confirmPassword = String(formData.get('confirmPassword') ?? '')
+  const passwordError = validatePassword(password)
+  if (passwordError) redirect(withMessage('/set-password', 'error', passwordError))
+  if (password !== confirmPassword) redirect(withMessage('/set-password', 'error', 'Passwords do not match.'))
+  const supabase = await createClient()
+  const { data: claimsData } = await supabase.auth.getClaims()
+  const userId = claimsData?.claims?.sub
+  if (!userId) redirect('/login')
+  const { error } = await supabase.auth.updateUser({ password })
+  if (error) redirect(withMessage('/set-password', 'error', 'Unable to set the password. Try again.'))
+  const { error: clearError } = await supabase.rpc('complete_initial_password_change', { target_user: String(userId) })
+  if (clearError) redirect(withMessage('/set-password', 'error', 'Password saved, but the account could not be activated. Contact support.'))
+  revalidatePath('/', 'layout')
+  redirect('/dashboard')
+}
+
+export async function signOut() {
+  const supabase = await createClient()
+  await supabase.auth.signOut()
+  revalidatePath('/', 'layout')
+  redirect('/login')
+}

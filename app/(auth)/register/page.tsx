@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { selectableParticipantTypes, participantTypeLabels } from '@/lib/auth/access'
 import { signup } from '../actions'
 import { BrandCircle, Logo, LogoLink } from '@/components/brand'
 
@@ -22,12 +23,7 @@ export default async function RegisterPage({ searchParams }: Props) {
           <label>Account type
             <select name="participantType" required defaultValue="">
               <option value="" disabled>Select account type</option>
-              <option value="investor">Investor</option>
-              <option value="buyer">Buyer</option>
-              <option value="business">Business</option>
-              <option value="project_sponsor">Project sponsor</option>
-              <option value="wtc_association_member">WTC Association member</option>
-              <option value="wtc_accra_member">WTC Accra member</option>
+              {selectableParticipantTypes.map(type => <option key={type} value={type}>{participantTypeLabels[type]}</option>)}
             </select>
           </label>
           <label>Password<input name="password" type="password" autoComplete="new-password" minLength={8} required /></label>

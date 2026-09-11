@@ -1,7 +1,33 @@
 import type { ReactNode } from 'react'
 import Link from 'next/link'
-import { requireAdminProfile } from '@/lib/auth/guards'
+import { requireStaffConsole } from '@/lib/auth/guards'
+import { hasCapability, isAdminRole, systemRoleLabels } from '@/lib/auth/access'
 import { LogoLink } from '@/components/brand'
 
-export const dynamic='force-dynamic'
-export default async function AdminLayout({children}:{children:ReactNode}){const {profile}=await requireAdminProfile();return <div className="admin-shell"><header className="admin-header"><div><LogoLink href="/dashboard" /><span className="admin-label">Administration</span></div><nav><Link href="/admin">Overview</Link><Link href="/admin/verification">Verification queue</Link><Link href="/dashboard">Member dashboard</Link></nav><span>{profile.full_name}</span></header><main className="admin-main">{children}</main></div>}
+export const dynamic = 'force-dynamic'
+
+export default async function AdminLayout({ children }: { children: ReactNode }) {
+  const { profile } = await requireStaffConsole()
+  const role = profile.system_role
+  const links = [
+    { href: '/admin', label: 'Overview', show: true },
+    { href: '/admin/verification', label: 'Verification queue', show: hasCapability(role, 'verification') },
+    { href: '/admin/users', label: 'Members', show: isAdminRole(role) },
+    { href: '/admin/opportunities', label: 'Opportunities', show: hasCapability(role, 'opportunities') },
+    { href: '/admin/subscriptions', label: 'Subscriptions', show: hasCapability(role, 'finance') },
+    { href: '/admin/support', label: 'Support', show: hasCapability(role, 'support') },
+    { href: '/admin/audit', label: 'Audit log', show: isAdminRole(role) },
+  ].filter(link => link.show)
+
+  return <div className="admin-shell">
+    <header className="admin-header">
+      <div>
+        <LogoLink href="/dashboard" />
+        <span className="admin-label">{isAdminRole(role) ? 'Administration' : 'Staff console'}</span>
+      </div>
+      <nav>{links.map(link => <Link key={link.href} href={link.href}>{link.label}</Link>)}</nav>
+      <span>{profile.full_name} · {systemRoleLabels[role] ?? role}</span>
+    </header>
+    <main className="admin-main">{children}</main>
+  </div>
+}

@@ -6,9 +6,32 @@ export const participantTypes = [
   'wtc_association_member',
   'wtc_accra_member',
   'staff',
+  'institutional_partner',
 ] as const
 
 export type ParticipantType = (typeof participantTypes)[number]
+
+/* Participant types a member may choose at registration. `staff` is assigned by
+   WTC Accra only; `institutional_partner` is granted after review. */
+export const selectableParticipantTypes = [
+  'investor',
+  'buyer',
+  'business',
+  'project_sponsor',
+  'wtc_association_member',
+  'wtc_accra_member',
+] as const
+
+export const participantTypeLabels: Record<ParticipantType, string> = {
+  investor: 'Investor',
+  buyer: 'Buyer',
+  business: 'Business',
+  project_sponsor: 'Project sponsor',
+  wtc_association_member: 'WTC Association member',
+  wtc_accra_member: 'WTC Accra member',
+  staff: 'WTC Accra staff',
+  institutional_partner: 'Institutional partner',
+}
 
 export const systemRoles = [
   'user',
@@ -18,9 +41,21 @@ export const systemRoles = [
   'finance',
   'admin',
   'super_admin',
+  'support',
 ] as const
 
 export type SystemRole = (typeof systemRoles)[number]
+
+export const systemRoleLabels: Record<SystemRole, string> = {
+  user: 'Member',
+  trade_officer: 'Trade officer',
+  verification_officer: 'Verification officer',
+  content_manager: 'Content manager',
+  finance: 'Finance',
+  admin: 'Administrator',
+  super_admin: 'Super administrator',
+  support: 'Support',
+}
 
 export const verificationStatuses = [
   'pending_profile',
@@ -33,9 +68,40 @@ export const verificationStatuses = [
 
 export type VerificationStatus = (typeof verificationStatuses)[number]
 
+export const accountStatuses = ['pending', 'active', 'suspended', 'disabled'] as const
+export type AccountStatus = (typeof accountStatuses)[number]
+
+/* Mirrors private.staff_has_capability() in the database. The database is the
+   enforcement point; this exists so the UI hides what the user cannot do. */
+export const staffCapabilities = [
+  'verification',
+  'opportunities',
+  'matching',
+  'introductions',
+  'finance',
+  'content',
+  'support',
+  'reports',
+  'users',
+] as const
+
+export type StaffCapability = (typeof staffCapabilities)[number]
+
+const roleCapabilities: Record<SystemRole, readonly StaffCapability[]> = {
+  user: [],
+  trade_officer: ['opportunities', 'matching', 'introductions', 'reports'],
+  verification_officer: ['verification', 'users'],
+  content_manager: ['content'],
+  finance: ['finance', 'reports'],
+  support: ['support'],
+  admin: staffCapabilities,
+  super_admin: staffCapabilities,
+}
+
 const adminRoles = new Set<SystemRole>(['admin', 'super_admin'])
-const staffRoles = new Set<SystemRole>(['trade_officer','verification_officer','content_manager','finance','admin','super_admin'])
+const staffRoles = new Set<SystemRole>(['trade_officer', 'verification_officer', 'content_manager', 'finance', 'admin', 'super_admin', 'support'])
 const participantTypeSet = new Set<string>(participantTypes)
+const selectableParticipantTypeSet = new Set<string>(selectableParticipantTypes)
 
 export function isAdminRole(role: string | null | undefined): role is 'admin' | 'super_admin' {
   return !!role && adminRoles.has(role as SystemRole)
@@ -45,12 +111,29 @@ export function isStaffRole(role: string | null | undefined): role is Exclude<Sy
   return !!role && staffRoles.has(role as SystemRole)
 }
 
+export function hasCapability(role: string | null | undefined, capability: StaffCapability): boolean {
+  if (!role || !(role in roleCapabilities)) return false
+  return roleCapabilities[role as SystemRole].includes(capability)
+}
+
 export function canUseVerifiedFeatures(status: string | null | undefined): boolean {
   return status === 'verified'
 }
 
 export function isKnownParticipantType(value: string | null | undefined): value is ParticipantType {
   return !!value && participantTypeSet.has(value)
+}
+
+export function isSelectableParticipantType(value: string | null | undefined): value is ParticipantType {
+  return !!value && selectableParticipantTypeSet.has(value)
+}
+
+export function labelForParticipantType(value: string | null | undefined): string {
+  return isKnownParticipantType(value) ? participantTypeLabels[value] : 'Not selected'
+}
+
+export function humanize(value: string | null | undefined, fallback = '—'): string {
+  return value ? value.replaceAll('_', ' ') : fallback
 }
 
 export function dashboardRestrictionReason(status: VerificationStatus): string | null {
@@ -62,6 +145,51 @@ export function dashboardRestrictionReason(status: VerificationStatus): string |
     case 'rejected': return 'Your verification was rejected. Contact WTC Accra support if you believe this needs review.'
     case 'suspended': return 'Your account is suspended. Contact WTC Accra support for assistance.'
   }
+}
+
+/* Why the marketplace is locked, in the order the member must resolve it.
+   Mirrors private.has_marketplace_access() in the database. */
+export type AccessState = {
+  verification_status: VerificationStatus
+  account_status: AccountStatus
+  participant_type: string | null
+  can_view_opportunities: boolean
+  can_post_opportunities: boolean
+  has_active_subscription: boolean
+  subscription_ends_at: string | null
+}
+
+export type MarketplaceLock =
+  | { locked: true; reason: string; action: { label: string; href: string } | null }
+  | { locked: false }
+
+export function marketplaceLock(state: AccessState): MarketplaceLock {
+  if (state.account_status === 'suspended' || state.account_status === 'disabled') {
+    return { locked: true, reason: 'Your account is not active. Contact WTC Accra support.', action: { label: 'Contact support', href: '/dashboard/support' } }
+  }
+  if (state.verification_status !== 'verified') {
+    return { locked: true, reason: dashboardRestrictionReason(state.verification_status) ?? 'Verification required.', action: { label: 'Continue verification', href: '/dashboard/verification' } }
+  }
+  if (!state.can_view_opportunities) {
+    return { locked: true, reason: 'WTC Accra has paused marketplace browsing on your account.', action: { label: 'Contact support', href: '/dashboard/support' } }
+  }
+  if (!state.has_active_subscription) {
+    return { locked: true, reason: 'Opportunities are available to members with an active subscription.', action: { label: 'View plans', href: '/dashboard/billing' } }
+  }
+  return { locked: false }
+}
+
+export function postingLock(state: AccessState): MarketplaceLock {
+  if (state.account_status !== 'active') {
+    return { locked: true, reason: 'Your account is not active.', action: { label: 'Contact support', href: '/dashboard/support' } }
+  }
+  if (state.verification_status !== 'verified') {
+    return { locked: true, reason: 'Verification is required before posting.', action: { label: 'Continue verification', href: '/dashboard/verification' } }
+  }
+  if (!state.can_post_opportunities) {
+    return { locked: true, reason: 'WTC Accra has paused opportunity posting on your account.', action: { label: 'Contact support', href: '/dashboard/support' } }
+  }
+  return { locked: false }
 }
 
 export function hasAdminMfaAccess(role: string | null | undefined, aal: string | null | undefined): boolean {
