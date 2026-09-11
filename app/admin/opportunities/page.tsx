@@ -1,8 +1,8 @@
 import { requireCapability } from '@/lib/auth/guards'
-import { humanize } from '@/lib/auth/access'
+import { humanize, labelForIntent } from '@/lib/auth/access'
 import { money, date, dateTime } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
-import { reviewOpportunity } from './actions'
+import { reviewOpportunity, setDealGrading, openDealRoom } from './actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,7 +59,7 @@ export default async function AdminOpportunitiesPage({ searchParams }: Props) {
               <span>{item.submitted_at ? dateTime(item.submitted_at) : dateTime(item.created_at)}</span>
             </div>
             <dl className="detail-grid">
-              <div><dt>Type</dt><dd>{humanize(item.kind)}</dd></div>
+              <div><dt>Type</dt><dd>{labelForIntent(item.intent)} · {humanize(item.kind)}</dd></div>
               <div><dt>Capital required</dt><dd>{money(item.capital_required, item.currency)}</dd></div>
               <div><dt>Minimum ticket</dt><dd>{money(item.minimum_ticket, item.currency)}</dd></div>
               <div><dt>Deadline</dt><dd>{date(item.deadline)}</dd></div>
@@ -77,6 +77,26 @@ export default async function AdminOpportunitiesPage({ searchParams }: Props) {
                 <button className="button button-danger" name="decision" value="reject">Reject</button>
               </div>
             </form>
+
+            <div className="admin-action-grid">
+              <form action={setDealGrading} className="review-form">
+                <label>Deal rating and region</label>
+                <input type="hidden" name="opportunityId" value={item.id} />
+                <select name="importance" defaultValue={String(item.importance)}>
+                  {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{'★'.repeat(n)} — {n} of 5</option>)}
+                </select>
+                <input name="region" defaultValue={item.region ?? ''} placeholder="Region, e.g. West Africa" />
+                <p className="field-help">Members sort the feed by this rating. Owners cannot set it.</p>
+                <button className="button button-secondary" type="submit">Save rating</button>
+              </form>
+
+              {item.status === 'published' && <form action={openDealRoom} className="review-form">
+                <label>Deal room</label>
+                <input type="hidden" name="opportunityId" value={item.id} />
+                <p className="field-help">Opens a private room for this transaction and adds the owner. Add the counterparty afterwards.</p>
+                <button className="button button-outline" type="submit">Open deal room</button>
+              </form>}
+            </div>
           </article>
         })}</div>}
   </div>

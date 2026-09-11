@@ -213,6 +213,10 @@ p{margin:0}
    active state and the logo lockup rather than as a full dark chrome. */
 .dashboard-shell{min-height:100vh;background:var(--wtc-mist);display:grid;grid-template-columns:266px 1fr}
 .dashboard-sidebar{background:#fff;border-right:1px solid var(--line);padding:26px 20px 24px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.sidebar-top{display:block}
+.sidebar-toggle{display:none;align-items:center;gap:9px;background:#fff;border:1px solid var(--line-strong);
+  border-radius:var(--radius);padding:10px 14px;font-size:13px;font-weight:700;color:var(--wtc-navy);cursor:pointer}
+.sidebar-toggle:hover{border-color:var(--wtc-navy)}
 .dashboard-sidebar .logo{height:28px;margin:6px 6px 4px}
 .dashboard-sidebar .sidebar-label{margin:14px 6px 0;font-size:10px;text-transform:uppercase;letter-spacing:.18em;font-weight:800;color:var(--wtc-orange)}
 .dashboard-sidebar nav{display:flex;flex-direction:column;gap:2px;margin-top:26px}
@@ -294,29 +298,17 @@ p{margin:0}
 
 }
 @media(max-width:900px){
-  .public-header nav{display:none}
-  .dashboard-shell{grid-template-columns:1fr}
-  .dashboard-sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:18px 20px}
-  .dashboard-sidebar nav{flex-direction:row;overflow:auto;margin-top:16px;gap:6px}
-  .dashboard-sidebar nav a{white-space:nowrap;border-left:0;border-bottom:3px solid transparent}
-  .dashboard-sidebar nav a:hover,.dashboard-sidebar nav a.nav-active{border-left:0;border-bottom-color:var(--wtc-orange)}
-  .nav-admin{margin-top:0;border-top:0;padding-top:11px!important}
-  .sidebar-bottom{display:none}
   .detail-grid{grid-template-columns:1fr 1fr}
-  .admin-header{height:auto;padding-top:16px;padding-bottom:16px;flex-wrap:wrap}
-  .admin-header nav{display:none}
 }
 @media(max-width:640px){
   .feature-grid,.steps,.dashboard-grid,.value-grid,.form-grid,.detail-grid{grid-template-columns:1fr}
   .value-grid article{border-right:0!important}
   .public-footer{grid-template-columns:1fr}
   .footer-bottom{grid-column:auto}
-  .header-actions .text-link{display:none}
   .cta-section,.restriction-banner{align-items:flex-start;flex-direction:column}
   .media-circle{width:min(200px,60vw)}
   .public-header{gap:14px;height:72px}
   .logo{height:24px}
-  .public-header .button{padding:11px 14px;font-size:13px}
 }
 
 /* ==========================================================================
@@ -563,9 +555,7 @@ a.contact-card:hover strong{color:var(--wtc-orange)}
   .page-hero-copy::before,.hero-photo .hero-copy::before{inset:-22px -26px}
   .page-hero-scrim{background:linear-gradient(180deg, rgba(11,32,60,.86) 0%, rgba(11,32,60,.80) 60%, rgba(11,32,60,.88) 100%)}
 }
-@media(max-width:760px){
-  .public-header nav{display:none}
-}
+
 
 /* --- Shortlist toggle ---------------------------------------------------- */
 .save-row{margin:-2px 0 0}
@@ -608,3 +598,165 @@ a.contact-card:hover strong{color:var(--wtc-orange)}
 .status-conn-pending{background:var(--navy-soft);color:var(--wtc-navy)}
 .status-conn-accepted{background:var(--success-soft);color:var(--success)}
 .status-conn-declined,.status-conn-withdrawn{background:var(--danger-soft);color:var(--danger)}
+
+/* --- Preferences and queue ----------------------------------------------- */
+.preference-row{align-items:flex-start!important;padding:12px 0;border-bottom:1px solid var(--line)}
+.preference-row:last-child{border-bottom:0}
+.preference-row input{margin-top:3px}
+.preference-row span{display:flex;flex-direction:column;gap:3px}
+.preference-row strong{font-size:15px;color:var(--wtc-navy)}
+.preference-row small{font-size:13px;color:var(--muted);font-weight:400;line-height:1.5}
+.mail-body{white-space:pre-wrap;font-size:14px;background:var(--wtc-mist);padding:18px;border-radius:var(--radius)}
+.status-mail-queued{background:var(--warning-soft);color:var(--warning)}
+.status-mail-sent{background:var(--success-soft);color:var(--success)}
+.status-mail-failed{background:var(--danger-soft);color:var(--danger)}
+.opportunity-card h3 a:hover{color:var(--wtc-orange)}
+
+/* ==========================================================================
+   Responsive behaviour
+   Breakpoints: 1100 (dense desktop) · 900 (tablet) · 820 (mobile nav) · 600 (phone)
+   Everything below assumes the desktop rules above are the default.
+   ========================================================================== */
+
+/* --- Shared burger / disclosure menu ------------------------------------- */
+.mobile-menu{display:none;position:relative;margin-left:auto}
+.mobile-menu>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:9px;
+  padding:10px 14px;border:1px solid var(--line-strong);border-radius:var(--radius);
+  font-size:13px;font-weight:700;color:var(--wtc-navy);background:#fff}
+.mobile-menu>summary::-webkit-details-marker{display:none}
+.mobile-menu>summary:hover{border-color:var(--wtc-navy)}
+.burger{position:relative;display:inline-block;width:18px;height:2px;background:var(--wtc-navy);border-radius:2px}
+.burger::before,.burger::after{content:'';position:absolute;left:0;width:18px;height:2px;background:var(--wtc-navy);border-radius:2px}
+.burger::before{top:-6px}
+.burger::after{top:6px}
+.mobile-menu[open]>summary .burger{background:transparent}
+.mobile-menu[open]>summary .burger::before{top:0;transform:rotate(45deg)}
+.mobile-menu[open]>summary .burger::after{top:0;transform:rotate(-45deg)}
+.mobile-menu-panel{position:absolute;right:0;top:calc(100% + 12px);z-index:60;width:min(320px,calc(100vw - 32px));
+  background:#fff;border:1px solid var(--line);border-top:3px solid var(--wtc-orange);
+  border-radius:var(--radius);box-shadow:0 22px 50px rgba(21,64,116,.18);padding:10px}
+.public-header .mobile-menu-panel nav,.admin-header .mobile-menu-panel nav,.mobile-menu-panel nav{display:flex;flex-direction:column;gap:0;margin-left:0;font-size:15px}
+.mobile-menu-panel nav a{display:block;padding:13px 14px;font-size:15px;font-weight:600;color:var(--ink);border-bottom:1px solid var(--line)}
+.mobile-menu-panel nav a:last-child{border-bottom:0}
+.mobile-menu-panel nav a:hover{color:var(--wtc-orange)}
+.mobile-menu-actions{display:flex;flex-direction:column;gap:10px;padding:14px 10px 6px;border-top:1px solid var(--line-strong);margin-top:6px}
+.mobile-menu-actions .button{width:100%}
+
+/* --- Dense desktop -------------------------------------------------------- */
+@media(max-width:1100px){
+  .dashboard-shell{grid-template-columns:232px 1fr}
+  .public-header nav{gap:14px;font-size:13px}
+}
+
+/* --- Tablet --------------------------------------------------------------- */
+@media(max-width:900px){
+  .dashboard-shell{grid-template-columns:1fr}
+
+  /* The sidebar becomes a top bar with a collapsible menu. With 20+ links a
+     horizontal scroll strip was unusable, and the nav groups stacked into
+     side-by-side columns. */
+  .dashboard-sidebar{position:sticky;top:0;z-index:40;height:auto;border-right:0;
+    border-bottom:1px solid var(--line);padding:12px 18px;display:block;background:#fff}
+  .sidebar-top{display:flex;align-items:center;justify-content:space-between;gap:16px}
+  .sidebar-toggle{display:inline-flex}
+  .dashboard-sidebar .sidebar-label{display:none}
+  .dashboard-sidebar nav{display:none}
+  .dashboard-sidebar.sidebar-open nav{display:block;margin-top:16px;padding-top:14px;border-top:1px solid var(--line);
+    max-height:min(70vh,560px);overflow-y:auto}
+  .dashboard-sidebar.sidebar-open .nav-group{margin-bottom:10px}
+  .dashboard-sidebar nav a{border-left:0;border-bottom:1px solid var(--line);border-radius:0;padding:13px 10px}
+  .dashboard-sidebar nav a:hover,.dashboard-sidebar nav a.nav-active{border-left:0;background:var(--navy-soft)}
+  .dashboard-sidebar .sidebar-bottom{display:flex;flex-direction:row;align-items:center;justify-content:space-between;
+    margin-top:14px;padding-top:14px}
+
+  /* Console headers get the same disclosure treatment. */
+  .admin-header{height:auto;padding-top:14px;padding-bottom:14px;flex-wrap:nowrap;gap:14px}
+  .admin-header>nav{display:none}
+  .admin-header>span{display:none}
+  .console-menu{display:block}
+}
+
+/* --- Mobile navigation ---------------------------------------------------- */
+@media(max-width:820px){
+  .public-header{gap:12px}
+  .public-header .header-nav{display:none}
+  .public-header .header-actions{display:none}
+  .mobile-menu{display:block}
+}
+
+/* --- Phone ---------------------------------------------------------------- */
+@media(max-width:600px){
+  /* Heroes: a 600px banner ate most of a phone screen before any content. */
+  .page-hero{min-height:auto;padding:clamp(44px,12vw,64px) var(--gutter)}
+  .page-hero-copy{gap:16px}
+  .page-hero-copy::before{inset:-18px -20px}
+  .hero{padding:clamp(44px,12vw,64px) var(--gutter);gap:32px}
+  .hero-photo .hero-copy::before{inset:-16px -18px}
+  .display{font-size:clamp(29px,8.5vw,40px)}
+  .section-head h2,.section>h2{font-size:clamp(24px,6.5vw,32px)}
+  .cta-section h2{font-size:clamp(22px,6vw,28px)}
+  .article-title{font-size:clamp(26px,7vw,34px)}
+
+  /* Tap targets and stacked controls. */
+  .button{width:100%;padding:14px 18px}
+  .button-row{flex-direction:column;align-items:stretch}
+  .button-row .button{width:100%}
+  .form-stack button,.form-stack .button{align-self:stretch;width:100%}
+  .filter-row{flex-direction:column;align-items:stretch;gap:12px}
+  .filter-row label,.filter-row .button,.filter-row input,.filter-row select{width:100%}
+  .listing-head{flex-direction:column;align-items:flex-start}
+  .listing-head .button{width:100%}
+
+  /* Cards and grids. */
+  .dashboard-grid,.feature-grid,.steps,.value-grid,.plan-grid,.member-grid,
+  .article-grid,.contact-cards,.split-grid,.admin-action-grid{grid-template-columns:1fr}
+  .detail-grid,.detail-grid-two{grid-template-columns:1fr}
+  .card{padding:20px}
+  .opportunity-head{flex-direction:column;gap:12px}
+  .opportunity-figures{text-align:left;flex-direction:row;align-items:baseline;gap:10px}
+  .opportunity-figures strong{font-size:19px}
+  .feed-meta{gap:8px}
+  .notification{flex-direction:column;gap:10px}
+  .notification-meta{align-items:flex-start;flex-direction:row;gap:14px}
+  .review-head{flex-direction:column;gap:10px}
+  .intent-picker{padding:14px}
+  .intent-option{padding:11px 12px}
+  .media-row{gap:18px}
+  .media-circle{width:min(180px,62vw)}
+
+  /* Tables always scroll rather than squashing to nothing. */
+  .table-wrap{margin-inline:-20px;padding-inline:20px}
+  .data-table{font-size:13px}
+
+  /* Threads and previews. */
+  .thread-message{padding:13px 14px}
+  .thread-message header{gap:8px}
+  .thread-message header time{margin-left:0;width:100%}
+  .mail-body{padding:14px;font-size:13px}
+
+  /* Auth and editor. */
+  .auth-card{padding:24px 20px}
+  .item-form{padding:14px}
+  .nav-link-row{grid-template-columns:1fr;gap:10px}
+  .nav-link-row .button{width:100%}
+  .queue-tabs{gap:8px}
+  .queue-tab{flex:1 1 auto;justify-content:center}
+
+  /* The realtime toast must not cover the whole screen. */
+  .realtime-toast{left:12px;right:12px;bottom:12px;max-width:none;font-size:13px}
+}
+
+/* --- Small phones --------------------------------------------------------- */
+@media(max-width:380px){
+  .logo{height:22px}
+  .display{font-size:27px}
+  .card{padding:16px}
+  .sidebar-toggle-label{display:none}
+}
+
+/* --- Coarse pointers ------------------------------------------------------ */
+@media(pointer:coarse){
+  .dashboard-sidebar nav a,.mobile-menu-panel nav a{min-height:44px}
+  .save-toggle,.link-button{min-height:40px}
+  .faq-item summary,.eoi-block summary{padding-block:14px}
+}

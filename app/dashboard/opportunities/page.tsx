@@ -64,7 +64,7 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
         <div className="opportunity-head">
           <div>
             <span className={`status-dot status-opp-${item.status}`}>{humanize(item.status)}</span>
-            <h3>{item.title}</h3>
+            <h3><Link href={`/dashboard/opportunities/${item.id}`}>{item.title}</Link></h3>
             <p className="muted">{item.sector} · {item.city ? `${item.city}, ` : ''}{item.country} · {humanize(item.kind)}</p>
           </div>
           <div className="opportunity-figures">
@@ -110,7 +110,7 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
               <div className="opportunity-head">
                 <div>
                   <span className="eyebrow">{labelForIntent(item.intent)} · {humanize(item.kind)}</span>
-                  <h3>{item.title}</h3>
+                  <h3><Link href={`/dashboard/opportunities/${item.id}`}>{item.title}</Link></h3>
                   <p className="muted">{item.sector} · {item.city ? `${item.city}, ` : ''}{item.country}{item.deadline ? ` · ${relativeDays(item.deadline)}` : ''}</p>
                 </div>
                 <div className="opportunity-figures">

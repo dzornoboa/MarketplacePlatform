@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { Profile } from '@/lib/database.types'
@@ -10,6 +11,11 @@ type NavLink = { href: string; label: string; verifiedOnly?: boolean; badge?: nu
 
 export function DashboardNav({ profile, unreadCount = 0 }: { profile: Profile; unreadCount?: number }) {
   const pathname = usePathname()
+  const [open, setOpen] = useState(false)
+
+  /* On a phone the sidebar is a collapsed menu. Closing it on navigation means
+     a tap always lands on the page, not on a menu still covering it. */
+  useEffect(() => { setOpen(false) }, [pathname])
   const verified = profile.verification_status === 'verified'
   const admin = isAdminRole(profile.system_role)
   const editor = hasCapability(profile.system_role, 'content')
@@ -24,6 +30,7 @@ export function DashboardNav({ profile, unreadCount = 0 }: { profile: Profile; u
         { href: '/dashboard/network', label: 'Network', verifiedOnly: true },
         { href: '/dashboard/opportunities', label: 'Opportunities', verifiedOnly: true },
         { href: '/dashboard/matches', label: 'Matches', verifiedOnly: true },
+        { href: '/dashboard/saved', label: 'Saved', verifiedOnly: true },
         { href: '/dashboard/interests', label: 'Expressions of interest', verifiedOnly: true },
         { href: '/dashboard/introductions', label: 'Introductions', verifiedOnly: true },
         { href: '/dashboard/deal-rooms', label: 'Deal rooms', verifiedOnly: true },
@@ -53,10 +60,17 @@ export function DashboardNav({ profile, unreadCount = 0 }: { profile: Profile; u
 
   const isActive = (href: string) => pathname === href || (href !== '/dashboard' && pathname.startsWith(`${href}/`))
 
-  return <aside className="dashboard-sidebar">
-    <LogoLink href="/dashboard" />
+  return <aside className={open ? 'dashboard-sidebar sidebar-open' : 'dashboard-sidebar'}>
+    <div className="sidebar-top">
+      <LogoLink href="/dashboard" />
+      <button className="sidebar-toggle" type="button" aria-expanded={open} aria-controls="dashboard-nav" onClick={() => setOpen(v => !v)}>
+        <span className="burger" aria-hidden="true" />
+        <span className="sidebar-toggle-label">{open ? 'Close' : 'Menu'}</span>
+        {!open && unreadCount > 0 && <span className="nav-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>}
+      </button>
+    </div>
     <p className="sidebar-label">{staff ? 'Staff workspace' : 'Member workspace'}</p>
-    <nav>
+    <nav id="dashboard-nav">
       {groups.map(group => <div className="nav-group" key={group.label}>
         <p className="nav-group-label">{group.label}</p>
         {group.links.map(link => {

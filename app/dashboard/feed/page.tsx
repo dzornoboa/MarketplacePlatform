@@ -162,7 +162,7 @@ export default async function FeedPage({ searchParams }: Props) {
                     <span className="eyebrow">{labelForIntent(item.intent)}</span>
                     <Stars rating={item.importance} />
                   </div>
-                  <h3>{item.title}</h3>
+                  <h3><Link href={`/dashboard/opportunities/${item.id}`}>{item.title}</Link></h3>
                   <p className="muted">
                     {owner ? `${owner.organisation ?? owner.full_name} · ${labelForParticipantType(owner.participant_type)} · ` : ''}
                     {item.sector} · {item.city ? `${item.city}, ` : ''}{item.country}

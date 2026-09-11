@@ -133,3 +133,49 @@ export async function toggleSaved(formData: FormData) {
   revalidatePath('/dashboard/opportunities')
   redirect(to(returnTo, 'message', saved ? 'Removed from your shortlist.' : 'Saved to your shortlist.'))
 }
+
+/* Editing an existing listing. RLS only permits this while the listing is a
+   draft or has changes requested; the protect trigger independently blocks
+   status, rating and review fields. Without this the changes-requested loop was
+   dead — a reviewer could ask for changes the owner had no way to make. */
+export async function updateOpportunity(formData: FormData) {
+  const id = String(formData.get('opportunityId') ?? '')
+  if (!id) redirect(to('/dashboard/opportunities', 'error', 'Opportunity not found.'))
+  const target = `/dashboard/opportunities/${id}/edit`
+
+  const title = String(formData.get('title') ?? '').trim()
+  const summary = String(formData.get('summary') ?? '').trim()
+  const description = String(formData.get('description') ?? '').trim()
+  const sector = String(formData.get('sector') ?? '').trim()
+  const country = String(formData.get('country') ?? '').trim()
+  const kind = String(formData.get('kind') ?? '')
+  const intent = String(formData.get('intent') ?? '')
+  const currency = String(formData.get('currency') ?? 'USD').trim().toUpperCase()
+  const deadline = String(formData.get('deadline') ?? '').trim()
+
+  if (title.length < 5 || title.length > 180) redirect(to(target, 'error', 'Title must be between 5 and 180 characters.'))
+  if (summary.length < 20 || summary.length > 700) redirect(to(target, 'error', 'Summary must be between 20 and 700 characters.'))
+  if (description.length < 50) redirect(to(target, 'error', 'Description must be at least 50 characters.'))
+  if (!sector || !country) redirect(to(target, 'error', 'Sector and country are required.'))
+  if (!KINDS.has(kind)) redirect(to(target, 'error', 'Select an opportunity type.'))
+  if (!INTENTS.has(intent)) redirect(to(target, 'error', 'Select what you are posting as.'))
+  if (!/^[A-Z]{3}$/.test(currency)) redirect(to(target, 'error', 'Currency must be a 3-letter code such as USD or GHS.'))
+
+  const supabase = await createClient()
+  const { error } = await supabase.from('opportunities').update({
+    title, summary, description, sector, country,
+    city: String(formData.get('city') ?? '').trim() || null,
+    region: String(formData.get('region') ?? '').trim() || null,
+    kind: kind as 'investment',
+    intent: intent as 'seeking_investment',
+    capital_required: optionalNumber(formData.get('capitalRequired')),
+    minimum_ticket: optionalNumber(formData.get('minimumTicket')),
+    currency,
+    deadline: deadline || null,
+    tags: String(formData.get('tags') ?? '').split(',').map(t => t.trim()).filter(Boolean).slice(0, 12),
+  }).eq('id', id)
+
+  if (error) redirect(to(target, 'error', error.message))
+  revalidatePath('/dashboard/opportunities')
+  redirect(to('/dashboard/opportunities', 'message', 'Listing updated. Submit it when you are ready for review.'))
+}
