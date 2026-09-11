@@ -3,7 +3,7 @@ import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
 import { marketplaceLock, postingLock, humanize } from '@/lib/auth/access'
 import { money, date, relativeDays } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
-import { submitOpportunity, expressInterest } from './actions'
+import { submitOpportunity, expressInterest, toggleSaved } from './actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,12 +25,14 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
   let query = supabase.from('opportunities').select('*').eq('status', 'published').order('published_at', { ascending: false }).limit(60)
   if (sector) query = query.eq('sector', sector)
   if (kind) query = query.eq('kind', kind as 'investment')
-  const [{ data: published }, { data: mine }, { data: sentInterests }] = await Promise.all([
+  const [{ data: published }, { data: mine }, { data: sentInterests }, { data: savedRows }] = await Promise.all([
     browseLock.locked ? Promise.resolve({ data: [] }) : query,
     supabase.from('opportunities').select('*').eq('owner_user_id', profile.id).order('updated_at', { ascending: false }),
     supabase.from('expressions_of_interest').select('opportunity_id').eq('applicant_id', profile.id),
+    supabase.from('saved_opportunities').select('opportunity_id'),
   ])
   const alreadyApplied = new Set((sentInterests ?? []).map(e => e.opportunity_id))
+  const savedIds = new Set((savedRows ?? []).map(r => r.opportunity_id))
   const sectors = [...new Set((published ?? []).map(o => o.sector))].sort()
 
   return <div className="page-stack">
@@ -118,6 +120,11 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
               </div>
               <p>{item.summary}</p>
               {item.tags.length > 0 && <div className="trust-row">{item.tags.map(tag => <span key={tag}>{tag}</span>)}</div>}
+              <form action={toggleSaved} className="save-row">
+                <input type="hidden" name="opportunityId" value={item.id} />
+                <input type="hidden" name="saved" value={savedIds.has(item.id) ? '1' : '0'} />
+                <button className={savedIds.has(item.id) ? 'save-toggle save-toggle-on' : 'save-toggle'} type="submit">{savedIds.has(item.id) ? '★ Saved to shortlist' : '☆ Save to shortlist'}</button>
+              </form>
               <details className="eoi-block">
                 <summary>{alreadyApplied.has(item.id) ? 'Interest already sent — send another note' : 'Express interest'}</summary>
                 <form action={expressInterest} className="form-stack">

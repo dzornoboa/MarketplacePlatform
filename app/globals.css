@@ -99,17 +99,17 @@ p{margin:0}
 .button-danger{background:#fff;color:var(--danger);border-color:#EFC9BE}
 .button-danger:hover{background:var(--danger-soft)}
 .button-row{display:flex;gap:12px;flex-wrap:wrap}
-.text-link{font-weight:700;font-size:14px;color:var(--wtc-navy)}
+.text-link{font-weight:700;font-size:14px;color:var(--wtc-navy);white-space:nowrap}
 .text-link:hover{color:var(--wtc-orange)}
 .arrow-link{font-weight:700;font-size:14px;color:var(--wtc-navy);display:inline-flex;gap:8px;align-items:center}
 .arrow-link:hover{color:var(--wtc-orange)}
 
 /* --- Public header ------------------------------------------------------ */
-.public-header{height:84px;display:flex;align-items:center;gap:40px;padding:0 var(--gutter);background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:30}
-.public-header nav{display:flex;gap:30px;margin-left:auto;font-size:14px;font-weight:600}
-.public-header nav a{color:var(--ink);padding:4px 0;border-bottom:2px solid transparent}
+.public-header{height:84px;display:flex;align-items:center;gap:clamp(16px,2.5vw,40px);padding:0 clamp(18px,4vw,72px);background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:30}
+.public-header nav{display:flex;gap:clamp(14px,1.8vw,28px);margin-left:auto;font-size:14px;font-weight:600;white-space:nowrap}
+.public-header nav a{color:var(--ink);padding:4px 0;border-bottom:2px solid transparent;white-space:nowrap}
 .public-header nav a:hover{color:var(--wtc-navy);border-bottom-color:var(--wtc-orange)}
-.header-actions{display:flex;gap:18px;align-items:center}
+.header-actions{display:flex;gap:clamp(12px,1.4vw,18px);align-items:center;white-space:nowrap;flex-shrink:0}
 
 /* --- Landing ------------------------------------------------------------ */
 .hero{position:relative;overflow:hidden;padding:clamp(64px,8vw,110px) var(--gutter);display:grid;grid-template-columns:minmax(0,1.1fr) minmax(320px,.72fr);gap:clamp(40px,6vw,86px);align-items:center;background:#fff;border-bottom:1px solid var(--line)}
@@ -451,8 +451,8 @@ p{margin:0}
 /* --- Standalone public pages -------------------------------------------- */
 /* Full-bleed banner over an approved WTCA background plate. Solid navy sits
    under the image so the copy stays legible if the plate fails to load. */
-.page-hero{position:relative;overflow:hidden;background:var(--accent,var(--wtc-navy));color:#fff;padding:clamp(64px,8vw,120px) var(--gutter);min-height:clamp(320px,34vw,440px);display:flex;align-items:center}
-.page-hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.page-hero{position:relative;isolation:isolate;overflow:hidden;background:var(--wtc-navy);color:#fff;padding:clamp(64px,8vw,120px) var(--gutter);min-height:clamp(340px,36vw,470px);display:flex;align-items:center}
+.page-hero-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
 .page-hero-copy{position:relative;z-index:2;max-width:900px;display:flex;flex-direction:column;gap:20px;align-items:flex-start}
 .motif-page-hero{width:clamp(280px,32vw,460px);right:-140px;top:-150px;opacity:.45;z-index:1}
 .display-on-dark{color:rgba(255,255,255,.88)}
@@ -529,3 +529,46 @@ a.contact-card:hover strong{color:var(--wtc-orange)}
 .reset-help strong{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.16em;color:var(--wtc-navy);margin-bottom:10px}
 .reset-help .plain-list{font-size:14px;line-height:1.75}
 .auth-card .arrow-link{margin-top:20px}
+
+/* --- Hero layering ------------------------------------------------------- */
+/* Order: photograph → navy scrim → WTCA plate → circle motif → copy.
+   The scrim is what guarantees legibility. It is a functional overlay for
+   contrast, not a decorative brand gradient — WTCA solid colours are still the
+   only fills used anywhere in the design system. */
+.page-hero-plate{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;opacity:.32;mix-blend-mode:soft-light;pointer-events:none}
+.page-hero-scrim{position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:
+    linear-gradient(90deg, rgba(11,32,60,.94) 0%, rgba(11,32,60,.86) 38%, rgba(11,32,60,.62) 66%, rgba(11,32,60,.46) 100%),
+    linear-gradient(180deg, rgba(11,32,60,.35) 0%, rgba(11,32,60,0) 45%, rgba(11,32,60,.45) 100%)}
+.page-hero .motif-page-hero{z-index:3}
+.page-hero-copy{position:relative;z-index:4;max-width:900px;display:flex;flex-direction:column;gap:20px;align-items:flex-start}
+/* A soft blur behind the copy lifts it off busy areas of the photograph. */
+.page-hero-copy::before{content:'';position:absolute;inset:-42px -56px;z-index:-1;border-radius:var(--radius);
+  background:rgba(11,32,60,.30);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.display-on-dark{color:#fff;text-shadow:0 1px 24px rgba(6,20,38,.45)}
+.display-on-dark strong{color:#fff}
+.lede-on-dark{color:#E4EDF7;max-width:64ch;text-shadow:0 1px 14px rgba(6,20,38,.4)}
+.page-hero .eyebrow.light{color:var(--wtc-gold)}
+
+/* Home hero uses the same treatment, but keeps its white card on top. */
+.hero-photo{position:relative;isolation:isolate;overflow:hidden;background:var(--wtc-navy);border-bottom:0}
+.hero-photo .hero-copy{position:relative;z-index:4}
+.hero-photo .hero-card{position:relative;z-index:4}
+.hero-photo .hero-tagline{color:var(--wtc-gold);border-top-color:rgba(255,255,255,.28)}
+.hero-photo .page-hero-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.hero-photo .hero-copy::before{content:'';position:absolute;inset:-34px -48px;z-index:-1;border-radius:var(--radius);
+  background:rgba(11,32,60,.28);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+
+@media(max-width:900px){
+  .page-hero-copy::before,.hero-photo .hero-copy::before{inset:-22px -26px}
+  .page-hero-scrim{background:linear-gradient(180deg, rgba(11,32,60,.86) 0%, rgba(11,32,60,.80) 60%, rgba(11,32,60,.88) 100%)}
+}
+@media(max-width:760px){
+  .public-header nav{display:none}
+}
+
+/* --- Shortlist toggle ---------------------------------------------------- */
+.save-row{margin:-2px 0 0}
+.save-toggle{background:none;border:1px solid var(--line-strong);border-radius:999px;padding:7px 14px;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;transition:border-color .15s,color .15s}
+.save-toggle:hover{border-color:var(--wtc-orange);color:var(--wtc-orange)}
+.save-toggle-on{border-color:var(--wtc-gold);color:var(--wtc-navy);background:var(--warning-soft)}

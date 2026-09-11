@@ -105,3 +105,27 @@ export async function respondToInterest(formData: FormData) {
   revalidatePath('/dashboard/interests')
   redirect(to('/dashboard/interests', 'message', 'Response recorded.'))
 }
+
+/* Saved opportunities are a private shortlist — RLS scopes both the insert and
+   the read to the member's own rows. */
+export async function toggleSaved(formData: FormData) {
+  const opportunityId = String(formData.get('opportunityId') ?? '')
+  const saved = String(formData.get('saved') ?? '') === '1'
+  const returnTo = String(formData.get('returnTo') ?? '/dashboard/opportunities')
+  if (!opportunityId) redirect(to('/dashboard/opportunities', 'error', 'Opportunity not found.'))
+
+  const supabase = await createClient()
+  const { data: claimsData } = await supabase.auth.getClaims()
+  const userId = claimsData?.claims?.sub
+  if (!userId) redirect('/login')
+
+  const { error } = saved
+    ? await supabase.from('saved_opportunities').delete()
+        .eq('user_id', String(userId)).eq('opportunity_id', opportunityId)
+    : await supabase.from('saved_opportunities')
+        .insert({ user_id: String(userId), opportunity_id: opportunityId })
+
+  if (error) redirect(to(returnTo, 'error', error.message))
+  revalidatePath('/dashboard/opportunities')
+  redirect(to(returnTo, 'message', saved ? 'Removed from your shortlist.' : 'Saved to your shortlist.'))
+}

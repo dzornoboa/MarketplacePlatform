@@ -25,11 +25,28 @@ function Cta({ section, primaryClass, secondaryClass }: { section: ContentSectio
   </div>
 }
 
-/* Full-bleed banner. The image is an approved WTCA background plate; the
-   brand circle sits on top of it, never the logo. */
+/* Full-bleed banner, built in layers so the copy always stays readable:
+   1. the topical photograph
+   2. a navy scrim, heaviest behind the text and clearing toward the image
+   3. the approved WTCA background plate, blended so its globe watermark reads
+      across the photo without hiding it
+   4. the brand circle, then the copy.
+   The plate is chosen from the section accent rather than stored separately. */
+const HERO_PLATES: Record<string, string> = {
+  navy: '/brand/hero-band-navy.jpg',
+  orange: '/brand/hero-band-orange.jpg',
+  teal: '/brand/hero-band-teal.jpg',
+  gold: '/brand/hero-band-gold.jpg',
+  sky: '/brand/hero-band-navy.jpg',
+  peach: '/brand/hero-band-orange.jpg',
+}
+
 function PageHero({ section }: { section: ContentSection }) {
+  const plate = HERO_PLATES[section.accent] ?? HERO_PLATES.navy
   return <section className={`page-hero accent-${section.accent}`}>
-    {section.image_url && <img className="page-hero-bg" src={section.image_url} alt="" aria-hidden="true" />}
+    {section.image_url && <img className="page-hero-photo" src={section.image_url} alt="" aria-hidden="true" />}
+    <img className="page-hero-plate" src={plate} alt="" aria-hidden="true" />
+    <div className="page-hero-scrim" aria-hidden="true" />
     <BrandCircle className="motif motif-page-hero" stroke={2} />
     <div className="page-hero-copy">
       {section.eyebrow && <p className="eyebrow light">{section.eyebrow}</p>}

@@ -34,12 +34,17 @@ export default async function HomePage() {
 
   return <><PublicHeader /><main>
 
-    <section className="hero">
+    <section className={hero.image_url ? 'hero hero-photo' : 'hero'}>
+      {hero.image_url && <>
+        <img className="page-hero-photo" src={hero.image_url} alt="" aria-hidden="true" />
+        <img className="page-hero-plate" src="/brand/hero-band-navy.jpg" alt="" aria-hidden="true" />
+        <div className="page-hero-scrim" aria-hidden="true" />
+      </>}
       <div className="hero-copy">
-        {hero.eyebrow && <p className="eyebrow">{hero.eyebrow}</p>}
-        <Headline section={hero} as="h1" className="display" />
-        {hero.body && <p className="lede">{hero.body}</p>}
-        <Cta section={hero} primaryClass="button button-primary" secondaryClass="button button-outline" />
+        {hero.eyebrow && <p className="eyebrow light">{hero.eyebrow}</p>}
+        <Headline section={hero} as="h1" className="display display-on-dark" />
+        {hero.body && <p className="lede lede-on-dark">{hero.body}</p>}
+        <Cta section={hero} primaryClass="button button-primary" secondaryClass="button button-ghost" />
         <p className="hero-tagline">{chrome.settings.site_tagline}</p>
       </div>
       <div className="hero-card">

@@ -24,6 +24,7 @@ export function DashboardNav({ profile, unreadCount = 0 }: { profile: Profile; u
         { href: '/dashboard/matches', label: 'Matches', verifiedOnly: true },
         { href: '/dashboard/interests', label: 'Expressions of interest', verifiedOnly: true },
         { href: '/dashboard/introductions', label: 'Introductions', verifiedOnly: true },
+        { href: '/dashboard/deal-rooms', label: 'Deal rooms', verifiedOnly: true },
         { href: '/dashboard/notifications', label: 'Notifications', badge: unreadCount },
       ],
     },
