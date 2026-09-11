@@ -523,3 +523,9 @@ a.contact-card:hover strong{color:var(--wtc-orange)}
 .status-doc-granted{background:var(--navy-soft);color:var(--wtc-navy)}
 
 .opportunity-figures strong small{font-size:13px;font-weight:600;color:var(--muted)}
+
+/* --- Account recovery guidance ------------------------------------------ */
+.reset-help{margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}
+.reset-help strong{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.16em;color:var(--wtc-navy);margin-bottom:10px}
+.reset-help .plain-list{font-size:14px;line-height:1.75}
+.auth-card .arrow-link{margin-top:20px}
