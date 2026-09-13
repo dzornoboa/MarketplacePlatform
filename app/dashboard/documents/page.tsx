@@ -1,8 +1,9 @@
 import { requireUserProfile } from '@/lib/auth/guards'
+import { SubmitButton } from '@/components/submit-button'
 import { humanize } from '@/lib/auth/access'
 import { dateTime } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
-import { uploadDocument, deleteDocument } from './actions'
+import { uploadDocument, deleteDocument, setDocumentPurpose } from './actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -53,6 +54,16 @@ export default async function DocumentsPage({ searchParams }: Props) {
           <label>File<input name="file" type="file" required accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx" /></label>
           <p className="field-help">PDF, PNG, JPEG, DOCX or XLSX. Maximum 25MB.</p>
           <div className="form-grid">
+            <label>What is this document
+              <select name="purpose" defaultValue="general">
+                <option value="identity">Identity document (passport, ID card)</option>
+                <option value="business_certificate">Business registration certificate</option>
+                <option value="profile">Company profile</option>
+                <option value="financials">Financials</option>
+                <option value="general">General</option>
+                <option value="other">Other</option>
+              </select>
+            </label>
             <label>Who may see it
               <select name="accessScope" defaultValue="private">
                 <option value="private">Private — only me and WTC Accra</option>
@@ -67,7 +78,7 @@ export default async function DocumentsPage({ searchParams }: Props) {
               </select>
             </label>
           </div>
-          <button className="button button-primary" type="submit">Upload</button>
+          <SubmitButton pendingLabel="Uploading…">Upload</SubmitButton>
         </form>}
 
     {(documents ?? []).length === 0
@@ -75,9 +86,15 @@ export default async function DocumentsPage({ searchParams }: Props) {
       : <section className="card table-wrap">
           <h2>Your documents</h2>
           <table className="data-table">
-            <thead><tr><th>File</th><th>Visibility</th><th>Linked to</th><th>Size</th><th>Uploaded</th><th></th></tr></thead>
+            <thead><tr><th>File</th><th>Type</th><th>Visibility</th><th>Linked to</th><th>Size</th><th>Uploaded</th><th></th></tr></thead>
             <tbody>{(documents ?? []).map(doc => <tr key={doc.id}>
               <td><strong>{doc.file_name}</strong></td>
+              <td>{doc.owner_user_id === profile.id
+                ? <form action={setDocumentPurpose} className="inline-select"><input type="hidden" name="documentId" value={doc.id} />
+                    <select name="purpose" defaultValue={doc.purpose}>{['identity', 'business_certificate', 'profile', 'financials', 'general', 'other'].map(v => <option key={v} value={v}>{humanize(v)}</option>)}</select>
+                    <button className="link-button" type="submit">Save</button>
+                  </form>
+                : humanize(doc.purpose)}</td>
               <td><span className={`status-dot status-doc-${doc.access_scope}`}>{humanize(doc.access_scope)}</span><br /><span className="field-help">{SCOPE_HELP[doc.access_scope]}</span></td>
               <td>{doc.opportunity_id ? oppById.get(doc.opportunity_id) ?? 'An opportunity' : '—'}</td>
               <td>{fileSize(doc.size_bytes)}</td>

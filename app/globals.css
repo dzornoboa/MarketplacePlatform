@@ -1077,3 +1077,6 @@ a.contact-card:hover strong{color:var(--wtc-orange)}
 @media(max-width:900px){.sidebar-user{display:none}}
 .console-user .avatar{margin-right:6px}
 .owner-card{display:flex;align-items:center;gap:12px}
+
+.inline-select{display:flex;gap:6px;align-items:center}
+.inline-select select{border:1px solid var(--line-strong);border-radius:var(--radius);padding:5px 6px;font-size:12px;background:#fff}

@@ -104,3 +104,16 @@ export async function deleteDocument(formData: FormData) {
   revalidatePath('/dashboard/documents')
   redirect(back('message', 'Document deleted.'))
 }
+
+/* Re-classify a document (e.g. mark an upload as the identity document so
+   the verification checklist recognises it). RLS limits this to the owner. */
+export async function setDocumentPurpose(formData: FormData) {
+  const id = String(formData.get('documentId') ?? '')
+  const purpose = String(formData.get('purpose') ?? '')
+  if (!id || !['general','business_certificate','identity','profile','financials','other'].includes(purpose)) redirect(back('error', 'Choose what this document is.'))
+  const supabase = await createClient()
+  const { error } = await supabase.from('document_records').update({ purpose }).eq('id', id)
+  if (error) redirect(back('error', error.message))
+  revalidatePath('/dashboard/documents'); revalidatePath('/dashboard/verification')
+  redirect(back('message', 'Document type updated.'))
+}
