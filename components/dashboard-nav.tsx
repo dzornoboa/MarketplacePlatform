@@ -9,7 +9,7 @@ import { hasCapability, isAdminRole, isStaffRole } from '@/lib/auth/access'
 
 type NavLink = { href: string; label: string; verifiedOnly?: boolean; badge?: number }
 
-export function DashboardNav({ profile, unreadCount = 0 }: { profile: Profile; unreadCount?: number }) {
+export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true }: { profile: Profile; unreadCount?: number; adminMfaReady?: boolean }) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
 
@@ -89,8 +89,12 @@ export function DashboardNav({ profile, unreadCount = 0 }: { profile: Profile; u
 
       {(admin || editor) && <div className="nav-group">
         <p className="nav-group-label">Console</p>
-        {editor && <Link className={isActive('/editor') ? 'nav-active nav-console' : 'nav-console'} href="/editor">Editor console</Link>}
-        {admin && <Link className={isActive('/admin') ? 'nav-active nav-console' : 'nav-console'} href="/admin">Administration</Link>}
+        {admin && !adminMfaReady
+          ? <Link className="nav-console nav-console-locked" href="/dashboard/security?required=admin-mfa"><span>Administration</span><span className="nav-badge">Set up MFA</span></Link>
+          : <>
+              {editor && <Link className={isActive('/editor') ? 'nav-active nav-console' : 'nav-console'} href="/editor">Editor console</Link>}
+              {admin && <Link className={isActive('/admin') ? 'nav-active nav-console' : 'nav-console'} href="/admin">Administration</Link>}
+            </>}
       </div>}
     </nav>
     <div className="sidebar-bottom">

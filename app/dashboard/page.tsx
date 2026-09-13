@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
-import { marketplaceLock, postingLock, labelForParticipantType, humanize } from '@/lib/auth/access'
+import { marketplaceLock, postingLock, labelForParticipantType, humanize, isAdminRole, systemRoleLabels } from '@/lib/auth/access'
 import { date, dateTime } from '@/lib/format'
 
 export const dynamic = 'force-dynamic'
@@ -17,6 +17,8 @@ export default async function DashboardPage() {
     supabase.from('subscriptions').select('plan_code,ends_at').eq('status', 'active').limit(1).maybeSingle(),
   ])
 
+  const adminRole = isAdminRole(profile.system_role)
+  const adminMfaReady = adminRole && claims.aal === 'aal2'
   const browse = state ? marketplaceLock(state) : null
   const post = state ? postingLock(state) : null
   const steps = [
@@ -31,6 +33,20 @@ export default async function DashboardPage() {
       <h1>Welcome, {displayName}</h1>
       <p className="muted">Your WTC Accra trade and investment workspace.</p>
     </div>
+
+    {adminRole && !adminMfaReady && <section className="admin-setup-card">
+      <div className="admin-setup-copy">
+        <p className="eyebrow light">One step remaining</p>
+        <h2>Your {systemRoleLabels[profile.system_role].toLowerCase()} console is locked until you add an authenticator</h2>
+        <p>Every WTC Accra administrator signs in with a password <em>and</em> a six-digit code from an authenticator app. Until that is set up, verification, publishing, member access and site editing are all disabled for this account — by design, because this account can change every other account.</p>
+        <ol className="admin-setup-steps">
+          <li><span>1</span>Install Google Authenticator, Microsoft Authenticator or 1Password on your phone.</li>
+          <li><span>2</span>Open <strong>Set up authenticator</strong> below and scan the code it shows.</li>
+          <li><span>3</span>Enter the six-digit code. The console unlocks immediately.</li>
+        </ol>
+        <Link className="button button-light" href="/dashboard/security?required=admin-mfa">Set up authenticator now</Link>
+      </div>
+    </section>}
 
     {browse?.locked && <section className="restriction-banner">
       <div><strong>Marketplace access is restricted</strong><p>{browse.reason}</p></div>
