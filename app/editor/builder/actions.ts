@@ -11,14 +11,14 @@ import type { SiteContentBlock, SiteContentItem } from '@/lib/database.types'
 type Result<T = undefined> = { ok: true; data?: T } | { ok: false; error: string }
 
 const ACCENTS = new Set(['navy', 'orange', 'teal', 'gold', 'sky', 'peach'])
-const PAGE_PATHS: Record<string, string> = { home: '/', about: '/about', 'how-it-works': '/how-it-works', membership: '/membership', contact: '/contact', 'why-wtc-accra': '/why-wtc-accra' }
+const PAGE_PATHS: Record<string, string> = { home: '/', about: '/about', 'how-it-works': '/how-it-works', membership: '/membership', contact: '/contact', 'why-wtc-accra': '/why-wtc-accra', news: '/news', listings: '/opportunities', auth: '/register' }
 
 function clean(v: unknown): string | null { const s = String(v ?? '').trim(); return s ? s : null }
 function goodLink(v: string | null) { return !v || v.startsWith('https://') || v.startsWith('/') || v.startsWith('#') || v.startsWith('mailto:') || v.startsWith('tel:') }
 function goodImage(v: string | null) { return !v || v.startsWith('https://') || v.startsWith('/') }
 
 function revalidate(pageSlug: string) {
-  revalidatePath(PAGE_PATHS[pageSlug] ?? `/${pageSlug}`); revalidatePath('/'); revalidatePath('/editor/builder'); revalidatePath('/editor/pages')
+  revalidatePath(PAGE_PATHS[pageSlug] ?? `/${pageSlug}`); if (pageSlug === 'auth') revalidatePath('/login'); revalidatePath('/'); revalidatePath('/editor/builder'); revalidatePath('/editor/pages')
 }
 
 async function who() {

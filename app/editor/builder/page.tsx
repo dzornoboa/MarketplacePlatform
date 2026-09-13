@@ -3,7 +3,7 @@ import { SiteBuilder } from '@/components/site-builder'
 
 export const dynamic = 'force-dynamic'
 
-const PAGES = ['home', 'about', 'how-it-works', 'why-wtc-accra', 'membership', 'contact']
+const PAGES = ['home', 'about', 'how-it-works', 'why-wtc-accra', 'membership', 'contact', 'news', 'listings', 'auth']
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 

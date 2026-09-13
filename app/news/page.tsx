@@ -4,6 +4,7 @@ import { PublicFooter } from '@/components/public-footer'
 import { BrandCircle } from '@/components/brand'
 import { createPublicClient } from '@/lib/supabase/public'
 import { date } from '@/lib/format'
+import { getPageBlock } from '@/lib/content/site-content'
 
 export const revalidate = 300
 
@@ -18,15 +19,16 @@ export default async function NewsIndexPage() {
     .select('id,title,slug,excerpt,category,image_url,published_at')
     .eq('status', 'published').order('published_at', { ascending: false }).limit(60)
 
+  const intro = await getPageBlock('news', 'intro', { eyebrow: 'News and resources', heading: 'Commerce and', heading_emphasis: 'connections', body: 'Trade and investment news, guidance and practical resources from World Trade Centre Accra and the wider WTCA network.', cta_label: null, cta_href: null, secondary_cta_label: null, secondary_cta_href: null, image_url: null })
   const news = (posts ?? []).filter(p => p.category === 'news')
   const resources = (posts ?? []).filter(p => p.category === 'resource')
 
   return <><PublicHeader /><main>
     <section className="section">
-      <div className="section-head">
-        <p className="eyebrow">News and resources</p>
-        <h2>Commerce and <strong>connections</strong></h2>
-        <p className="lede">Trade and investment news, guidance and practical resources from World Trade Centre Accra and the wider WTCA network.</p>
+      <div className="section-head" data-section="intro">
+        {intro.eyebrow && <p className="eyebrow">{intro.eyebrow}</p>}
+        <h2>{intro.heading} {intro.heading_emphasis && <strong>{intro.heading_emphasis}</strong>}</h2>
+        {intro.body && <p className="lede">{intro.body}</p>}
       </div>
 
       {(posts ?? []).length === 0

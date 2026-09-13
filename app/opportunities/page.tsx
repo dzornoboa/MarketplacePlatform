@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { humanize, labelForIntent, listingIntents, listingIntentLabels } from '@/lib/auth/access'
 import { relativeDays } from '@/lib/format'
 import { SessionCta } from '@/components/header-session'
+import { getPageBlock } from '@/lib/content/site-content'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,16 +39,17 @@ export default async function PublicListingsPage({ searchParams }: Props) {
     }),
     supabase.rpc('public_listing_facets'),
   ])
+  const intro = await getPageBlock('listings', 'intro', { eyebrow: 'Private marketplace', heading: 'Live', heading_emphasis: 'listings', body: 'Opportunities posted by verified WTC Accra members and reviewed by the trade desk. Sign in to see the full details, the figures and who is behind each one — and to bid.', cta_label: 'Join the network', cta_href: '/register', secondary_cta_label: 'Member sign in', secondary_cta_href: '/login', image_url: null })
   const facet = (name: string) => (facets ?? []).filter(f => f.facet === name)
   const filtered = !!(kind || intent || sector || country)
 
   return <><PublicHeader /><main>
     <section className="section">
-      <div className="section-head">
-        <p className="eyebrow">Private marketplace</p>
-        <h2>Live <strong>listings</strong></h2>
-        <p className="lede">Opportunities posted by verified WTC Accra members and reviewed by the trade desk. Sign in to see the full details, the figures and who is behind each one — and to bid.</p>
-        <SessionCta memberHref="/dashboard/feed" memberLabel="Open your feed" />
+      <div className="section-head" data-section="intro">
+        {intro.eyebrow && <p className="eyebrow">{intro.eyebrow}</p>}
+        <h2>{intro.heading} {intro.heading_emphasis && <strong>{intro.heading_emphasis}</strong>}</h2>
+        {intro.body && <p className="lede">{intro.body}</p>}
+        <SessionCta memberHref="/dashboard/feed" memberLabel="Open your feed" primaryLabel={intro.cta_label ?? undefined} primaryHref={intro.cta_href ?? undefined} secondaryLabel={intro.secondary_cta_label ?? undefined} secondaryHref={intro.secondary_cta_href ?? undefined} />
       </div>
 
       <form className="filter-row card" method="get">

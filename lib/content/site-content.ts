@@ -272,3 +272,12 @@ export async function getPublicPlans(): Promise<PlanSummary[]> {
     return []
   }
 }
+
+/* One editable block (eyebrow / heading / emphasis / body / buttons) for
+   pages that are otherwise code-driven: news index, live listings, the
+   sign-in and register asides. Falls back to the copy given. */
+export async function getPageBlock(slug: string, key: string, fallback: Omit<ContentSection, 'items' | 'section_key' | 'layout' | 'accent'> & Partial<Pick<ContentSection, 'accent'>>): Promise<ContentSection> {
+  const page = await getPageContent(slug)
+  const found = page.sections.find(b => b.section_key === key)
+  return found ?? { section_key: key, layout: 'page_head', accent: fallback.accent ?? 'navy', items: [], ...fallback }
+}

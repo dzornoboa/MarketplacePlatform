@@ -52,14 +52,16 @@ export function HeaderSession({ variant = 'inline' }: { variant?: 'inline' | 'me
    register/sign-in pair; a signed-in member gets a route into the platform
    instead of being told to join something they are already in. */
 export function SessionCta({ primaryClass = 'button button-primary', secondaryClass = 'button button-outline',
-  memberHref = '/dashboard/feed', memberLabel = 'Go to your dashboard' }: {
+  memberHref = '/dashboard/feed', memberLabel = 'Go to your dashboard',
+  primaryLabel = 'Join the network', primaryHref = '/register', secondaryLabel = 'Member sign in', secondaryHref = '/login' }: {
   primaryClass?: string; secondaryClass?: string; memberHref?: string; memberLabel?: string
+  primaryLabel?: string; primaryHref?: string; secondaryLabel?: string; secondaryHref?: string
 }) {
   const state = useSessionState()
   if (state === 'member') return <div className="button-row"><Link className={primaryClass} href={memberHref}>{memberLabel}</Link></div>
   return <div className="button-row">
-    <Link className={primaryClass} href="/register">Join the network</Link>
-    <Link className={secondaryClass} href="/login">Member sign in</Link>
+    <Link className={primaryClass} href={primaryHref}>{primaryLabel}</Link>
+    {secondaryLabel && <Link className={secondaryClass} href={secondaryHref}>{secondaryLabel}</Link>}
   </div>
 }
 

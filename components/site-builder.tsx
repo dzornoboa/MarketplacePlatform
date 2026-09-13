@@ -23,6 +23,9 @@ const PAGES: Array<{ slug: string; label: string; path: string }> = [
   { slug: 'why-wtc-accra', label: 'Why WTC Accra', path: '/why-wtc-accra' },
   { slug: 'membership', label: 'Membership', path: '/membership' },
   { slug: 'contact', label: 'Contact', path: '/contact' },
+  { slug: 'news', label: 'News', path: '/news' },
+  { slug: 'listings', label: 'Live listings', path: '/opportunities' },
+  { slug: 'auth', label: 'Sign in / Register', path: '/register' },
 ]
 const LAYOUT_HELP: Record<string, string> = {
   hero: 'Large banner at the top of the page. Heading + emphasis, one paragraph, two buttons, optional photo.',
@@ -38,6 +41,7 @@ const LAYOUT_HELP: Record<string, string> = {
   cta: 'Full-width call-to-action band with two buttons.',
   contact: 'Contact block. Details come from Site settings.',
   prose: 'Simple text section.',
+  page_head: 'Page heading: eyebrow, heading + emphasis, intro text and (where shown) the two buttons.',
 }
 
 function pretty(key: string) { return key.replaceAll('_', ' ').replaceAll('-', ' ') }

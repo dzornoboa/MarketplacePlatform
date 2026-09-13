@@ -6,7 +6,7 @@ import { updateBlock, updateItem } from './actions'
 export const dynamic = 'force-dynamic'
 
 const ACCENTS = ['navy', 'orange', 'teal', 'gold', 'sky', 'peach'] as const
-const PAGES = ['home', 'about', 'how-it-works', 'membership', 'contact'] as const
+const PAGES = ['home', 'about', 'how-it-works', 'why-wtc-accra', 'membership', 'contact', 'news', 'listings', 'auth'] as const
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
