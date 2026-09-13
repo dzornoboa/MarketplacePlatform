@@ -1,4 +1,6 @@
+import Link from 'next/link'
 import { requireUserProfile } from '@/lib/auth/guards'
+import { labelForParticipantType } from '@/lib/auth/access'
 import { money } from '@/lib/format'
 import { saveMandate, saveRequirement } from './actions'
 
@@ -19,6 +21,8 @@ export default async function MandatePage({ searchParams }: Props) {
   const mandate = mandates?.[0]
   const requirement = requirements?.[0]
   const type = profile.participant_type
+  const canInvest = type === 'investor' || type === 'institutional_partner'
+  const canBuy = type === 'buyer' || type === 'institutional_partner'
 
   return <div className="page-stack narrow-content">
     <div>
@@ -29,9 +33,17 @@ export default async function MandatePage({ searchParams }: Props) {
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
 
-    <section className="card">
+    {!canInvest && !canBuy && <section className="restriction-banner">
+      <div>
+        <strong>Mandates are recorded by investors and buyers</strong>
+        <p>Your participant type is {labelForParticipantType(type)}. Investors record an investment mandate; buyers record a buying requirement. Both are used by the WTC Accra trade desk to match you — if your role should include one of these, ask WTC Accra to review your participant type.</p>
+      </div>
+      <Link className="button button-light" href="/dashboard/verification">Open verification</Link>
+    </section>}
+
+    {canInvest && <section className="card">
       <h2>Investment mandate</h2>
-      <p className="muted">For investors and institutions deploying capital.{type && type !== 'investor' && type !== 'institutional_partner' ? ' Optional for your participant type.' : ''}</p>
+      <p className="muted">For investors and institutions deploying capital.</p>
       <form action={saveMandate} className="form-stack">
         {mandate && <input type="hidden" name="mandateId" value={mandate.id} />}
         <label>Mandate title<input name="title" defaultValue={mandate?.title ?? ''} placeholder="West Africa growth capital" minLength={3} required /></label>
@@ -48,9 +60,9 @@ export default async function MandatePage({ searchParams }: Props) {
         <button className="button button-primary" type="submit">{mandate ? 'Save mandate' : 'Create mandate'}</button>
       </form>
       {mandate && <p className="field-help">Current range: {money(mandate.ticket_min, mandate.currency)} – {money(mandate.ticket_max, mandate.currency)}</p>}
-    </section>
+    </section>}
 
-    <section className="card">
+    {canBuy && <section className="card">
       <h2>Buying requirement</h2>
       <p className="muted">For buyers sourcing goods, services or suppliers through the network.</p>
       <form action={saveRequirement} className="form-stack">
@@ -67,6 +79,6 @@ export default async function MandatePage({ searchParams }: Props) {
         <label className="switch"><input type="checkbox" name="active" defaultChecked={requirement?.active ?? true} /> Actively sourcing</label>
         <button className="button button-secondary" type="submit">{requirement ? 'Save requirement' : 'Create requirement'}</button>
       </form>
-    </section>
+    </section>}
   </div>
 }

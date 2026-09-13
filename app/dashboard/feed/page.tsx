@@ -33,6 +33,7 @@ export default async function FeedPage({ searchParams }: Props) {
   const sort = SORTS[sortKey]
   const sector = str('sector'), country = str('country'), region = str('region')
   const intent = str('intent'), kind = str('kind'), followed = str('followed') === '1'
+  const filtersApplied = !!(sector || country || region || intent || kind || followed)
 
   const state = await readAccessState(supabase)
   const lock = state
@@ -149,8 +150,8 @@ export default async function FeedPage({ searchParams }: Props) {
       {visible.length === 0
         ? <section className="card empty-state">
             <BrandCircle />
-            <h2>Nothing matches those filters</h2>
-            <p>{followed ? 'You may not be following anyone with a live listing yet.' : 'Try widening the filters, or check back as WTC Accra publishes new listings.'}</p>
+            <h2>{filtersApplied ? 'Nothing matches those filters' : 'No listings from other members yet'}</h2>
+            <p>{followed ? 'You may not be following anyone with a live listing yet.' : filtersApplied ? 'Try widening the filters.' : 'Your own listings do not appear here. As WTC Accra verifies more members and publishes their listings, they will show up in this feed.'}</p>
           </section>
         : <div className="opportunity-list">{visible.map(item => {
             const owner = ownerById.get(item.owner_user_id)
