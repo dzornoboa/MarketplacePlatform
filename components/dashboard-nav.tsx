@@ -1,5 +1,7 @@
 'use client'
 
+import { SignOutButton } from '@/components/sign-out-button'
+
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -73,11 +75,12 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, a
   return <>{open && <div className="sidebar-backdrop" aria-hidden="true" />}<aside ref={asideRef} className={open ? 'dashboard-sidebar sidebar-open' : 'dashboard-sidebar'}>
     <div className="sidebar-top">
       <LogoLink href="/dashboard" />
+      <div className="sidebar-top-actions"><SignOutButton className="button button-outline signout-button signout-top" />
       <button className="sidebar-toggle" type="button" aria-expanded={open} aria-controls="dashboard-nav" onClick={() => setOpen(v => !v)}>
         <span className="burger" aria-hidden="true" />
         <span className="sidebar-toggle-label">{open ? 'Close' : 'Menu'}</span>
         {!open && unreadCount > 0 && <span className="nav-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>}
-      </button>
+      </button></div>
     </div>
     <p className="sidebar-label">{staff ? 'Staff workspace' : 'Member workspace'}</p>
     <nav id="dashboard-nav">
@@ -109,7 +112,7 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, a
     </nav>
     <div className="sidebar-bottom">
       <span className={`status-dot status-${profile.verification_status}`}>{profile.verification_status.replaceAll('_', ' ')}</span>
-      <form action="/auth/signout" method="post"><button className="link-button" type="submit">Sign out</button></form>
+      <SignOutButton />
     </div>
   </aside></>
 }

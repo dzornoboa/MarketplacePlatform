@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { Suspense } from 'react'
 import { AuthLinkHandler } from '@/components/auth-link-handler'
 import { MenuAutoClose } from '@/components/menu-autoclose'
+import { HelpAssistantMount } from '@/components/help-assistant-mount'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -13,5 +14,5 @@ export const metadata: Metadata = {
 
 // Open Sans is the WTCA brand font for both the logo lockup and all copy.
 export default function RootLayout({ children }: { children: ReactNode }) {
-  return <html lang="en"><head><link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" /><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700;800&display=swap" /></head><body><Suspense fallback={null}><AuthLinkHandler /><MenuAutoClose /></Suspense>{children}</body></html>
+  return <html lang="en"><head><link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" /><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700;800&display=swap" /></head><body><Suspense fallback={null}><AuthLinkHandler /><MenuAutoClose /><HelpAssistantMount /></Suspense>{children}</body></html>
 }

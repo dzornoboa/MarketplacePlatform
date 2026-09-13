@@ -1,3 +1,4 @@
+import { SignOutButton } from '@/components/sign-out-button'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { requireStaffConsole } from '@/lib/auth/guards'
@@ -12,6 +13,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const role = profile.system_role
   const links = [
     { href: '/admin', label: 'Overview', show: true },
+    { href: '/admin/insights', label: 'Insights', show: true },
+    { href: '/admin/assistant', label: 'AI agent', show: role === 'super_admin' },
     { href: '/admin/super', label: 'Super admin', show: role === 'super_admin' },
     { href: '/admin/verification', label: 'Verification queue', show: hasCapability(role, 'verification') },
     { href: '/admin/users', label: 'Members', show: isAdminRole(role) },
@@ -35,11 +38,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         <summary aria-label="Open menu"><span className="burger" aria-hidden="true" /></summary>
         <div className="mobile-menu-panel">
           <nav>{links.map(link => <Link key={`m-${link.href}`} href={link.href}>{link.label}</Link>)}</nav>
-          <div className="mobile-menu-actions"><Link className="button button-outline" href="/dashboard">Member dashboard</Link><form action="/auth/signout" method="post"><button className="button button-outline" type="submit">Sign out</button></form></div>
+          <div className="mobile-menu-actions"><Link className="button button-outline" href="/dashboard">Member dashboard</Link><SignOutButton /></div>
         </div>
       </details>
       <span className="console-user">{profile.full_name} · {systemRoleLabels[role] ?? role}</span>
-      <form action="/auth/signout" method="post" className="console-signout"><button className="link-button" type="submit">Sign out</button></form>
+      <div className="console-signout"><SignOutButton /></div>
     </header>
     <main className="admin-main">{children}</main>
   </div>

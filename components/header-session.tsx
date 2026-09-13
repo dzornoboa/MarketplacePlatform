@@ -1,5 +1,7 @@
 'use client'
 
+import { SignOutButton } from '@/components/sign-out-button'
+
 import { useEffect, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -28,11 +30,11 @@ export function HeaderSession({ variant = 'inline' }: { variant?: 'inline' | 'me
     return variant === 'menu'
       ? <>
           <Link className="button button-primary" href="/dashboard">Open my dashboard</Link>
-          <form action="/auth/signout" method="post"><button className="button button-outline" type="submit">Sign out</button></form>
+          <SignOutButton />
         </>
       : <>
           <Link className="button button-primary" href="/dashboard">My dashboard</Link>
-          <form action="/auth/signout" method="post"><button className="link-button" type="submit">Sign out</button></form>
+          <SignOutButton className="button button-outline signout-button" />
         </>
   }
   return variant === 'menu'
