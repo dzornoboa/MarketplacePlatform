@@ -111,6 +111,5 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, a
       <span className={`status-dot status-${profile.verification_status}`}>{profile.verification_status.replaceAll('_', ' ')}</span>
       <form action="/auth/signout" method="post"><button className="link-button" type="submit">Sign out</button></form>
     </div>
-    {open && <div className="nav-group nav-group-mobile-signout"><form action="/auth/signout" method="post"><button className="link-button" type="submit">Sign out</button></form></div>}
   </aside></>
 }

@@ -18,10 +18,12 @@ export default async function MatchesPage({ searchParams }: Props) {
   await supabase.rpc('refresh_my_matches')
   const { data: matches } = await supabase.from('matches').select('*').order('score', { ascending: false })
   const oppIds = [...new Set((matches ?? []).map(m => m.opportunity_id))]
-  const { data: opportunities } = oppIds.length
-    ? await supabase.from('opportunities').select('*').in('id', oppIds)
-    : { data: [] }
+  const [{ data: opportunities }, { data: teasers }] = oppIds.length
+    ? await Promise.all([supabase.from('opportunities').select('*').in('id', oppIds), supabase.rpc('public_listing_teasers', { max_rows: 200 })])
+    : [{ data: [] }, { data: [] }]
   const oppById = new Map((opportunities ?? []).map(o => [o.id, o]))
+  // Without marketplace access RLS hides the listing; the teaser still names it.
+  const teaserById = new Map((teasers ?? []).map(t => [t.id, t]))
   const live = (matches ?? []).filter(m => m.status !== 'dismissed')
   const dismissed = (matches ?? []).filter(m => m.status === 'dismissed')
 
@@ -43,19 +45,22 @@ export default async function MatchesPage({ searchParams }: Props) {
         </section>
       : <div className="opportunity-list">{live.map(match => {
           const opportunity = oppById.get(match.opportunity_id)
+          const teaser = teaserById.get(match.opportunity_id)
           return <article className="card opportunity-card" key={match.id}>
             <div className="opportunity-head">
               <div>
                 <span className={`status-dot status-match-${match.status}`}>{humanize(match.status)}</span>
-                <h3>{opportunity?.title ?? 'Opportunity'}</h3>
-                {opportunity && <p className="muted">{opportunity.sector} · {opportunity.city ? `${opportunity.city}, ` : ''}{opportunity.country} · {humanize(opportunity.kind)}</p>}
+                <h3><a href={`/opportunities/${match.opportunity_id}`}>{opportunity?.title ?? teaser?.title ?? 'Opportunity'}</a></h3>
+                {opportunity
+                  ? <p className="muted">{opportunity.sector} · {opportunity.city ? `${opportunity.city}, ` : ''}{opportunity.country} · {humanize(opportunity.kind)}</p>
+                  : teaser && <p className="muted">{teaser.sector} · {teaser.country} · {humanize(teaser.kind)} · <a className="arrow-link" href="/dashboard/billing">subscribe to see the figures and bid →</a></p>}
               </div>
               <div className="opportunity-figures">
                 <strong>{match.score}<small>/100</small></strong>
                 <span>Match score</span>
               </div>
             </div>
-            {opportunity?.summary && <p>{opportunity.summary}</p>}
+            {(opportunity?.summary ?? teaser?.teaser) && <p>{opportunity?.summary ?? teaser?.teaser}</p>}
             {match.rationale && <p className="field-help">Why this was matched: {match.rationale}</p>}
             {opportunity && <dl className="detail-grid detail-grid-two">
               <div><dt>Capital required</dt><dd>{money(opportunity.capital_required, opportunity.currency)}</dd></div>
@@ -73,7 +78,7 @@ export default async function MatchesPage({ searchParams }: Props) {
     {dismissed.length > 0 && <section className="card">
       <h2>Dismissed ({dismissed.length})</h2>
       <div className="history-list">{dismissed.map(match => <div key={match.id}>
-        <strong>{oppById.get(match.opportunity_id)?.title ?? 'Opportunity'}</strong>
+        <strong>{oppById.get(match.opportunity_id)?.title ?? teaserById.get(match.opportunity_id)?.title ?? 'Opportunity'}</strong>
         <span>Score {match.score}</span>
       </div>)}</div>
     </section>}
