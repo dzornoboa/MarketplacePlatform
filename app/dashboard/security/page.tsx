@@ -2,6 +2,8 @@ import { requireUserProfile } from '@/lib/auth/guards'
 import { isAdminRole, systemRoleLabels } from '@/lib/auth/access'
 import { safeNextPath } from '@/lib/auth/redirects'
 import { MfaClient } from './mfa-client'
+import { SubmitButton } from '@/components/submit-button'
+import { changePassword } from './actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,6 +12,8 @@ type Props = { searchParams: Promise<Record<string, string | string[] | undefine
 export default async function SecurityPage({ searchParams }: Props) {
   const { supabase, profile, claims } = await requireUserProfile()
   const params = await searchParams
+  const error = typeof params.error === 'string' ? params.error : null
+  const message = typeof params.message === 'string' ? params.message : null
   const admin = isAdminRole(profile.system_role)
   const required = params.required === 'admin-mfa' || admin
   const next = safeNextPath(typeof params.next === 'string' ? params.next : null, '/admin')
@@ -51,7 +55,24 @@ export default async function SecurityPage({ searchParams }: Props) {
   return <div className="page-stack narrow-content">
     <div>
       <p className="eyebrow">Security</p>
-      <h1>Two-factor authentication</h1>
+      <h1>Password and two-factor authentication</h1>
+    </div>
+    {error && <div className="alert alert-error">{error}</div>}
+    {message && <div className="alert alert-success">{message}</div>}
+
+    <form action={changePassword} className="card form-stack">
+      <h2>Change password</h2>
+      <label>Current password<input name="currentPassword" type="password" autoComplete="current-password" required /></label>
+      <div className="form-grid">
+        <label>New password<input name="newPassword" type="password" autoComplete="new-password" required minLength={8} /></label>
+        <label>Confirm new password<input name="confirmPassword" type="password" autoComplete="new-password" required minLength={8} /></label>
+      </div>
+      <p className="field-help">At least 8 characters with an uppercase letter, a lowercase letter and a number. Forgotten it? Sign out and use “Forgot password” on the sign-in page.</p>
+      <div><SubmitButton pendingLabel="Changing…">Change password</SubmitButton></div>
+    </form>
+
+    <div>
+      <h2>Two-factor authentication</h2>
       <p className="muted">{admin ? 'Your administrator session is verified.' : 'WTC Accra administrators must use MFA. Other members may enable it for stronger account protection.'}</p>
     </div>
     <MfaClient adminRequired={required} next={next} />
