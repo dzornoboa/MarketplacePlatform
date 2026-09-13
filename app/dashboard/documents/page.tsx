@@ -2,7 +2,7 @@ import { requireUserProfile } from '@/lib/auth/guards'
 import { humanize } from '@/lib/auth/access'
 import { dateTime } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
-import { uploadDocument, openDocument, deleteDocument } from './actions'
+import { uploadDocument, deleteDocument } from './actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -84,7 +84,7 @@ export default async function DocumentsPage({ searchParams }: Props) {
               <td>{dateTime(doc.created_at)}</td>
               <td>
                 <div className="button-row">
-                  <form action={openDocument}><input type="hidden" name="documentId" value={doc.id} /><button className="button button-outline" type="submit">Open</button></form>
+                  <a className="button button-outline" href={`/api/documents/${doc.id}`} target="_blank" rel="noopener">Open</a>
                   {doc.owner_user_id === profile.id && <form action={deleteDocument}><input type="hidden" name="documentId" value={doc.id} /><button className="button button-danger" type="submit">Delete</button></form>}
                 </div>
               </td>

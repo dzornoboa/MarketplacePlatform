@@ -2,7 +2,6 @@ import { requireUserProfile } from '@/lib/auth/guards'
 import { humanize } from '@/lib/auth/access'
 import { date, dateTime } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
-import { openDocument } from '../documents/actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -76,10 +75,7 @@ export default async function DealRoomsPage() {
               <div className="history-list">{roomDocs.map(doc => <div key={doc.id}>
                 <strong>{doc.file_name}</strong>
                 <span>{dateTime(doc.created_at)}</span>
-                <form action={openDocument}>
-                  <input type="hidden" name="documentId" value={doc.id} />
-                  <button className="button button-outline" type="submit">Open</button>
-                </form>
+                <a className="button button-outline" href={`/api/documents/${doc.id}`} target="_blank" rel="noopener">Open</a>
               </div>)}</div>
               <p className="field-help">Links are signed and expire after two minutes.</p>
             </div>}

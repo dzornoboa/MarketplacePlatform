@@ -171,6 +171,12 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['outbound_emails']['Insert']>
         Relationships: []
       }
+      document_access_events: {
+        Row: { id:number; document_id:string; user_id:string|null; event_type:string; created_at:string }
+        Insert: { document_id:string; user_id?:string|null; event_type:string; created_at?:string }
+        Update: Partial<Database['public']['Tables']['document_access_events']['Insert']>
+        Relationships: []
+      }
       site_settings: {
         Row: { key:string; value:string; label:string; help:string|null; updated_by:string|null; updated_at:string }
         Insert: { key:string; value?:string; label:string; help?:string|null; updated_by?:string|null; updated_at?:string }
