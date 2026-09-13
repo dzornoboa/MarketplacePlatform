@@ -141,6 +141,12 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['document_records']['Insert']>
         Relationships: []
       }
+      deal_room_messages: {
+        Row: { id:string; deal_room_id:string; author_id:string; body:string; created_at:string }
+        Insert: { id?:string; deal_room_id:string; author_id:string; body:string; created_at?:string }
+        Update: Partial<{ id:string; deal_room_id:string; author_id:string; body:string; created_at:string }>
+        Relationships: []
+      }
       deal_rooms: {
         Row: { id:string; opportunity_id:string; created_by:string; status:Database['public']['Enums']['deal_room_status']; created_at:string; updated_at:string }
         Insert: { id?:string; opportunity_id:string; created_by:string; status?:Database['public']['Enums']['deal_room_status']; created_at?:string; updated_at?:string }
@@ -231,6 +237,8 @@ export type Database = {
       set_support_bypass: { Args: { target_user: string; until_at: string | null; reason?: string | null }; Returns: undefined }
       member_email: { Args: { target_user: string }; Returns: string | null }
       refresh_my_matches: { Args: Record<string, never>; Returns: number }
+      post_deal_room_message: { Args: { room: string; message_body: string }; Returns: string }
+      withdraw_bid: { Args: { bid_id: string }; Returns: undefined }
       review_bid: { Args: { bid_id: string; decision: string; review_note?: string | null }; Returns: undefined }
       confirm_payment: { Args: { payment_id: string; decision: string; note?: string | null }; Returns: undefined }
       record_provider_payment: { Args: { payment_reference: string; provider_ref: string; succeeded: boolean }; Returns: undefined }

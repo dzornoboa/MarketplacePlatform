@@ -209,3 +209,14 @@ export async function deleteOpportunity(formData: FormData) {
   revalidatePath('/dashboard/opportunities')
   redirect(to('/dashboard/opportunities', 'message', 'Listing deleted.'))
 }
+
+/* A bidder pulls a bid that has not been decided yet (submitted or with the owner). */
+export async function withdrawBid(formData: FormData) {
+  const id = String(formData.get('eoiId') ?? '')
+  if (!id) redirect(to('/dashboard/interests', 'error', 'Bid not found.'))
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('withdraw_bid', { bid_id: id })
+  if (error) redirect(to('/dashboard/interests', 'error', error.message))
+  revalidatePath('/dashboard/interests')
+  redirect(to('/dashboard/interests', 'message', 'Bid withdrawn.'))
+}

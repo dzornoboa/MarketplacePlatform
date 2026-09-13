@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { requireUserProfile } from '@/lib/auth/guards'
 import { humanize } from '@/lib/auth/access'
 import { date, dateTime } from '@/lib/format'
@@ -31,7 +32,7 @@ export default async function DealRoomsPage() {
     <div>
       <p className="eyebrow">Deal execution</p>
       <h1>Deal rooms</h1>
-      <p className="muted">A private space per transaction, opened by the WTC Accra trade desk once both sides agree to proceed. Documents shared here are visible only to room members.</p>
+      <p className="muted">A private space per transaction, opened automatically when a listing owner accepts a bid (or by the WTC Accra trade desk). Documents shared here are visible only to room members.</p>
     </div>
 
     {(rooms ?? []).length === 0
@@ -48,7 +49,7 @@ export default async function DealRoomsPage() {
             <div className="opportunity-head">
               <div>
                 <span className={room.status === 'active' ? 'status-dot status-verified' : 'status-dot'}>{humanize(room.status)}</span>
-                <h3>{opportunity?.title ?? 'Opportunity'}</h3>
+                <h3><Link href={`/dashboard/deal-rooms/${room.id}`}>{opportunity?.title ?? 'Opportunity'}</Link></h3>
                 <p className="muted">{opportunity ? `${opportunity.sector} · ${opportunity.country} · ` : ''}opened {date(room.created_at)}</p>
               </div>
             </div>
@@ -57,6 +58,7 @@ export default async function DealRoomsPage() {
               <div><dt>Participants</dt><dd>{roomMembers.length}</dd></div>
               <div><dt>Documents</dt><dd>{roomDocs.length}</dd></div>
             </dl>
+            <div><Link className="button button-primary" href={`/dashboard/deal-rooms/${room.id}`}>Open deal room — messages and files</Link></div>
 
             <div className="item-editor">
               <h3>Participants</h3>

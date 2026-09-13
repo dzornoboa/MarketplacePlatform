@@ -15,7 +15,7 @@ const str = (description: string, enumv?: string[]) => ({ type: 'string', descri
 
 export const ADMIN_TOOLS: Anthropic.Tool[] = [
   { name: 'get_overview', description: 'Counts for every queue and headline KPIs (members, plans, revenue, listings, bids). Call this first for status questions.', input_schema: S({}) },
-  { name: 'list_queue', description: 'List items in a console queue.', input_schema: S({ queue: str('Which queue', ['verification', 'opportunities', 'bids', 'payments', 'subscriptions', 'support', 'members']), status: str('Optional status filter, e.g. pending_review, submitted, pending, awaiting_approval, open, active'), limit: { type: 'integer', description: 'Max rows (default 20, max 50)' } }, ['queue']) },
+  { name: 'list_queue', description: 'List items in a console queue.', input_schema: S({ queue: str('Which queue', ['verification', 'opportunities', 'bids', 'introductions', 'payments', 'subscriptions', 'support', 'members']), status: str('Optional status filter, e.g. pending_review, submitted, pending, awaiting_approval, open, active'), limit: { type: 'integer', description: 'Max rows (default 20, max 50)' } }, ['queue']) },
   { name: 'find_member', description: 'Search members by name or email. Returns ids, status, plan.', input_schema: S({ query: str('Name or email fragment') }, ['query']) },
   { name: 'get_member', description: 'Full record for one member: profile, email, organisation, documents, verification history, subscriptions, payments, listings, bids.', input_schema: S({ user_id: str('Member id (uuid)') }, ['user_id']) },
   { name: 'review_verification', description: 'Decide a pending verification request: approve (activates the account and starts their plan), changes (send back), reject.', input_schema: S({ request_id: str('verification_requests.id'), decision: str('Decision', ['approve', 'changes', 'reject']), note: str('Note shown to the member') }, ['request_id', 'decision']) },
@@ -32,11 +32,12 @@ export const ADMIN_TOOLS: Anthropic.Tool[] = [
   { name: 'message_member', description: 'Send a member an in-app notification and email.', input_schema: S({ user_id: str('Member id'), title: str('Subject'), body: str('Message'), href: str('Dashboard link, e.g. /dashboard/billing') }, ['user_id', 'title', 'body']) },
   { name: 'reply_support', description: 'Reply to a support request and optionally set its status.', input_schema: S({ request_id: str('support_requests.id'), body: str('Reply text'), status: str('New status', ['open', 'in_progress', 'resolved', 'closed']) }, ['request_id', 'body']) },
   { name: 'create_news_post', description: 'Create a news or resource article on the public website (draft or published).', input_schema: S({ title: str('Title'), body: str('Body text'), category: str('news or resource', ['news', 'resource']), excerpt: str('Short summary'), publish: { type: 'boolean', description: 'Publish now (true) or save as draft' } }, ['title', 'body', 'category']) },
+  { name: 'review_introduction', description: 'Move an introduction request forward: approve, introduce, schedule (needs meeting_at), complete or decline.', input_schema: S({ introduction_id: str('introductions.id'), decision: str('Decision', ['approve', 'introduce', 'schedule', 'complete', 'decline']), note: str('Note to both parties'), meeting_at: str('ISO datetime for schedule'), meeting_url: str('https meeting link') }, ['introduction_id', 'decision']) },
   { name: 'get_insights', description: 'KPIs, monthly series and breakdowns for reports and charts.', input_schema: S({}) },
   { name: 'get_audit', description: 'Recent audit events (who did what).', input_schema: S({ limit: { type: 'integer' }, action_contains: str('Filter on action text, optional') }) },
 ]
 
-export const WRITE_TOOLS = new Set(['review_verification', 'set_verification_status', 'review_opportunity', 'set_deal_rating', 'review_bid', 'confirm_payment', 'approve_subscription', 'set_member_subscription', 'set_marketplace_access', 'set_account_status', 'set_support_bypass', 'message_member', 'reply_support', 'create_news_post'])
+export const WRITE_TOOLS = new Set(['review_verification', 'set_verification_status', 'review_opportunity', 'set_deal_rating', 'review_bid', 'confirm_payment', 'approve_subscription', 'set_member_subscription', 'set_marketplace_access', 'set_account_status', 'set_support_bypass', 'message_member', 'reply_support', 'create_news_post', 'review_introduction'])
 
 const QUEUES: Record<string, { table: string; defaultStatus: string; order: string; select: string }> = {
   verification: { table: 'verification_requests', defaultStatus: 'pending_review', order: 'submitted_at', select: 'id,user_id,status,submission_note,submitted_at' },
@@ -44,6 +45,7 @@ const QUEUES: Record<string, { table: string; defaultStatus: string; order: stri
   bids: { table: 'expressions_of_interest', defaultStatus: 'submitted', order: 'created_at', select: 'id,opportunity_id,applicant_id,status,message,created_at' },
   payments: { table: 'payments', defaultStatus: 'pending', order: 'created_at', select: 'id,user_id,reference,amount,currency,method,provider,status,plan_code,created_at,paid_at' },
   subscriptions: { table: 'subscriptions', defaultStatus: 'awaiting_approval', order: 'created_at', select: 'id,user_id,plan_code,status,starts_at,ends_at,created_at' },
+  introductions: { table: 'introductions', defaultStatus: 'requested', order: 'created_at', select: 'id,opportunity_id,requester_id,recipient_id,status,request_note,meeting_at,created_at' },
   support: { table: 'support_requests', defaultStatus: 'open', order: 'created_at', select: 'id,user_id,subject,category,priority,status,created_at' },
   members: { table: 'profiles', defaultStatus: '', order: 'created_at', select: 'id,full_name,participant_type,verification_status,account_status,system_role,country,created_at' },
 }
@@ -86,10 +88,10 @@ export async function runAdminTool(supabase: Supabase, name: string, input: Json
       const { data, error } = await query
       if (error) return fail(error.message)
       const rows = (data ?? []) as unknown as Array<Record<string, unknown>>
-      const ids = [...new Set(rows.flatMap(r => [r.user_id, r.applicant_id, r.owner_user_id].filter((x): x is string => typeof x === 'string')))]
+      const ids = [...new Set(rows.flatMap(r => [r.user_id, r.applicant_id, r.owner_user_id, r.requester_id, r.recipient_id].filter((x): x is string => typeof x === 'string')))]
       const { data: names } = ids.length ? await supabase.from('profiles').select('id,full_name').in('id', ids) : { data: [] }
       const nameById = Object.fromEntries((names ?? []).map(p => [p.id, p.full_name]))
-      return ok(rows.map(r => ({ ...r, member_name: nameById[String(r.user_id ?? r.applicant_id ?? r.owner_user_id ?? '')] })))
+      return ok(rows.map(r => ({ ...r, member_name: nameById[String(r.user_id ?? r.applicant_id ?? r.owner_user_id ?? r.requester_id ?? '')], recipient_name: r.recipient_id ? nameById[String(r.recipient_id)] : undefined })))
     }
     case 'find_member': {
       const q = s('query')
@@ -145,6 +147,7 @@ export async function runAdminTool(supabase: Supabase, name: string, input: Json
       const { data, error } = await supabase.from('content_posts').insert({ title: s('title'), body: s('body'), category: s('category') || 'news', excerpt: s('excerpt') || null, slug, status: publish ? 'published' : 'draft', published_at: publish ? new Date().toISOString() : null, author_id: actorId }).select('id,slug').single()
       return error ? fail(error.message) : ok({ ...data, url: `/news/${data.slug}` })
     }
+    case 'review_introduction': return rpc('review_introduction', { introduction_id: s('introduction_id'), decision: s('decision'), staff_note: s('note') || null, meeting_at: s('meeting_at') ? new Date(s('meeting_at')).toISOString() : null, meeting_url: s('meeting_url') || null })
     case 'get_insights': { const d = await gatherInsights(supabase); return ok({ kpis: d.kpis, months: d.months, series: d.series, breakdowns: d.breakdowns, topListings: d.topListings }) }
     case 'get_audit': {
       let q = supabase.from('audit_events').select('action,entity_type,entity_id,actor_id,details,created_at').order('created_at', { ascending: false }).limit(Math.min(50, n('limit') || 20))

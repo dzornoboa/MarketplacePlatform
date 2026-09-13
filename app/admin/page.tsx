@@ -10,7 +10,7 @@ type Tally = Record<string, number>
 
 /* One grouped count per table so the overview shows both what is waiting
    and what has already moved through each queue. */
-async function tally(supabase: Awaited<ReturnType<typeof requireStaffConsole>>['supabase'], table: 'verification_requests' | 'opportunities' | 'subscriptions' | 'expressions_of_interest' | 'support_requests' | 'payments' | 'profiles', column = 'status'): Promise<Tally> {
+async function tally(supabase: Awaited<ReturnType<typeof requireStaffConsole>>['supabase'], table: 'verification_requests' | 'opportunities' | 'subscriptions' | 'expressions_of_interest' | 'support_requests' | 'payments' | 'profiles' | 'introductions', column = 'status'): Promise<Tally> {
   const { data } = await supabase.from(table).select(column).limit(5000)
   const out: Tally = {}
   for (const row of (data ?? []) as unknown as Record<string, string | null>[]) { const k = row[column] ?? 'unknown'; out[k] = (out[k] ?? 0) + 1 }
@@ -24,9 +24,9 @@ export default async function AdminPage() {
   const role = profile.system_role
   const admin = isAdminRole(role)
 
-  const [vr, opp, subs, bids, support, pay, members, verif, { data: plans }, { data: activeSubs }, { data: paidRows }, { data: recentAudit }, { data: staffNotes }, { data: latestMembers }, { data: latestListings }] = await Promise.all([
+  const [vr, opp, subs, bids, support, pay, intros, members, verif, { data: plans }, { data: activeSubs }, { data: paidRows }, { data: recentAudit }, { data: staffNotes }, { data: latestMembers }, { data: latestListings }] = await Promise.all([
     tally(supabase, 'verification_requests'), tally(supabase, 'opportunities'), tally(supabase, 'subscriptions'),
-    tally(supabase, 'expressions_of_interest'), tally(supabase, 'support_requests'), tally(supabase, 'payments'),
+    tally(supabase, 'expressions_of_interest'), tally(supabase, 'support_requests'), tally(supabase, 'payments'), tally(supabase, 'introductions'),
     tally(supabase, 'profiles', 'account_status'), tally(supabase, 'profiles', 'verification_status'),
     supabase.from('subscription_plans').select('code,price_usd'),
     supabase.from('subscriptions').select('plan_code').eq('status', 'active'),
@@ -49,6 +49,7 @@ export default async function AdminPage() {
     { label: 'Verification requests', waiting: vr.pending_review ?? 0, total: sum(vr), detail: breakdown(vr, ['pending_review', 'verified', 'changes_requested', 'rejected']), href: '/admin/verification', show: hasCapability(role, 'verification') },
     { label: 'Opportunities to review', waiting: (opp.submitted ?? 0) + (opp.in_review ?? 0), total: sum(opp), detail: breakdown(opp, ['submitted', 'in_review', 'published', 'changes_requested', 'rejected', 'draft']), href: '/admin/opportunities', show: hasCapability(role, 'opportunities') },
     { label: 'Bids awaiting due diligence', waiting: bids.submitted ?? 0, total: sum(bids), detail: breakdown(bids, ['submitted', 'under_review', 'accepted', 'declined', 'withdrawn']), href: '/admin/bids', show: hasCapability(role, 'opportunities') },
+    { label: 'Introductions to arrange', waiting: (intros.requested ?? 0) + (intros.approved ?? 0), total: sum(intros), detail: breakdown(intros, ['requested', 'approved', 'introduced', 'meeting_scheduled', 'completed', 'declined']), href: '/admin/introductions', show: hasCapability(role, 'introductions') },
     { label: 'Payments to confirm', waiting: pay.pending ?? 0, total: sum(pay), detail: breakdown(pay, ['pending', 'paid', 'failed', 'cancelled', 'refunded']), href: '/admin/payments', show: hasCapability(role, 'finance') },
     { label: 'Plans awaiting approval', waiting: (subs.awaiting_approval ?? 0) + (subs.pending ?? 0), total: sum(subs), detail: breakdown(subs, ['awaiting_approval', 'pending', 'active', 'expired', 'cancelled']), href: '/admin/subscriptions', show: hasCapability(role, 'finance') },
     { label: 'Open support requests', waiting: (support.open ?? 0) + (support.in_progress ?? 0), total: sum(support), detail: breakdown(support, ['open', 'in_progress', 'resolved', 'closed']), href: '/admin/support', show: hasCapability(role, 'support') },
@@ -56,7 +57,7 @@ export default async function AdminPage() {
   const waitingTotal = queues.reduce((n, q) => n + q.waiting, 0)
 
   return <div className="page-stack">
-    <RealtimeRefresh tables={["profiles","subscriptions","payments","opportunities","expressions_of_interest","verification_requests","support_requests","audit_events","notifications"]} />
+    <RealtimeRefresh tables={["profiles","subscriptions","payments","opportunities","expressions_of_interest","verification_requests","support_requests","audit_events","notifications","introductions"]} />
     <div>
       <p className="eyebrow">WTC Accra administration</p>
       <h1>Platform control centre</h1>

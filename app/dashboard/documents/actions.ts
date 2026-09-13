@@ -41,6 +41,7 @@ export async function uploadDocument(formData: FormData) {
   const scope = String(formData.get('accessScope') ?? 'private')
   if (!SCOPES.has(scope)) redirect(back('error', 'Choose who may see this document.'))
   const opportunityId = String(formData.get('opportunityId') ?? '').trim() || null
+  const dealRoomId = String(formData.get('dealRoomId') ?? '').trim() || null
   const purpose = String(formData.get('purpose') ?? 'general')
   const returnTo = String(formData.get('returnTo') ?? '/dashboard/documents')
   if (!['general','business_certificate','identity','profile','financials','other'].includes(purpose)) redirect(back('error', 'Choose what this document is.'))
@@ -53,6 +54,7 @@ export async function uploadDocument(formData: FormData) {
   const { error: recordError } = await supabase.from('document_records').insert({
     owner_user_id: String(userId),
     opportunity_id: opportunityId,
+    deal_room_id: dealRoomId,
     object_path: objectPath,
     file_name: file.name.slice(-160),
     mime_type: file.type,

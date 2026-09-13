@@ -1,8 +1,10 @@
+import Link from 'next/link'
+import { SubmitButton } from '@/components/submit-button'
 import { requireUserProfile } from '@/lib/auth/guards'
 import { humanize } from '@/lib/auth/access'
 import { dateTime } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
-import { respondToInterest } from '../opportunities/actions'
+import { respondToInterest, withdrawBid } from '../opportunities/actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -79,8 +81,13 @@ export default async function InterestsPage({ searchParams }: Props) {
                 </div>
               </div>
               <p>{item.message}</p>
-              <p className="field-help">{item.status === 'submitted' ? 'With WTC Accra for due diligence.' : item.status === 'under_review' ? 'Cleared by WTC Accra — now with the owner.' : item.status === 'accepted' ? 'Accepted by the owner. WTC Accra will open a deal room.' : item.status === 'declined' ? 'Not proceeding.' : 'Withdrawn.'}</p>
+              <p className="field-help">{item.status === 'submitted' ? 'With WTC Accra for due diligence.' : item.status === 'under_review' ? 'Cleared by WTC Accra — now with the owner.' : item.status === 'accepted' ? 'Accepted by the owner — a deal room is open.' : item.status === 'declined' ? 'Not proceeding.' : 'Withdrawn.'}</p>
               {item.owner_note && <p className="field-help">Note: {item.owner_note}</p>}
+              <div className="button-row">
+                {item.status === 'accepted' && <Link className="button button-primary" href="/dashboard/deal-rooms">Open deal room</Link>}
+                {item.status === 'under_review' && <Link className="button button-outline" href={`/dashboard/introductions?opportunity=${item.opportunity_id}`}>Request an introduction</Link>}
+                {(item.status === 'submitted' || item.status === 'under_review') && <form action={withdrawBid}><input type="hidden" name="eoiId" value={item.id} /><SubmitButton className="button button-danger" pendingLabel="Withdrawing…">Withdraw bid</SubmitButton></form>}
+              </div>
             </article>
           })}</div>}
     </section>

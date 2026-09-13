@@ -2,6 +2,9 @@ import { requireUserProfile } from '@/lib/auth/guards'
 import { humanize } from '@/lib/auth/access'
 import { dateTime } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
+import { SubmitButton } from '@/components/submit-button'
+import { RealtimeRefresh } from '@/components/realtime-refresh'
+import { requestIntroduction } from './actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,8 +17,14 @@ const STAGE_HELP: Record<string, string> = {
   declined: 'The trade desk did not proceed with this introduction.',
 }
 
-export default async function IntroductionsPage() {
+type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
+
+export default async function IntroductionsPage({ searchParams }: Props) {
   const { supabase, profile } = await requireUserProfile()
+  const params = await searchParams
+  const error = typeof params.error === 'string' ? params.error : null
+  const message = typeof params.message === 'string' ? params.message : null
+  const preselect = typeof params.opportunity === 'string' ? params.opportunity : ''
 
   const { data: introductions } = await supabase.from('introductions').select('*').order('created_at', { ascending: false })
   const oppIds = [...new Set((introductions ?? []).map(i => i.opportunity_id))]
@@ -23,6 +32,11 @@ export default async function IntroductionsPage() {
     ? await supabase.from('opportunities').select('id,title,sector,country').in('id', oppIds)
     : { data: [] }
   const oppById = new Map((opportunities ?? []).map(o => [o.id, o]))
+  // Listings this member can ask about: published, not their own (RLS hides them without marketplace access).
+  const { data: candidates } = await supabase.from('opportunities').select('id,title,sector,country').eq('status', 'published').neq('owner_user_id', profile.id).order('published_at', { ascending: false }).limit(100)
+  const peopleIds = [...new Set((introductions ?? []).flatMap(i => [i.requester_id, i.recipient_id]))].filter(id => id !== profile.id)
+  const { data: people } = peopleIds.length ? await supabase.from('profiles').select('id,full_name').in('id', peopleIds) : { data: [] }
+  const nameById = new Map((people ?? []).map(x => [x.id, x.full_name]))
 
   return <div className="page-stack">
     <div>
@@ -30,6 +44,26 @@ export default async function IntroductionsPage() {
       <h1>Introductions</h1>
       <p className="muted">WTC Accra brokers introductions between verified counterparties. The trade desk reviews each request before either side is contacted.</p>
     </div>
+
+    <RealtimeRefresh tables={["introductions"]} />
+    {error && <div className="alert alert-error">{error}</div>}
+    {message && <div className="alert alert-success">{message}</div>}
+
+    <section className="card">
+      <h2>Request an introduction</h2>
+      {(candidates ?? []).length === 0
+        ? <p className="muted">Introductions are requested from live listings. Subscribe to browse listings, then ask for an introduction here.</p>
+        : <form action={requestIntroduction} className="form-stack">
+            <label>Listing
+              <select name="opportunityId" defaultValue={preselect} required>
+                <option value="" disabled>Choose a listing</option>
+                {(candidates ?? []).map(o => <option key={o.id} value={o.id}>{o.title} · {o.sector} · {o.country}</option>)}
+              </select>
+            </label>
+            <label>Why you want to be introduced<textarea name="note" rows={3} maxLength={2000} placeholder="Who you are, what you can offer, and what you would like to discuss." /></label>
+            <div><SubmitButton pendingLabel="Sending…">Request introduction</SubmitButton></div>
+          </form>}
+    </section>
 
     {(introductions ?? []).length === 0
       ? <section className="card empty-state">
@@ -45,7 +79,7 @@ export default async function IntroductionsPage() {
               <div>
                 <span className={`status-dot status-intro-${item.status}`}>{humanize(item.status)}</span>
                 <h3>{opportunity?.title ?? 'Opportunity'}</h3>
-                <p className="muted">{outbound ? 'You requested this introduction' : 'Requested with you'} · {dateTime(item.created_at)}</p>
+                <p className="muted">{outbound ? `You asked to be introduced to ${nameById.get(item.recipient_id) ?? 'the listing owner'}` : `${nameById.get(item.requester_id) ?? 'A member'} asked to be introduced to you`} · {dateTime(item.created_at)}</p>
               </div>
             </div>
             {opportunity && <p className="muted">{opportunity.sector} · {opportunity.country}</p>}

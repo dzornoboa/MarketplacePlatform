@@ -39,6 +39,7 @@ export const PLATFORM_PAGES: PlatformPage[] = [
   { href: '/admin/users', title: 'Members', audience: 'admin', summary: 'Every member; open one to edit details, verify, message, set plan, send password reset, support bypass.', keywords: ['members', 'users', 'edit user', 'suspend', 'block', 'role'] },
   { href: '/admin/opportunities', title: 'Opportunity review', audience: 'staff', summary: 'Review, publish, request changes or reject listings; set the deal rating.', keywords: ['review listing', 'publish listing', 'opportunity review', 'trade desk'] },
   { href: '/admin/bids', title: 'Bid due diligence', audience: 'staff', summary: 'Clear or reject member bids before owners see them.', keywords: ['bids queue', 'clear bid', 'due diligence'] },
+  { href: '/admin/introductions', title: 'Introductions queue', audience: 'staff', summary: 'Approve, introduce, schedule meetings and complete member introduction requests.', keywords: ['introductions queue', 'arrange introduction', 'meeting'] },
   { href: '/admin/subscriptions', title: 'Subscriptions', audience: 'staff', summary: 'Approve restricted plans, activate, and see who is on what.', keywords: ['subscriptions', 'approve plan'] },
   { href: '/admin/payments', title: 'Payments', audience: 'staff', summary: 'Confirm bank and mobile-money payments by reference.', keywords: ['confirm payment', 'payments queue', 'finance'] },
   { href: '/admin/support', title: 'Support desk', audience: 'staff', summary: 'Reply to member requests.', keywords: ['support desk', 'tickets'] },
