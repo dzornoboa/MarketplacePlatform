@@ -9,7 +9,7 @@ import { hasCapability, isAdminRole, isStaffRole } from '@/lib/auth/access'
 
 type NavLink = { href: string; label: string; verifiedOnly?: boolean; badge?: number }
 
-export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true }: { profile: Profile; unreadCount?: number; adminMfaReady?: boolean }) {
+export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, adminHasFactor = false }: { profile: Profile; unreadCount?: number; adminMfaReady?: boolean; adminHasFactor?: boolean }) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
 
@@ -27,6 +27,7 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true }:
       links: [
         { href: '/dashboard', label: 'Overview' },
         { href: '/dashboard/feed', label: 'Home feed' },
+        { href: '/opportunities', label: 'Live listings' },
         { href: '/dashboard/network', label: 'Network', verifiedOnly: true },
         { href: '/dashboard/opportunities', label: 'Opportunities', verifiedOnly: true },
         { href: '/dashboard/matches', label: 'Matches', verifiedOnly: true },
@@ -90,7 +91,7 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true }:
       {(admin || editor) && <div className="nav-group">
         <p className="nav-group-label">Console</p>
         {admin && !adminMfaReady
-          ? <Link className="nav-console nav-console-locked" href="/dashboard/security?required=admin-mfa"><span>Administration</span><span className="nav-badge">Set up MFA</span></Link>
+          ? <Link className="nav-console nav-console-locked" href="/dashboard/security?required=admin-mfa"><span>Administration</span><span className="nav-badge">{adminHasFactor ? 'Enter code' : 'Set up MFA'}</span></Link>
           : <>
               {editor && <Link className={isActive('/editor') ? 'nav-active nav-console' : 'nav-console'} href="/editor">Editor console</Link>}
               {admin && <Link className={isActive('/admin') ? 'nav-active nav-console' : 'nav-console'} href="/admin">Administration</Link>}

@@ -1,10 +1,17 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
 import { login } from '../actions'
 import { BrandCircle, Logo, LogoLink } from '@/components/brand'
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
 export default async function LoginPage({ searchParams }: Props) {
+  // A signed-in visitor who lands here (e.g. from a cached header) goes to their dashboard.
+  const supabase = await createClient()
+  const { data: claimsData } = await supabase.auth.getClaims()
+  if (claimsData?.claims?.sub) redirect('/dashboard')
+
   const params = await searchParams
   const error = typeof params.error === 'string' ? params.error : null
   const message = typeof params.message === 'string' ? params.message : null

@@ -21,6 +21,14 @@ export async function login(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) redirect(withMessage('/login', 'error', 'Invalid email or password.'))
   revalidatePath('/', 'layout')
+
+  /* An account with an enrolled authenticator is only at aal1 after the
+     password step. Send it straight to the code prompt rather than to a
+     dashboard that will report the console as locked. */
+  const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+  if (assurance?.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') {
+    redirect(`/dashboard/security?required=admin-mfa&next=${encodeURIComponent(next)}`)
+  }
   redirect(next)
 }
 

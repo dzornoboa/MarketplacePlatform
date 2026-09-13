@@ -77,20 +77,24 @@ export async function submitOpportunity(formData: FormData) {
   redirect(to('/dashboard/opportunities', 'message', 'Submitted for WTC Accra review.'))
 }
 
+/* A bid. It is created as 'submitted', which the owner cannot see: WTC Accra
+   reviews it first (see review_bid) and only a cleared bid reaches the owner. */
 export async function expressInterest(formData: FormData) {
   const opportunityId = String(formData.get('opportunityId') ?? '')
   const message = String(formData.get('message') ?? '').trim()
+  const returnTo = String(formData.get('returnTo') ?? '/dashboard/opportunities')
   const supabase = await createClient()
   const { data: claimsData } = await supabase.auth.getClaims()
   const userId = claimsData?.claims?.sub
   if (!userId) redirect('/login')
-  if (message.length < 20 || message.length > 3000) redirect(to('/dashboard/opportunities', 'error', 'Your message must be between 20 and 3000 characters.'))
+  if (message.length < 20 || message.length > 3000) redirect(to(returnTo, 'error', 'Your bid must be between 20 and 3000 characters.'))
   const { error } = await supabase.from('expressions_of_interest').insert({
     opportunity_id: opportunityId, applicant_id: String(userId), message, status: 'submitted',
   })
-  if (error) redirect(to('/dashboard/opportunities', 'error', error.message))
+  if (error) redirect(to(returnTo, 'error', error.message))
   revalidatePath('/dashboard/interests')
-  redirect(to('/dashboard/interests', 'message', 'Expression of interest sent to the opportunity owner.'))
+  revalidatePath(returnTo)
+  redirect(to(returnTo, 'message', 'Bid submitted. WTC Accra will review it and clear it to the owner; you will be notified at each step.'))
 }
 
 export async function respondToInterest(formData: FormData) {

@@ -15,6 +15,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     { href: '/admin/verification', label: 'Verification queue', show: hasCapability(role, 'verification') },
     { href: '/admin/users', label: 'Members', show: isAdminRole(role) },
     { href: '/admin/opportunities', label: 'Opportunities', show: hasCapability(role, 'opportunities') },
+    { href: '/admin/bids', label: 'Bids', show: hasCapability(role, 'opportunities') },
     { href: '/admin/subscriptions', label: 'Subscriptions', show: hasCapability(role, 'finance') },
     { href: '/admin/support', label: 'Support', show: hasCapability(role, 'support') },
     { href: '/admin/emails', label: 'Email queue', show: isAdminRole(role) },

@@ -19,6 +19,8 @@ export default async function DashboardPage() {
 
   const adminRole = isAdminRole(profile.system_role)
   const adminMfaReady = adminRole && claims.aal === 'aal2'
+  const { data: factors } = adminRole && !adminMfaReady ? await supabase.auth.mfa.listFactors() : { data: null }
+  const hasFactor = (factors?.totp ?? []).some(f => f.status === 'verified')
   const browse = state ? marketplaceLock(state) : null
   const post = state ? postingLock(state) : null
   const steps = [
@@ -32,19 +34,29 @@ export default async function DashboardPage() {
       <p className="eyebrow">Member dashboard</p>
       <h1>Welcome, {displayName}</h1>
       <p className="muted">Your WTC Accra trade and investment workspace.</p>
+      <div className="button-row">
+        <Link className="button button-primary" href="/opportunities">View live listings</Link>
+        <Link className="button button-outline" href="/dashboard/opportunities/new">Post a listing</Link>
+      </div>
     </div>
 
     {adminRole && !adminMfaReady && <section className="admin-setup-card">
       <div className="admin-setup-copy">
-        <p className="eyebrow light">One step remaining</p>
-        <h2>Your {systemRoleLabels[profile.system_role].toLowerCase()} console is locked until you add an authenticator</h2>
-        <p>Every WTC Accra administrator signs in with a password <em>and</em> a six-digit code from an authenticator app. Until that is set up, verification, publishing, member access and site editing are all disabled for this account — by design, because this account can change every other account.</p>
-        <ol className="admin-setup-steps">
-          <li><span>1</span>Install Google Authenticator, Microsoft Authenticator or 1Password on your phone.</li>
-          <li><span>2</span>Open <strong>Set up authenticator</strong> below and scan the code it shows.</li>
-          <li><span>3</span>Enter the six-digit code. The console unlocks immediately.</li>
-        </ol>
-        <Link className="button button-light" href="/dashboard/security?required=admin-mfa">Set up authenticator now</Link>
+        <p className="eyebrow light">{hasFactor ? 'Sign-in verification' : 'One step remaining'}</p>
+        <h2>{hasFactor
+          ? 'Enter your authenticator code to unlock the ' + systemRoleLabels[profile.system_role].toLowerCase() + ' console'
+          : 'Your ' + systemRoleLabels[profile.system_role].toLowerCase() + ' console is locked until you add an authenticator'}</h2>
+        {hasFactor
+          ? <p>Your authenticator is set up. Each new sign-in needs the current six-digit code from the app before verification, publishing, member access and site editing are enabled for this session.</p>
+          : <>
+              <p>Every WTC Accra administrator signs in with a password <em>and</em> a six-digit code from an authenticator app. Until that is set up, verification, publishing, member access and site editing are all disabled for this account — by design, because this account can change every other account.</p>
+              <ol className="admin-setup-steps">
+                <li><span>1</span>Install Google Authenticator, Microsoft Authenticator or 1Password on your phone.</li>
+                <li><span>2</span>Open <strong>Set up authenticator</strong> below and scan the code it shows.</li>
+                <li><span>3</span>Enter the six-digit code. The console unlocks immediately.</li>
+              </ol>
+            </>}
+        <Link className="button button-light" href="/dashboard/security?required=admin-mfa">{hasFactor ? 'Enter code now' : 'Set up authenticator now'}</Link>
       </div>
     </section>}
 

@@ -205,6 +205,9 @@ export type Database = {
       request_membership: { Args: { membership_type_code: string }; Returns: string }
       complete_initial_password_change: { Args: { target_user: string }; Returns: undefined }
       get_platform_report_metrics: { Args: Record<string, never>; Returns: Json }
+      public_listing_teasers: { Args: { listing_kind?: string | null; listing_intent?: string | null; listing_sector?: string | null; listing_country?: string | null; max_rows?: number }; Returns: { id: string; title: string; kind: string; intent: string; sector: string; country: string; region: string | null; importance: number; teaser: string; tags: string[]; deadline: string | null; published_at: string | null }[] }
+      public_listing_facets: { Args: Record<string, never>; Returns: { facet: string; value: string; listings: number }[] }
+      review_bid: { Args: { bid_id: string; decision: string; review_note?: string | null }; Returns: undefined }
       request_connection: { Args: { addressee: string; connection_intent?: string; opportunity?: string | null; note?: string | null }; Returns: string }
       respond_to_connection: { Args: { connection_id: string; decision: string; response_note?: string | null }; Returns: undefined }
       toggle_follow: { Args: { target_user: string }; Returns: boolean }

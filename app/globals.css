@@ -773,3 +773,13 @@ a.contact-card:hover strong{color:var(--wtc-orange)}
 .admin-setup-steps strong{color:#fff}
 .nav-console-locked{color:var(--muted)!important;font-weight:600!important}
 .nav-console-locked .nav-badge{background:var(--wtc-gold);color:var(--wtc-navy)}
+
+/* --- Public listings and bidding ---------------------------------------- */
+.teaser-card{display:flex;flex-direction:column;gap:10px;align-items:flex-start;border-top:3px solid var(--wtc-orange)}
+.teaser-card h3{font-size:19px;line-height:1.3}
+.teaser-card h3 a:hover{color:var(--wtc-orange)}
+.teaser-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;margin-top:auto;padding-top:10px;border-top:1px solid var(--line)}
+.listing-detail{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.listing-detail .article-title{margin:6px 0 2px}
+.bid-card{border-left:3px solid var(--wtc-orange)}
+.bid-card .status-dot{vertical-align:middle;margin:0 4px}

@@ -28,16 +28,17 @@ export default async function InterestsPage({ searchParams }: Props) {
   return <div className="page-stack">
     <div>
       <p className="eyebrow">Deal flow</p>
-      <h1>Expressions of interest</h1>
-      <p className="muted">Interest you have sent to other members, and interest received on your own listings.</p>
+      <h1>Bids</h1>
+      <p className="muted">Bids you have placed on other members' listings, and bids received on yours. Every bid passes WTC Accra due diligence before it reaches the owner, and both parties are notified at each step.</p>
     </div>
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
 
     <section>
-      <h2>Received</h2>
+      <h2>Received on your listings</h2>
+      <p className="muted">Only bids WTC Accra has cleared appear here. Accepting one tells the bidder and the trade desk, who can then open a deal room.</p>
       {received.length === 0
-        ? <section className="card empty-state"><BrandCircle /><h2>No interest received yet</h2><p>When a subscribed member expresses interest in one of your listings it appears here.</p></section>
+        ? <section className="card empty-state"><BrandCircle /><h2>No cleared bids yet</h2><p>When a member bids on one of your listings and WTC Accra clears it, it appears here for you to accept or decline.</p></section>
         : <div className="opportunity-list">{received.map(item => {
             const opportunity = byId.get(item.opportunity_id)
             return <article className="card opportunity-card" key={item.id}>
@@ -52,11 +53,10 @@ export default async function InterestsPage({ searchParams }: Props) {
               {item.owner_note && <p className="field-help">Your note: {item.owner_note}</p>}
               {item.status !== 'accepted' && item.status !== 'declined' && <form action={respondToInterest} className="review-form">
                 <input type="hidden" name="eoiId" value={item.id} />
-                <label>Note to the applicant</label>
+                <label>Note to the bidder</label>
                 <textarea name="ownerNote" rows={2} />
                 <div className="button-row">
-                  <button className="button button-primary" name="decision" value="accept">Accept</button>
-                  <button className="button button-secondary" name="decision" value="review">Mark under review</button>
+                  <button className="button button-primary" name="decision" value="accept">Accept bid</button>
                   <button className="button button-danger" name="decision" value="decline">Decline</button>
                 </div>
               </form>}
@@ -65,9 +65,9 @@ export default async function InterestsPage({ searchParams }: Props) {
     </section>
 
     <section>
-      <h2>Sent</h2>
+      <h2>Bids you placed</h2>
       {sent.length === 0
-        ? <p className="muted">You have not expressed interest in any opportunity yet.</p>
+        ? <p className="muted">You have not bid on any listing yet. <a className="arrow-link" href="/opportunities">Browse live listings →</a></p>
         : <div className="opportunity-list">{sent.map(item => {
             const opportunity = byId.get(item.opportunity_id)
             return <article className="card opportunity-card" key={item.id}>
@@ -79,7 +79,8 @@ export default async function InterestsPage({ searchParams }: Props) {
                 </div>
               </div>
               <p>{item.message}</p>
-              {item.owner_note && <p className="field-help">Owner response: {item.owner_note}</p>}
+              <p className="field-help">{item.status === 'submitted' ? 'With WTC Accra for due diligence.' : item.status === 'under_review' ? 'Cleared by WTC Accra — now with the owner.' : item.status === 'accepted' ? 'Accepted by the owner. WTC Accra will open a deal room.' : item.status === 'declined' ? 'Not proceeding.' : 'Withdrawn.'}</p>
+              {item.owner_note && <p className="field-help">Note: {item.owner_note}</p>}
             </article>
           })}</div>}
     </section>

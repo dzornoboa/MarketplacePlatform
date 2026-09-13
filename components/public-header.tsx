@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { LogoLink } from '@/components/brand'
 import { getSiteChrome } from '@/lib/content/site-content'
+import { HeaderSession } from '@/components/header-session'
 
 /* The mobile menu is a <details> disclosure so it works with no JavaScript and
    stays keyboard accessible. Below 820px the inline nav and the sign-in link
@@ -14,10 +15,7 @@ export async function PublicHeader() {
       {header.map(link => <Link key={`${link.href}-${link.label}`} href={link.href}>{link.label}</Link>)}
     </nav>
 
-    <div className="header-actions">
-      <Link className="text-link" href="/login">Sign in</Link>
-      <Link className="button button-primary" href="/register">Join the network</Link>
-    </div>
+    <div className="header-actions"><HeaderSession /></div>
 
     <details className="mobile-menu">
       <summary aria-label="Open menu"><span className="burger" aria-hidden="true" /></summary>
@@ -25,10 +23,7 @@ export async function PublicHeader() {
         <nav>
           {header.map(link => <Link key={`m-${link.href}-${link.label}`} href={link.href}>{link.label}</Link>)}
         </nav>
-        <div className="mobile-menu-actions">
-          <Link className="button button-outline" href="/login">Sign in</Link>
-          <Link className="button button-primary" href="/register">Join the network</Link>
-        </div>
+        <div className="mobile-menu-actions"><HeaderSession variant="menu" /></div>
       </div>
     </details>
   </header>
