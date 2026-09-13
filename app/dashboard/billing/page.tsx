@@ -4,7 +4,8 @@ import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
 import { SubmitButton } from '@/components/submit-button'
 import { humanize, labelForParticipantType } from '@/lib/auth/access'
 import { money, date } from '@/lib/format'
-import { requestSubscription, requestMembership, startPayment } from './actions'
+import { requestSubscription, requestMembership, startPayment, cancelPlanChange } from './actions'
+import { subscriptionDaysLeft } from '@/lib/auth/access'
 import { paystackConfigured } from '@/lib/payments/paystack'
 import { getSiteChrome } from '@/lib/content/site-content'
 
@@ -13,7 +14,7 @@ export const dynamic = 'force-dynamic'
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
 export default async function BillingPage({ searchParams }: Props) {
-  const { supabase, profile } = await requireUserProfile()
+  const { supabase, profile, claims } = await requireUserProfile()
   const params = await searchParams
   const error = typeof params.error === 'string' ? params.error : null
   const message = typeof params.message === 'string' ? params.message : null
@@ -32,15 +33,58 @@ export default async function BillingPage({ searchParams }: Props) {
   ])
   const active = (subscriptions ?? []).find(s => s.status === 'active')
   const pending = (subscriptions ?? []).find(s => s.status === 'pending')
+  const awaiting = (subscriptions ?? []).find(s => s.status === 'awaiting_approval')
+  const expired = !active && (subscriptions ?? []).find(s => s.status === 'expired')
+  const daysLeft = state ? subscriptionDaysLeft(state) : null
+  const email = String(claims.email ?? '')
+  const emailDomain = email.split('@')[1]?.toLowerCase() ?? ''
+  const { data: orgRows } = await supabase.from('organization_members').select('organization_id').eq('user_id', profile.id)
+  const { data: verifiedOrgs } = (orgRows ?? []).length ? await supabase.from('organizations').select('id').in('id', (orgRows ?? []).map(r => r.organization_id)).eq('is_verified', true) : { data: [] }
+  const orgVerified = (verifiedOrgs ?? []).length > 0
   const testMode = (st => (st.payment_mode ?? 'test') !== 'live')(chrome.settings as Record<string, string | undefined>)
   const online = testMode || paystackConfigured()
   const pendingPlan = pending ? (plans ?? []).find(p => p.code === pending.plan_code) : null
   const openPayment = (payments ?? []).find(p => p.status === 'pending' && (payRef ? p.reference === payRef : true))
   const st = chrome.settings as Record<string, string | undefined>
-  const eligible = (plans ?? []).filter(p =>
-    p.target_participant_types.length === 0 ||
-    (profile.participant_type ? p.target_participant_types.includes(profile.participant_type) : false))
-  const offered = eligible.length > 0 ? eligible : (plans ?? [])
+  type Plan = NonNullable<typeof plans>[number]
+  const forType = (p: Plan) => p.target_participant_types.length === 0 ||
+    (profile.participant_type ? p.target_participant_types.includes(profile.participant_type) : false)
+  const activePlan = active ? (plans ?? []).find(p => p.code === active.plan_code) : null
+  /* Why a plan is not available to this member right now — mirrors plan_eligibility() in the database. */
+  const blocker = (p: Plan): string | null => {
+    if (!forType(p) && profile.system_role === 'user') return `For ${p.target_participant_types.map(t => labelForParticipantType(t)).join(', ')} participants`
+    if (p.allowed_email_domains.length > 0 && !p.allowed_email_domains.includes(emailDomain)) return `Requires an @${p.allowed_email_domains.join(' or @')} email address`
+    if (p.requires_verified_organisation && !orgVerified) return 'Requires a verified organisation on your account'
+    return null
+  }
+  const matched = (plans ?? []).filter(forType)
+  const others = (plans ?? []).filter(p => !forType(p))
+  const changeInProgress = !!pending || !!awaiting
+  const changeLabel = (p: Plan) => {
+    if (!activePlan) return expired ? 'Renew on this plan' : 'Choose this plan'
+    return p.tier > activePlan.tier ? 'Upgrade to this plan' : p.tier < activePlan.tier ? 'Downgrade to this plan' : 'Switch to this plan'
+  }
+  const planCard = (plan: Plan) => {
+    const current = active?.plan_code === plan.code
+    const why = blocker(plan)
+    return <article className={`card plan-card${current ? ' plan-current' : ''}${why ? ' plan-locked' : ''}`} key={plan.code}>
+      <span className="eyebrow">{plan.name}</span>
+      <strong className="plan-price">{Number(plan.price_usd) === 0 ? 'Free' : money(plan.price_usd)}<small>/{plan.billing_interval}</small></strong>
+      <p className="muted">{plan.description ?? 'WTC Accra marketplace subscription.'}</p>
+      <p className="field-help">For: {plan.target_participant_types.map(t => labelForParticipantType(t)).join(', ') || 'All participants'}{plan.requires_approval ? ' · WTC Accra approval required' : ''}</p>
+      {plan.eligibility_note && <p className="field-help">{plan.eligibility_note}</p>}
+      {current
+        ? <span className="status-dot status-verified">Current plan{active?.ends_at ? ` · to ${date(active.ends_at)}` : ''}</span>
+        : why
+          ? <span className="status-dot">{why}</span>
+          : changeInProgress
+            ? <span className="status-dot">Change in progress</span>
+            : <form action={requestSubscription}>
+                <input type="hidden" name="planCode" value={plan.code} />
+                <SubmitButton pendingLabel="Requesting…" className={activePlan && plan.tier < activePlan.tier ? 'button button-outline' : 'button button-primary'}>{changeLabel(plan)}</SubmitButton>
+              </form>}
+    </article>
+  }
 
   return <div className="page-stack">
     <RealtimeRefresh tables={["payments","subscriptions"]} />
@@ -51,6 +95,10 @@ export default async function BillingPage({ searchParams }: Props) {
     </div>
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
+    {expired && <div className="alert alert-error">Your {expired.plan_code.replaceAll('_', ' ')} subscription expired on {date(expired.ends_at)}. Marketplace access is paused until you renew below.</div>}
+    {active && daysLeft !== null && daysLeft <= 30 && daysLeft >= 0 && <div className="alert alert-error">Your subscription ends in {daysLeft} day{daysLeft === 1 ? '' : 's'} ({date(active.ends_at)}). Renew or change plan below to keep marketplace access.</div>}
+    {awaiting && <div className="alert alert-success">Your {awaiting.plan_code.replaceAll('_', ' ')} plan is paid and awaiting WTC Accra approval. You will be notified as soon as it is confirmed.</div>}
+    {pending && <form action={cancelPlanChange} className="field-help">Changed your mind? <button className="link-button" type="submit">Cancel this plan change</button></form>}
 
     {pending && pendingPlan && Number(pendingPlan.price_usd) > 0 && <section className="card pay-card" id="pay">
       <h2>Pay for your {pendingPlan.name} plan</h2>
@@ -97,8 +145,8 @@ export default async function BillingPage({ searchParams }: Props) {
     <section className="dashboard-grid">
       <article className="metric-card">
         <span>Subscription</span>
-        <strong>{active ? 'Active' : pending ? 'Pending' : 'None'}</strong>
-        <p>{active ? `Renews or expires ${date(active.ends_at)}.` : pending ? 'Awaiting confirmation from WTC Accra finance.' : 'An active subscription unlocks published opportunities.'}</p>
+        <strong>{active ? (activePlan?.name ?? 'Active') : awaiting ? 'Awaiting approval' : pending ? 'Payment due' : expired ? 'Expired' : 'None'}</strong>
+        <p>{active ? `Active until ${date(active.ends_at)}.` : awaiting ? 'Paid; WTC Accra is confirming eligibility.' : pending ? 'Complete the payment above.' : expired ? 'Renew to restore access.' : 'An active subscription unlocks published opportunities.'}</p>
       </article>
       <article className="metric-card">
         <span>Marketplace access</span>
@@ -115,23 +163,14 @@ export default async function BillingPage({ searchParams }: Props) {
     <section>
       <h2>Plans</h2>
       <p className="muted">Prices are annual. Choose a plan, then pay by card, mobile money or bank transfer; the marketplace opens as soon as the payment is confirmed.</p>
-      <div className="plan-grid">
-        {offered.map(plan => {
-          const current = active?.plan_code === plan.code
-          return <article className={`card plan-card${current ? ' plan-current' : ''}`} key={plan.code}>
-            <span className="eyebrow">{plan.name}</span>
-            <strong className="plan-price">{money(plan.price_usd)}<small>/{plan.billing_interval}</small></strong>
-            <p className="muted">{plan.description ?? 'WTC Accra marketplace subscription.'}</p>
-            <p className="field-help">For: {plan.target_participant_types.map(t => labelForParticipantType(t)).join(', ') || 'All participants'}</p>
-            {current
-              ? <span className="status-dot status-verified">Current plan</span>
-              : <form action={requestSubscription}>
-                  <input type="hidden" name="planCode" value={plan.code} />
-                  <SubmitButton pendingLabel="Requesting…">{pending ? 'Request pending' : 'Request this plan'}</SubmitButton>
-                </form>}
-          </article>
-        })}
-      </div>
+      {matched.length > 0 && <>
+        <h3 className="plan-group-title">Plans for {labelForParticipantType(profile.participant_type)} participants</h3>
+        <div className="plan-grid">{matched.map(planCard)}</div>
+      </>}
+      {others.length > 0 && <details className="plan-others">
+        <summary>{matched.length > 0 ? `Other plans (${others.length}) — WTC members, institutions, government and DFIs` : 'All plans'}</summary>
+        <div className="plan-grid">{others.map(planCard)}</div>
+      </details>}
     </section>
 
     {(payments ?? []).length > 0 && <section className="card">

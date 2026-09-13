@@ -2,10 +2,10 @@ import Link from 'next/link'
 import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { notFound } from 'next/navigation'
 import { requireAdminProfile } from '@/lib/auth/guards'
-import { humanize, labelForParticipantType, systemRoleLabels, systemRoles, accountStatuses } from '@/lib/auth/access'
+import { humanize, labelForParticipantType, systemRoleLabels, systemRoles, accountStatuses, selectableParticipantTypes, participantTypeLabels } from '@/lib/auth/access'
 import { date, dateTime, money } from '@/lib/format'
 import { SubmitButton } from '@/components/submit-button'
-import { updateMarketplaceAccess, updateAccountStatus, updateStaffRole, setVerificationStatus, messageMember, setMemberSubscription } from '../actions'
+import { updateMarketplaceAccess, updateAccountStatus, updateStaffRole, setVerificationStatus, messageMember, setMemberSubscription, setSupportBypass, sendPasswordReset, adminUpdateProfile } from '../actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +23,8 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
 
   const { data: person } = await supabase.from('profiles').select('*').eq('id', id).maybeSingle()
   if (!person) notFound()
+  const { data: email } = await supabase.rpc('member_email', { target_user: id })
+  const bypassActive = !!person.support_bypass_until && new Date(person.support_bypass_until) > new Date()
   const self = person.id === me.id
 
   const [{ data: requests }, { data: docs }, { data: subs }, { data: payments }, { data: orgLinks }, { data: plans }, { data: notes }, { data: listings }, { data: bids }, { data: memberships }] = await Promise.all([
@@ -55,6 +57,7 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
         <span className={`status-dot status-${person.verification_status}`}>{humanize(person.verification_status)}</span>
         <span className={`status-dot status-${person.account_status}`}>{humanize(person.account_status)}</span>
         {current && <span className={`status-dot status-sub-${current.status}`}>{current.plan_code.replaceAll('_', ' ')} · {current.status}</span>}
+        {bypassActive && <span className="status-dot status-pending">Support bypass to {date(person.support_bypass_until)}</span>}
       </div>
     </div>
     {error && <div className="alert alert-error">{error}</div>}
@@ -64,6 +67,7 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
       <section className="card">
         <h2>Profile</h2>
         <dl className="detail-grid detail-grid-two">
+          <div><dt>Email</dt><dd>{email ?? '—'}</dd></div>
           <div><dt>Phone</dt><dd>{person.phone || '—'}</dd></div>
           <div><dt>Job title</dt><dd>{person.job_title || '—'}</dd></div>
           <div><dt>City</dt><dd>{person.city || '—'}</dd></div>
@@ -163,6 +167,25 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
         <SubmitButton className="button button-outline" pendingLabel="Saving…">Update status</SubmitButton>
       </form>
 
+      <form action={setSupportBypass} className="card review-form">
+        <h3>Support bypass</h3>
+        <p className="field-help">Open the marketplace temporarily without a subscription — for support cases only. Recorded in the audit log.</p>
+        <input type="hidden" name="userId" value={person.id} />
+        <select name="days" defaultValue={bypassActive ? '0' : '7'}>
+          <option value="0">{bypassActive ? 'Remove bypass' : 'No bypass'}</option>
+          <option value="1">1 day</option><option value="3">3 days</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option>
+        </select>
+        <input name="reason" placeholder="Reason (shown to the member)" defaultValue={person.support_bypass_reason ?? ''} />
+        <SubmitButton className="button button-outline" pendingLabel="Saving…">Apply</SubmitButton>
+      </form>
+
+      <form action={sendPasswordReset} className="card review-form">
+        <h3>Password reset</h3>
+        <p className="field-help">Emails the member a reset link{email ? ` (${email})` : ''} and notifies them in-app. Support never sees or sets the password.</p>
+        <input type="hidden" name="userId" value={person.id} />
+        <SubmitButton className="button button-outline" pendingLabel="Sending…">Send reset link</SubmitButton>
+      </form>
+
       <form action={updateStaffRole} className="card review-form">
         <h3>System role</h3>
         <input type="hidden" name="userId" value={person.id} /><input type="hidden" name="returnTo" value="detail" />
@@ -171,6 +194,29 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
         <SubmitButton className="button button-outline" pendingLabel="Saving…">Update role</SubmitButton>
       </form>
     </div>}
+
+    {!self && <form action={adminUpdateProfile} className="card form-stack">
+      <h2>Edit profile details</h2>
+      <p className="muted">Correct details on the member's behalf. Changing the participant type re-targets the plans they can buy.</p>
+      <input type="hidden" name="userId" value={person.id} />
+      <div className="form-grid">
+        <label>Full name<input name="fullName" defaultValue={person.full_name} required /></label>
+        <label>Participant type<select name="participantType" defaultValue={person.participant_type ?? ''}><option value="">Leave unchanged</option>{selectableParticipantTypes.map(t => <option key={t} value={t}>{participantTypeLabels[t]}</option>)}</select></label>
+      </div>
+      <div className="form-grid">
+        <label>Phone<input name="phone" defaultValue={person.phone ?? ''} /></label>
+        <label>Job title<input name="jobTitle" defaultValue={person.job_title ?? ''} /></label>
+      </div>
+      <div className="form-grid">
+        <label>Country<input name="country" defaultValue={person.country ?? ''} /></label>
+        <label>City<input name="city" defaultValue={person.city ?? ''} /></label>
+      </div>
+      <div className="form-grid">
+        <label>WTCA membership no.<input name="wtcaNumber" defaultValue={person.wtca_membership_number ?? ''} /></label>
+        <label>WTCA chapter<input name="wtcaChapter" defaultValue={person.wtca_chapter ?? ''} /></label>
+      </div>
+      <div><SubmitButton pendingLabel="Saving…">Save profile</SubmitButton></div>
+    </form>}
 
     <div className="split-grid admin-detail-grid">
       <section className="card">

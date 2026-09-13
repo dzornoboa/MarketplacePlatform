@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { Profile } from '@/lib/database.types'
@@ -16,6 +16,15 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, a
   /* On a phone the sidebar is a collapsed menu. Closing it on navigation means
      a tap always lands on the page, not on a menu still covering it. */
   useEffect(() => { setOpen(false) }, [pathname])
+  const asideRef = useRef<HTMLElement>(null)
+  // Tap outside the menu, or press Escape, and it closes.
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent | TouchEvent) => { if (asideRef.current && !asideRef.current.contains(e.target as Node)) setOpen(false) }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onDown); document.addEventListener('touchstart', onDown); document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('touchstart', onDown); document.removeEventListener('keydown', onKey) }
+  }, [open])
   const verified = profile.verification_status === 'verified'
   const admin = isAdminRole(profile.system_role)
   const editor = hasCapability(profile.system_role, 'content')
@@ -61,7 +70,7 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, a
 
   const isActive = (href: string) => pathname === href || (href !== '/dashboard' && pathname.startsWith(`${href}/`))
 
-  return <aside className={open ? 'dashboard-sidebar sidebar-open' : 'dashboard-sidebar'}>
+  return <>{open && <div className="sidebar-backdrop" aria-hidden="true" />}<aside ref={asideRef} className={open ? 'dashboard-sidebar sidebar-open' : 'dashboard-sidebar'}>
     <div className="sidebar-top">
       <LogoLink href="/dashboard" />
       <button className="sidebar-toggle" type="button" aria-expanded={open} aria-controls="dashboard-nav" onClick={() => setOpen(v => !v)}>
@@ -102,5 +111,6 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, a
       <span className={`status-dot status-${profile.verification_status}`}>{profile.verification_status.replaceAll('_', ' ')}</span>
       <form action="/auth/signout" method="post"><button className="link-button" type="submit">Sign out</button></form>
     </div>
-  </aside>
+    {open && <div className="nav-group nav-group-mobile-signout"><form action="/auth/signout" method="post"><button className="link-button" type="submit">Sign out</button></form></div>}
+  </aside></>
 }

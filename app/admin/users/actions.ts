@@ -103,3 +103,53 @@ export async function setMemberSubscription(formData: FormData) {
   revalidatePath(`/admin/users/${targetUser}`); revalidatePath('/admin/subscriptions'); revalidatePath('/dashboard/billing')
   redirect(back('message', `Subscription set to ${status} on ${plan.replaceAll('_', ' ')}.`, targetUser))
 }
+
+/* Support tools: temporary marketplace access, password reset, profile edits. */
+export async function setSupportBypass(formData: FormData) {
+  const targetUser = String(formData.get('userId') ?? '')
+  const days = Number(formData.get('days') ?? 0)
+  const reason = String(formData.get('reason') ?? '').trim()
+  if (!targetUser) redirect(back('error', 'User not found.'))
+  const until = days > 0 ? new Date(Date.now() + days * 86400000).toISOString() : null
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('set_support_bypass', { target_user: targetUser, until_at: until, reason: reason || null })
+  if (error) redirect(back('error', error.message, targetUser))
+  revalidatePath(`/admin/users/${targetUser}`)
+  redirect(back('message', until ? `Marketplace opened for ${days} day${days === 1 ? '' : 's'} without a subscription.` : 'Support bypass removed.', targetUser))
+}
+
+export async function sendPasswordReset(formData: FormData) {
+  const targetUser = String(formData.get('userId') ?? '')
+  if (!targetUser) redirect(back('error', 'User not found.'))
+  const supabase = await createClient()
+  const { data: email, error: lookupError } = await supabase.rpc('member_email', { target_user: targetUser })
+  if (lookupError || !email) redirect(back('error', lookupError?.message ?? 'Could not find the member’s email.', targetUser))
+  const { getSiteUrl } = await import('@/lib/supabase/config')
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${getSiteUrl()}/auth/confirm?next=/reset-password` })
+  if (error) redirect(back('error', `Reset email not sent: ${error.message}`, targetUser))
+  await supabase.rpc('message_member', { target_user: targetUser, message_title: 'Password reset sent', message_body: 'WTC Accra support sent a password reset link to your email address. It expires in one hour.', message_href: '/dashboard/security' })
+  revalidatePath(`/admin/users/${targetUser}`)
+  redirect(back('message', `Password reset email sent to ${email}.`, targetUser))
+}
+
+export async function adminUpdateProfile(formData: FormData) {
+  const targetUser = String(formData.get('userId') ?? '')
+  if (!targetUser) redirect(back('error', 'User not found.'))
+  const fullName = String(formData.get('fullName') ?? '').trim()
+  if (fullName.length < 2) redirect(back('error', 'Full name is required.', targetUser))
+  const type = String(formData.get('participantType') ?? '')
+  const supabase = await createClient()
+  const { error } = await supabase.from('profiles').update({
+    full_name: fullName,
+    phone: String(formData.get('phone') ?? '').trim() || null,
+    job_title: String(formData.get('jobTitle') ?? '').trim() || null,
+    country: String(formData.get('country') ?? '').trim() || null,
+    city: String(formData.get('city') ?? '').trim() || null,
+    wtca_membership_number: String(formData.get('wtcaNumber') ?? '').trim() || null,
+    wtca_chapter: String(formData.get('wtcaChapter') ?? '').trim() || null,
+    ...(type ? { participant_type: type as 'buyer', requested_participant_type: type as 'buyer' } : {}),
+  }).eq('id', targetUser)
+  if (error) redirect(back('error', error.message, targetUser))
+  revalidatePath(`/admin/users/${targetUser}`); revalidatePath('/admin/users')
+  redirect(back('message', 'Profile updated.', targetUser))
+}

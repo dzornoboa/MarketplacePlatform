@@ -144,7 +144,7 @@ export default async function NetworkPage({ searchParams }: Props) {
             <div className="member-identity">
               <span className="member-avatar" aria-hidden="true">{(person.full_name || '?').charAt(0)}</span>
               <div>
-                <strong>{person.full_name}</strong>
+                <strong>{person.full_name}</strong>{person.is_staff && <span className="status-dot status-verified">WTC Accra staff</span>}
                 <span className="member-role">{labelForParticipantType(person.participant_type)}</span>
               </div>
             </div>

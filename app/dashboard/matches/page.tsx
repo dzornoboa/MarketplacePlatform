@@ -14,6 +14,8 @@ export default async function MatchesPage({ searchParams }: Props) {
   const error = typeof params.error === 'string' ? params.error : null
   const message = typeof params.message === 'string' ? params.message : null
 
+  // Matching runs automatically whenever a mandate/requirement or a listing changes; this keeps a stale account fresh.
+  await supabase.rpc('refresh_my_matches')
   const { data: matches } = await supabase.from('matches').select('*').order('score', { ascending: false })
   const oppIds = [...new Set((matches ?? []).map(m => m.opportunity_id))]
   const { data: opportunities } = oppIds.length
@@ -27,7 +29,7 @@ export default async function MatchesPage({ searchParams }: Props) {
     <div>
       <p className="eyebrow">Curated for you</p>
       <h1>Matches</h1>
-      <p className="muted">Opportunities the WTC Accra trade desk has matched to your mandate or requirements. These are chosen by people, not an algorithm.</p>
+      <p className="muted">Published opportunities scored automatically against your investment mandate or buying requirements (sector, geography and ticket size), plus any the WTC Accra trade desk adds by hand. Update your mandate to refine them.</p>
     </div>
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
@@ -36,7 +38,7 @@ export default async function MatchesPage({ searchParams }: Props) {
       ? <section className="card empty-state">
           <BrandCircle />
           <h2>No matches yet</h2>
-          <p>Add an investment mandate or buying requirement so the trade desk knows what to look for.</p>
+          <p>Add an investment mandate or buying requirement and matches are generated automatically as listings are published.</p>
           <a className="button button-primary" href="/dashboard/mandate">Set your mandate</a>
         </section>
       : <div className="opportunity-list">{live.map(match => {

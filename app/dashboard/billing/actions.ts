@@ -19,8 +19,8 @@ export async function requestSubscription(formData: FormData) {
   const { error } = await supabase.rpc('request_subscription', { plan_code: planCode })
   if (error) redirect(back('error', error.message))
   revalidatePath('/dashboard/billing'); revalidatePath('/dashboard')
-  const { data: plan } = await supabase.from('subscription_plans').select('price_usd').eq('code', planCode).maybeSingle()
-  if (plan && Number(plan.price_usd) === 0) redirect(back('message', 'Your free plan is active. The marketplace is open.'))
+  const { data: plan } = await supabase.from('subscription_plans').select('price_usd,requires_approval').eq('code', planCode).maybeSingle()
+  if (plan && Number(plan.price_usd) === 0) redirect(back('message', plan.requires_approval ? 'Plan requested. WTC Accra will confirm your eligibility.' : 'Your free plan is active. The marketplace is open.'))
   redirect('/dashboard/billing?message=' + encodeURIComponent('Plan selected. Complete the payment below to open the marketplace.') + '#pay')
 }
 
@@ -116,4 +116,12 @@ export async function completeTestPayment(formData: FormData) {
   if (error) redirect(back('error', error.message))
   revalidatePath('/dashboard/billing'); revalidatePath('/dashboard'); revalidatePath('/admin/payments'); revalidatePath('/admin/subscriptions')
   redirect(back('message', 'Payment received. Your subscription is active and the marketplace is open.'))
+}
+
+export async function cancelPlanChange() {
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('cancel_pending_subscription')
+  if (error) redirect(back('error', error.message))
+  revalidatePath('/dashboard/billing')
+  redirect(back('message', 'Plan change cancelled.'))
 }

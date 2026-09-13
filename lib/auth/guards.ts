@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { hasAdminMfaAccess, hasCapability, isAdminRole, isStaffRole, marketplaceLock, type AccessState, type StaffCapability } from '@/lib/auth/access'
@@ -5,13 +6,21 @@ import { hasAdminMfaAccess, hasCapability, isAdminRole, isStaffRole, marketplace
 /* Authenticated session + profile, with no access gates applied. Use this only
    for the pages that must stay reachable while an account is blocked or is
    still waiting for its first password. */
-export async function requireSession() {
+const loadSession = cache(async () => {
   const supabase = await createClient()
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims()
   const claims = claimsData?.claims
-  if (claimsError || !claims?.sub) redirect('/login')
-  const { data: profile, error: profileError } = await supabase.from('profiles').select('*').eq('id', claims.sub).single()
-  if (profileError || !profile) redirect('/login?error=profile-unavailable')
+  if (claimsError || !claims?.sub) return { supabase, claims: null, profile: null }
+  const { data: profile } = await supabase.from('profiles').select('*').eq('id', claims.sub).single()
+  return { supabase, claims, profile: profile ?? null }
+})
+
+/* Memoised per request (React cache), so the layout and the page share one
+   claims check and one profile fetch instead of repeating both. */
+export async function requireSession() {
+  const { supabase, claims, profile } = await loadSession()
+  if (!claims?.sub) redirect('/login')
+  if (!profile) redirect('/login?error=profile-unavailable')
   return { supabase, claims, profile }
 }
 
@@ -64,10 +73,14 @@ export async function requireCapability(capability: StaffCapability) {
 
 type SupabaseLike = Awaited<ReturnType<typeof createClient>>
 
-export async function readAccessState(supabase: SupabaseLike): Promise<AccessState | null> {
+const loadAccessState = cache(async (supabase: SupabaseLike) => {
   const { data, error } = await supabase.rpc('my_access_state')
   if (error || !data) return null
   return data as unknown as AccessState
+})
+
+export async function readAccessState(supabase: SupabaseLike): Promise<AccessState | null> {
+  return loadAccessState(supabase)
 }
 
 export async function getAccessState() {

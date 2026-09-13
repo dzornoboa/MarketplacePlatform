@@ -4,8 +4,8 @@ export type Database = {
   public: {
     Tables: {
       profiles: {
-        Row: { id:string; full_name:string; phone:string|null; job_title:string|null; country:string|null; city:string|null; requested_participant_type:Database['public']['Enums']['participant_type']|null; participant_type:Database['public']['Enums']['participant_type']|null; verification_status:Database['public']['Enums']['verification_status']; system_role:Database['public']['Enums']['system_role']; wtca_membership_number:string|null; wtca_chapter:string|null; profile_completed:boolean; account_status:Database['public']['Enums']['account_status']; password_change_required:boolean; can_view_opportunities:boolean; can_post_opportunities:boolean; requested_plan_code:string|null; verified_at:string|null; verified_by:string|null; created_at:string; updated_at:string }
-        Insert: { id:string; full_name?:string; phone?:string|null; job_title?:string|null; country?:string|null; city?:string|null; requested_participant_type?:Database['public']['Enums']['participant_type']|null; participant_type?:Database['public']['Enums']['participant_type']|null; verification_status?:Database['public']['Enums']['verification_status']; system_role?:Database['public']['Enums']['system_role']; wtca_membership_number?:string|null; wtca_chapter?:string|null; profile_completed?:boolean; account_status?:Database['public']['Enums']['account_status']; password_change_required?:boolean; can_view_opportunities?:boolean; can_post_opportunities?:boolean; requested_plan_code?:string|null; verified_at?:string|null; verified_by?:string|null; created_at?:string; updated_at?:string }
+        Row: { id:string; full_name:string; phone:string|null; job_title:string|null; country:string|null; city:string|null; requested_participant_type:Database['public']['Enums']['participant_type']|null; participant_type:Database['public']['Enums']['participant_type']|null; verification_status:Database['public']['Enums']['verification_status']; system_role:Database['public']['Enums']['system_role']; wtca_membership_number:string|null; wtca_chapter:string|null; profile_completed:boolean; account_status:Database['public']['Enums']['account_status']; password_change_required:boolean; can_view_opportunities:boolean; can_post_opportunities:boolean; requested_plan_code:string|null; support_bypass_until:string|null; support_bypass_reason:string|null; verified_at:string|null; verified_by:string|null; created_at:string; updated_at:string }
+        Insert: { id:string; full_name?:string; phone?:string|null; job_title?:string|null; country?:string|null; city?:string|null; requested_participant_type?:Database['public']['Enums']['participant_type']|null; participant_type?:Database['public']['Enums']['participant_type']|null; verification_status?:Database['public']['Enums']['verification_status']; system_role?:Database['public']['Enums']['system_role']; wtca_membership_number?:string|null; wtca_chapter?:string|null; profile_completed?:boolean; account_status?:Database['public']['Enums']['account_status']; password_change_required?:boolean; can_view_opportunities?:boolean; can_post_opportunities?:boolean; requested_plan_code?:string|null; support_bypass_until?:string|null; support_bypass_reason?:string|null; verified_at?:string|null; verified_by?:string|null; created_at?:string; updated_at?:string }
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>
         Relationships: []
       }
@@ -40,14 +40,14 @@ export type Database = {
         Relationships: []
       }
       subscription_plans: {
-        Row: { code:string; name:string; description:string|null; price_usd:number; billing_interval:string; target_participant_types:string[]; active:boolean; created_at:string }
-        Insert: { code:string; name:string; description?:string|null; price_usd?:number; billing_interval?:string; target_participant_types?:string[]; active?:boolean; created_at?:string }
+        Row: { code:string; name:string; description:string|null; price_usd:number; billing_interval:string; target_participant_types:string[]; active:boolean; created_at:string; tier:number; requires_approval:boolean; allowed_email_domains:string[]; requires_verified_organisation:boolean; eligibility_note:string|null }
+        Insert: { code:string; name:string; description?:string|null; price_usd?:number; billing_interval?:string; target_participant_types?:string[]; active?:boolean; created_at?:string; tier?:number; requires_approval?:boolean; allowed_email_domains?:string[]; requires_verified_organisation?:boolean; eligibility_note?:string|null }
         Update: Partial<Database['public']['Tables']['subscription_plans']['Insert']>
         Relationships: []
       }
       subscriptions: {
-        Row: { id:string; user_id:string; plan_code:string; status:Database['public']['Enums']['subscription_status']; starts_at:string|null; ends_at:string|null; auto_renew:boolean; external_reference:string|null; approved_by:string|null; created_at:string; updated_at:string }
-        Insert: { id?:string; user_id:string; plan_code:string; status?:Database['public']['Enums']['subscription_status']; starts_at?:string|null; ends_at?:string|null; auto_renew?:boolean; external_reference?:string|null; approved_by?:string|null; created_at?:string; updated_at?:string }
+        Row: { id:string; user_id:string; plan_code:string; status:Database['public']['Enums']['subscription_status']; starts_at:string|null; ends_at:string|null; auto_renew:boolean; external_reference:string|null; approved_by:string|null; replaces_subscription_id:string|null; created_at:string; updated_at:string }
+        Insert: { id?:string; user_id:string; plan_code:string; status?:Database['public']['Enums']['subscription_status']; starts_at?:string|null; ends_at?:string|null; auto_renew?:boolean; external_reference?:string|null; approved_by?:string|null; replaces_subscription_id?:string|null; created_at?:string; updated_at?:string }
         Update: Partial<Database['public']['Tables']['subscriptions']['Insert']>
         Relationships: []
       }
@@ -224,13 +224,20 @@ export type Database = {
       set_verification_status: { Args: { target_user: string; new_status: string; note?: string | null }; Returns: undefined }
       message_member: { Args: { target_user: string; message_title: string; message_body: string; message_href?: string | null }; Returns: undefined }
       set_member_subscription: { Args: { target_user: string; plan: string; new_status: string; starts?: string | null; ends?: string | null; note?: string | null }; Returns: string }
+      plan_eligibility: { Args: { plan: string }; Returns: { eligible: boolean; reason: string | null }[] }
+      cancel_pending_subscription: { Args: Record<string, never>; Returns: undefined }
+      approve_subscription: { Args: { subscription_id: string; decision: string; note?: string | null }; Returns: undefined }
+      expire_subscriptions: { Args: Record<string, never>; Returns: number }
+      set_support_bypass: { Args: { target_user: string; until_at: string | null; reason?: string | null }; Returns: undefined }
+      member_email: { Args: { target_user: string }; Returns: string | null }
+      refresh_my_matches: { Args: Record<string, never>; Returns: number }
       review_bid: { Args: { bid_id: string; decision: string; review_note?: string | null }; Returns: undefined }
       confirm_payment: { Args: { payment_id: string; decision: string; note?: string | null }; Returns: undefined }
       record_provider_payment: { Args: { payment_reference: string; provider_ref: string; succeeded: boolean }; Returns: undefined }
       request_connection: { Args: { addressee: string; connection_intent?: string; opportunity?: string | null; note?: string | null }; Returns: string }
       respond_to_connection: { Args: { connection_id: string; decision: string; response_note?: string | null }; Returns: undefined }
       toggle_follow: { Args: { target_user: string }; Returns: boolean }
-      member_directory: { Args: { search?: string | null; participant?: string | null; member_country?: string | null; only_ids?: string[] | null; max_rows?: number }; Returns: { id: string; full_name: string; job_title: string | null; participant_type: string | null; country: string | null; city: string | null; organisation: string | null; is_following: boolean; connection_status: string | null }[] }
+      member_directory: { Args: { search?: string | null; participant?: string | null; member_country?: string | null; only_ids?: string[] | null; max_rows?: number }; Returns: { id: string; full_name: string; job_title: string | null; participant_type: string | null; country: string | null; city: string | null; organisation: string | null; is_following: boolean; connection_status: string | null; is_staff: boolean }[] }
       listing_owner_cards: { Args: { owner_ids: string[] }; Returns: { id: string; full_name: string; participant_type: string | null; country: string | null; organisation: string | null }[] }
       request_introduction: { Args: { opportunity_id: string; request_note?: string | null }; Returns: string }
       review_introduction: { Args: { introduction_id: string; decision: string; staff_note?: string | null; meeting_at?: string | null; meeting_url?: string | null }; Returns: undefined }
@@ -250,7 +257,7 @@ export type Database = {
       payment_method: 'card'|'mobile_money'|'bank_transfer'|'invoice'
       opportunity_status: 'draft'|'submitted'|'in_review'|'changes_requested'|'published'|'paused'|'closed'|'rejected'|'archived'
       eoi_status: 'submitted'|'under_review'|'accepted'|'declined'|'withdrawn'
-      subscription_status: 'pending'|'active'|'past_due'|'expired'|'cancelled'
+      subscription_status: 'pending'|'active'|'past_due'|'expired'|'cancelled'|'awaiting_approval'
       membership_status: 'pending'|'active'|'expired'|'suspended'|'cancelled'
       content_status: 'draft'|'published'|'archived'
       support_status: 'open'|'in_progress'|'resolved'|'closed'

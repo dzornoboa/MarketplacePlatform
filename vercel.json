@@ -3,5 +3,8 @@
   "framework": "nextjs",
   "buildCommand": "npm run build",
   "installCommand": "npm install",
-  "outputDirectory": null
+  "outputDirectory": null,
+  "regions": [
+    "dub1"
+  ]
 }

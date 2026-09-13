@@ -38,13 +38,15 @@ export async function saveMandate(formData: FormData) {
   if (title.length < 3) redirect(back('error', 'Give the mandate a title of at least 3 characters.'))
   if (!currency) redirect(back('error', 'Currency must be a 3-letter code such as USD or GHS.'))
 
+  const ticketMin = optionalNumber(formData.get('ticketMin')), ticketMax = optionalNumber(formData.get('ticketMax'))
+  if (ticketMin !== null && ticketMax !== null && ticketMin > ticketMax) redirect(back('error', 'Minimum ticket cannot be higher than the maximum ticket.'))
   const payload = {
     user_id: String(userId),
     title,
     sectors: list(formData.get('sectors')),
     geographies: list(formData.get('geographies')),
-    ticket_min: optionalNumber(formData.get('ticketMin')),
-    ticket_max: optionalNumber(formData.get('ticketMax')),
+    ticket_min: ticketMin,
+    ticket_max: ticketMax,
     currency,
     notes: String(formData.get('notes') ?? '').trim() || null,
     active: String(formData.get('active') ?? '') === 'on',
@@ -71,6 +73,8 @@ export async function saveRequirement(formData: FormData) {
   if (title.length < 3) redirect(back('error', 'Give the requirement a title of at least 3 characters.'))
   if (requirement.length < 10) redirect(back('error', 'Describe what you are sourcing in at least 10 characters.'))
   if (!currency) redirect(back('error', 'Currency must be a 3-letter code such as USD or GHS.'))
+  const budgetMin = optionalNumber(formData.get('budgetMin')), budgetMax = optionalNumber(formData.get('budgetMax'))
+  if (budgetMin !== null && budgetMax !== null && budgetMin > budgetMax) redirect(back('error', 'Minimum budget cannot be higher than the maximum budget.'))
 
   const payload = {
     user_id: String(userId),
@@ -78,8 +82,8 @@ export async function saveRequirement(formData: FormData) {
     requirement,
     sectors: list(formData.get('sectors')),
     geographies: list(formData.get('geographies')),
-    budget_min: optionalNumber(formData.get('budgetMin')),
-    budget_max: optionalNumber(formData.get('budgetMax')),
+    budget_min: budgetMin,
+    budget_max: budgetMax,
     currency,
     active: String(formData.get('active') ?? '') === 'on',
   }

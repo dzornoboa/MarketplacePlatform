@@ -157,6 +157,15 @@ export type AccessState = {
   can_post_opportunities: boolean
   has_active_subscription: boolean
   subscription_ends_at: string | null
+  subscription_plan?: string | null
+  subscription_status?: string | null
+  support_bypass_until?: string | null
+}
+
+/* Days until the active subscription ends; negative when expired. */
+export function subscriptionDaysLeft(state: AccessState): number | null {
+  if (!state.subscription_ends_at) return null
+  return Math.ceil((new Date(state.subscription_ends_at).getTime() - Date.now()) / 86400000)
 }
 
 export type MarketplaceLock =
@@ -174,6 +183,9 @@ export function marketplaceLock(state: AccessState): MarketplaceLock {
     return { locked: true, reason: 'WTC Accra has paused marketplace browsing on your account.', action: { label: 'Contact support', href: '/dashboard/support' } }
   }
   if (!state.has_active_subscription) {
+    if (state.subscription_status === 'expired') return { locked: true, reason: 'Your subscription has expired. Marketplace access is paused until you renew.', action: { label: 'Renew now', href: '/dashboard/billing' } }
+    if (state.subscription_status === 'awaiting_approval') return { locked: true, reason: 'Your plan is paid and awaiting WTC Accra approval.', action: { label: 'View billing', href: '/dashboard/billing' } }
+    if (state.subscription_status === 'pending') return { locked: true, reason: 'Complete the payment for your chosen plan to open the marketplace.', action: { label: 'Pay now', href: '/dashboard/billing#pay' } }
     return { locked: true, reason: 'Opportunities are available to members with an active subscription.', action: { label: 'View plans', href: '/dashboard/billing' } }
   }
   return { locked: false }
