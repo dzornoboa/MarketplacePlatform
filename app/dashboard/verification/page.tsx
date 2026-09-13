@@ -107,7 +107,7 @@ export default async function VerificationPage({ searchParams }: Props) {
           <strong>{doc.file_name}</strong><span>{date(doc.created_at)}</span>
           <p className="muted">{humanize(doc.purpose)}</p>
         </div>)}</div>}
-        <form action={uploadDocument} className="form-stack" encType="multipart/form-data">
+        <form action={uploadDocument} className="form-stack">
           <input type="hidden" name="returnTo" value="/dashboard/verification" />
           <input type="hidden" name="accessScope" value="private" />
           <div className="form-grid">

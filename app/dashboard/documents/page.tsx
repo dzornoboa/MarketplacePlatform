@@ -48,7 +48,7 @@ export default async function DocumentsPage({ searchParams }: Props) {
           <div><strong>Verification required</strong><p>Document upload opens once WTC Accra has verified your account.</p></div>
           <a className="button button-light" href="/dashboard/verification">Continue verification</a>
         </section>
-      : <form action={uploadDocument} className="card form-stack" encType="multipart/form-data">
+      : <form action={uploadDocument} className="card form-stack">
           <h2>Upload a document</h2>
           <label>File<input name="file" type="file" required accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx" /></label>
           <p className="field-help">PDF, PNG, JPEG, DOCX or XLSX. Maximum 25MB.</p>

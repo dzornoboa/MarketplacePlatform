@@ -1052,3 +1052,5 @@ a.contact-card:hover strong{color:var(--wtc-orange)}
 .deal-compose{display:flex;gap:8px;align-items:flex-end;margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
 .deal-compose textarea{flex:1;border:1px solid var(--line-strong);border-radius:var(--radius);padding:8px 10px;font:inherit;font-size:13.5px;resize:vertical}
 @media(max-width:900px){.deal-room-grid{grid-template-columns:1fr}}
+.deal-compose textarea{min-width:0;width:100%}
+@media(max-width:600px){.deal-compose{flex-direction:column;align-items:stretch}}

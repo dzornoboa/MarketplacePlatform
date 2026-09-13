@@ -87,7 +87,7 @@ export default async function DealRoomPage({ params, searchParams }: Props) {
             <strong>{d.file_name}</strong><span>{date(d.created_at)}</span>
             <p className="muted">{personById.get(d.owner_user_id)?.full_name ?? 'Participant'} · {humanize(d.purpose)} · <a className="arrow-link" href={`/api/documents/${d.id}`} target="_blank" rel="noopener">Open →</a></p>
           </div>)}</div>}
-          {open && <form action={uploadDocument} className="form-stack" encType="multipart/form-data">
+          {open && <form action={uploadDocument} className="form-stack">
             <input type="hidden" name="dealRoomId" value={id} />
             <input type="hidden" name="accessScope" value="private" />
             <input type="hidden" name="returnTo" value={`/dashboard/deal-rooms/${id}`} />
