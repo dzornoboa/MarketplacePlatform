@@ -2,101 +2,113 @@ import Link from 'next/link'
 import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { requireStaffConsole } from '@/lib/auth/guards'
 import { hasCapability, isAdminRole, humanize } from '@/lib/auth/access'
-import { money, dateTime } from '@/lib/format'
+import { money, dateTime, date } from '@/lib/format'
 
 export const dynamic = 'force-dynamic'
 
-async function countOf(
-  supabase: Awaited<ReturnType<typeof requireStaffConsole>>['supabase'],
-  table: 'verification_requests' | 'opportunities' | 'subscriptions' | 'profiles' | 'expressions_of_interest' | 'support_requests',
-  column: string, value: string,
-) {
-  const { count } = await supabase.from(table).select('*', { count: 'exact', head: true }).eq(column, value)
-  return count ?? 0
+type Tally = Record<string, number>
+
+/* One grouped count per table so the overview shows both what is waiting
+   and what has already moved through each queue. */
+async function tally(supabase: Awaited<ReturnType<typeof requireStaffConsole>>['supabase'], table: 'verification_requests' | 'opportunities' | 'subscriptions' | 'expressions_of_interest' | 'support_requests' | 'payments' | 'profiles', column = 'status'): Promise<Tally> {
+  const { data } = await supabase.from(table).select(column).limit(5000)
+  const out: Tally = {}
+  for (const row of (data ?? []) as unknown as Record<string, string | null>[]) { const k = row[column] ?? 'unknown'; out[k] = (out[k] ?? 0) + 1 }
+  return out
 }
+const sum = (t: Tally, keys?: string[]) => (keys ?? Object.keys(t)).reduce((n, k) => n + (t[k] ?? 0), 0)
+const breakdown = (t: Tally, order: string[]) => order.filter(k => t[k]).map(k => `${t[k]} ${humanize(k).toLowerCase()}`).join(' · ') || 'nothing yet'
 
 export default async function AdminPage() {
   const { supabase, profile } = await requireStaffConsole()
   const role = profile.system_role
   const admin = isAdminRole(role)
 
-  const [pendingVerification, submittedOpportunities, publishedOpportunities, pendingSubs, activeSubs, verifiedMembers, totalMembers, openSupport, pendingBids, pendingPayments] = await Promise.all([
-    countOf(supabase, 'verification_requests', 'status', 'pending_review'),
-    countOf(supabase, 'opportunities', 'status', 'submitted'),
-    countOf(supabase, 'opportunities', 'status', 'published'),
-    countOf(supabase, 'subscriptions', 'status', 'pending'),
-    countOf(supabase, 'subscriptions', 'status', 'active'),
-    countOf(supabase, 'profiles', 'verification_status', 'verified'),
-    supabase.from('profiles').select('*', { count: 'exact', head: true }).then(r => r.count ?? 0),
-    countOf(supabase, 'support_requests', 'status', 'open'),
-    countOf(supabase, 'expressions_of_interest', 'status', 'submitted'),
-    supabase.from('payments').select('*', { count: 'exact', head: true }).eq('status', 'pending').then(r => r.count ?? 0),
+  const [vr, opp, subs, bids, support, pay, members, verif, { data: plans }, { data: activeSubs }, { data: paidRows }, { data: recentAudit }, { data: staffNotes }, { data: latestMembers }, { data: latestListings }] = await Promise.all([
+    tally(supabase, 'verification_requests'), tally(supabase, 'opportunities'), tally(supabase, 'subscriptions'),
+    tally(supabase, 'expressions_of_interest'), tally(supabase, 'support_requests'), tally(supabase, 'payments'),
+    tally(supabase, 'profiles', 'account_status'), tally(supabase, 'profiles', 'verification_status'),
+    supabase.from('subscription_plans').select('code,price_usd'),
+    supabase.from('subscriptions').select('plan_code').eq('status', 'active'),
+    supabase.from('payments').select('amount,paid_at').eq('status', 'paid'),
+    admin ? supabase.from('audit_events').select('*').order('created_at', { ascending: false }).limit(12) : Promise.resolve({ data: [] }),
+    supabase.from('notifications').select('id,title,body,href,created_at,read_at').eq('user_id', profile.id).order('created_at', { ascending: false }).limit(8),
+    supabase.from('profiles').select('id,full_name,participant_type,verification_status,created_at').order('created_at', { ascending: false }).limit(5),
+    supabase.from('opportunities').select('id,title,status,updated_at').order('updated_at', { ascending: false }).limit(5),
   ])
-
-  const { data: plans } = await supabase.from('subscription_plans').select('code,price_usd')
-  const { data: active } = await supabase.from('subscriptions').select('plan_code').eq('status', 'active')
   const priceByCode = new Map((plans ?? []).map(p => [p.code, Number(p.price_usd)]))
-  const recurringValue = (active ?? []).reduce((sum, s) => sum + (priceByCode.get(s.plan_code) ?? 0), 0)
+  const recurringValue = (activeSubs ?? []).reduce((s, x) => s + (priceByCode.get(x.plan_code) ?? 0), 0)
+  const received = (paidRows ?? []).reduce((s, p) => s + Number(p.amount), 0)
+  const receivedThisMonth = (paidRows ?? []).filter(p => p.paid_at && new Date(p.paid_at).getMonth() === new Date().getMonth() && new Date(p.paid_at).getFullYear() === new Date().getFullYear()).reduce((s, p) => s + Number(p.amount), 0)
 
-  const { data: recentAudit } = admin
-    ? await supabase.from('audit_events').select('*').order('created_at', { ascending: false }).limit(6)
-    : { data: [] }
+  const actorIds = [...new Set((recentAudit ?? []).map(e => e.actor_id).filter((x): x is string => !!x))]
+  const { data: actors } = actorIds.length ? await supabase.from('profiles').select('id,full_name').in('id', actorIds) : { data: [] }
+  const actorName = new Map((actors ?? []).map(a => [a.id, a.full_name]))
 
   const queues = [
-    { label: 'Verification requests', value: pendingVerification, href: '/admin/verification', show: hasCapability(role, 'verification'), hint: 'Members waiting on a decision.' },
-    { label: 'Opportunities to review', value: submittedOpportunities, href: '/admin/opportunities', show: hasCapability(role, 'opportunities'), hint: 'Submitted listings not yet published.' },
-    { label: 'Bids awaiting due diligence', value: pendingBids, href: '/admin/bids', show: hasCapability(role, 'opportunities'), hint: 'Member bids that must be cleared before the owner sees them.' },
-    { label: 'Payments to confirm', value: pendingPayments, href: '/admin/payments', show: hasCapability(role, 'finance'), hint: 'Bank and mobile-money payments awaiting confirmation.' },
-    { label: 'Subscriptions to confirm', value: pendingSubs, href: '/admin/subscriptions', show: hasCapability(role, 'finance'), hint: 'Requested plans awaiting payment confirmation.' },
-    { label: 'Open support requests', value: openSupport, href: '/admin/support', show: hasCapability(role, 'support'), hint: 'Member questions needing a reply.' },
+    { label: 'Verification requests', waiting: vr.pending_review ?? 0, total: sum(vr), detail: breakdown(vr, ['pending_review', 'verified', 'changes_requested', 'rejected']), href: '/admin/verification', show: hasCapability(role, 'verification') },
+    { label: 'Opportunities to review', waiting: (opp.submitted ?? 0) + (opp.in_review ?? 0), total: sum(opp), detail: breakdown(opp, ['submitted', 'in_review', 'published', 'changes_requested', 'rejected', 'draft']), href: '/admin/opportunities', show: hasCapability(role, 'opportunities') },
+    { label: 'Bids awaiting due diligence', waiting: bids.submitted ?? 0, total: sum(bids), detail: breakdown(bids, ['submitted', 'under_review', 'accepted', 'declined', 'withdrawn']), href: '/admin/bids', show: hasCapability(role, 'opportunities') },
+    { label: 'Payments to confirm', waiting: pay.pending ?? 0, total: sum(pay), detail: breakdown(pay, ['pending', 'paid', 'failed', 'cancelled', 'refunded']), href: '/admin/payments', show: hasCapability(role, 'finance') },
+    { label: 'Plans awaiting approval', waiting: (subs.awaiting_approval ?? 0) + (subs.pending ?? 0), total: sum(subs), detail: breakdown(subs, ['awaiting_approval', 'pending', 'active', 'expired', 'cancelled']), href: '/admin/subscriptions', show: hasCapability(role, 'finance') },
+    { label: 'Open support requests', waiting: (support.open ?? 0) + (support.in_progress ?? 0), total: sum(support), detail: breakdown(support, ['open', 'in_progress', 'resolved', 'closed']), href: '/admin/support', show: hasCapability(role, 'support') },
   ].filter(q => q.show)
+  const waitingTotal = queues.reduce((n, q) => n + q.waiting, 0)
 
   return <div className="page-stack">
-    <RealtimeRefresh tables={["profiles","subscriptions","payments","opportunities","expressions_of_interest","verification_requests"]} />
+    <RealtimeRefresh tables={["profiles","subscriptions","payments","opportunities","expressions_of_interest","verification_requests","support_requests","audit_events","notifications"]} />
     <div>
       <p className="eyebrow">WTC Accra administration</p>
       <h1>Platform control centre</h1>
-      <p className="muted">Queues assigned to your role, and the health of the marketplace.</p>
+      <p className="muted">{waitingTotal === 0 ? 'Nothing is waiting on you right now.' : `${waitingTotal} item${waitingTotal === 1 ? '' : 's'} waiting on staff.`} Figures update live as members act.</p>
     </div>
 
-    {queues.length > 0 && <section className="dashboard-grid">
-      {queues.map(queue => <article className="metric-card" key={queue.label}>
-        <span>{queue.label}</span>
-        <strong>{queue.value}</strong>
-        <p>{queue.hint}</p>
-        <Link href={queue.href}>Open queue →</Link>
+    <section className="dashboard-grid">
+      {queues.map(q => <article className={q.waiting > 0 ? 'metric-card metric-card-alert' : 'metric-card'} key={q.label}>
+        <span>{q.label}</span>
+        <strong>{q.waiting}<small className="metric-sub"> waiting · {q.total} total</small></strong>
+        <p>{q.detail}</p>
+        <Link href={q.href}>Open queue →</Link>
       </article>)}
-    </section>}
-
-    <section className="card">
-      <h2>Marketplace health</h2>
-      <dl className="detail-grid">
-        <div><dt>Total members</dt><dd>{totalMembers}</dd></div>
-        <div><dt>Verified members</dt><dd>{verifiedMembers}</dd></div>
-        <div><dt>Active subscriptions</dt><dd>{activeSubs}</dd></div>
-        <div><dt>Published opportunities</dt><dd>{publishedOpportunities}</dd></div>
-      </dl>
-      {hasCapability(role, 'finance') && <p className="field-help">Annualised list value of active subscriptions: <strong>{money(recurringValue)}</strong></p>}
     </section>
 
-    <section className="card">
-      <h2>How access is granted</h2>
-      <p className="muted">Three independent gates control what a member can do. All are enforced in the database, not just the interface.</p>
-      <ol className="checklist">
-        <li><span aria-hidden="true">1</span><span>Verification approves who the member is and assigns their participant type.</span><em>Verification queue</em></li>
-        <li><span aria-hidden="true">2</span><span>An active subscription unlocks browsing other members&rsquo; opportunities.</span><em>Subscriptions</em></li>
-        <li><span aria-hidden="true">3</span><span>Per-member switches can pause browsing or posting without suspending the account.</span><em>Members</em></li>
-      </ol>
+    <section className="dashboard-grid">
+      <article className="metric-card"><span>Members</span><strong>{sum(members)}</strong><p>{verif.verified ?? 0} verified · {verif.pending_review ?? 0} in review · {members.active ?? 0} active accounts{(members.suspended ?? 0) + (members.disabled ?? 0) > 0 ? ` · ${(members.suspended ?? 0) + (members.disabled ?? 0)} blocked` : ''}</p><Link href="/admin/users">Members →</Link></article>
+      <article className="metric-card"><span>Active subscriptions</span><strong>{subs.active ?? 0}</strong><p>{hasCapability(role, 'finance') ? `Annual list value ${money(recurringValue)}` : 'Members with marketplace access'}{subs.expired ? ` · ${subs.expired} expired` : ''}</p><Link href="/admin/subscriptions?status=active">Subscriptions →</Link></article>
+      {hasCapability(role, 'finance') && <article className="metric-card"><span>Payments received</span><strong>{money(received)}</strong><p>{pay.paid ?? 0} payment{(pay.paid ?? 0) === 1 ? '' : 's'} · {money(receivedThisMonth)} this month</p><Link href="/admin/payments?status=paid">Payments →</Link></article>}
+      <article className="metric-card"><span>Live listings</span><strong>{opp.published ?? 0}</strong><p>{sum(bids)} bid{sum(bids) === 1 ? '' : 's'} placed · {bids.accepted ?? 0} accepted by owners</p><Link href="/opportunities">Public listings →</Link></article>
     </section>
 
-    {admin && (recentAudit ?? []).length > 0 && <section className="card">
-      <h2>Recent administrative activity</h2>
-      <div className="history-list">{(recentAudit ?? []).map(event => <div key={event.id}>
-        <strong>{event.action}</strong>
-        <span>{dateTime(event.created_at)}</span>
-        <p className="muted">{humanize(event.entity_type)}</p>
-      </div>)}</div>
-      <Link className="arrow-link" href="/admin/audit">Full audit log →</Link>
-    </section>}
+    <div className="split-grid admin-detail-grid">
+      <section className="card">
+        <h2>Latest members</h2>
+        <div className="history-list compact">{(latestMembers ?? []).map(m => <div key={m.id}>
+          <strong><Link href={`/admin/users/${m.id}`}>{m.full_name || 'Unnamed'}</Link></strong><span>{date(m.created_at)}</span>
+          <p className="muted">{humanize(m.participant_type)} · {humanize(m.verification_status)}</p>
+        </div>)}</div>
+        <h2>Latest listings</h2>
+        <div className="history-list compact">{(latestListings ?? []).map(l => <div key={l.id}>
+          <strong><Link href={`/admin/opportunities?status=${l.status}`}>{l.title}</Link></strong><span className={`status-dot status-opp-${l.status}`}>{humanize(l.status)}</span>
+          <p className="muted">Updated {dateTime(l.updated_at)}</p>
+        </div>)}</div>
+      </section>
+
+      <section className="card">
+        <h2>Activity</h2>
+        {(staffNotes ?? []).length > 0 && <div className="history-list compact">{(staffNotes ?? []).map(n => <div key={n.id}>
+          <strong>{n.href ? <Link href={n.href}>{n.title}</Link> : n.title}</strong><span>{dateTime(n.created_at)}</span>
+          {n.body && <p className="muted">{n.body}</p>}
+        </div>)}</div>}
+        {admin && (recentAudit ?? []).length > 0 && <>
+          <h3>Audit trail</h3>
+          <div className="history-list compact">{(recentAudit ?? []).map(e => <div key={e.id}>
+            <strong>{humanize(e.action.replaceAll('.', ' '))}</strong><span>{dateTime(e.created_at)}</span>
+            <p className="muted">{humanize(e.entity_type)} · {e.actor_id ? actorName.get(e.actor_id) ?? 'Unknown' : 'System'}</p>
+          </div>)}</div>
+          <Link className="arrow-link" href="/admin/audit">Full audit log →</Link>
+        </>}
+        {(staffNotes ?? []).length === 0 && (recentAudit ?? []).length === 0 && <p className="muted">No activity yet.</p>}
+      </section>
+    </div>
   </div>
 }

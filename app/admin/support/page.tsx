@@ -1,4 +1,6 @@
+import Link from 'next/link'
 import { requireCapability } from '@/lib/auth/guards'
+import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { humanize } from '@/lib/auth/access'
 import { dateTime } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
@@ -16,9 +18,15 @@ export default async function AdminSupportPage({ searchParams }: Props) {
   const error = typeof params.error === 'string' ? params.error : null
   const message = typeof params.message === 'string' ? params.message : null
   const status = typeof params.status === 'string' && TABS.includes(params.status as 'open') ? params.status : 'open'
+  const q = typeof params.q === 'string' ? params.q.trim() : ''
+  const priority = typeof params.priority === 'string' ? params.priority : ''
+  const sort = typeof params.sort === 'string' && ['oldest', 'newest', 'priority'].includes(params.sort) ? params.sort : 'oldest'
 
-  const { data: requests } = await supabase.from('support_requests').select('*')
-    .eq('status', status as 'open').order('created_at', { ascending: true }).limit(100)
+  let query = supabase.from('support_requests').select('*').eq('status', status as 'open').limit(200)
+  if (q) query = query.ilike('subject', `%${q}%`)
+  if (priority) query = query.eq('priority', priority)
+  query = sort === 'priority' ? query.order('priority').order('created_at') : query.order('created_at', { ascending: sort === 'oldest' })
+  const { data: requests } = await query
 
   const requestIds = (requests ?? []).map(r => r.id)
   const { data: messages } = requestIds.length
@@ -40,6 +48,7 @@ export default async function AdminSupportPage({ searchParams }: Props) {
   }))
 
   return <div className="page-stack">
+    <RealtimeRefresh tables={["support_requests","support_messages"]} />
     <div>
       <p className="eyebrow">Support desk</p>
       <h1>Member requests</h1>
@@ -54,6 +63,14 @@ export default async function AdminSupportPage({ searchParams }: Props) {
       </a>)}
     </nav>
 
+    <form className="filter-row card" method="get">
+      <input type="hidden" name="status" value={status} />
+      <label>Subject<input name="q" defaultValue={q} placeholder="Search subjects" /></label>
+      <label>Priority<select name="priority" defaultValue={priority}><option value="">All</option><option value="urgent">Urgent</option><option value="high">High</option><option value="normal">Normal</option><option value="low">Low</option></select></label>
+      <label>Sort<select name="sort" defaultValue={sort}><option value="oldest">Oldest first</option><option value="newest">Newest first</option><option value="priority">By priority</option></select></label>
+      <button className="button button-outline" type="submit">Apply</button>
+    </form>
+
     {(requests ?? []).length === 0
       ? <section className="card empty-state"><BrandCircle /><h2>Queue is clear</h2><p>No requests with status &ldquo;{humanize(status)}&rdquo;.</p></section>
       : <div className="review-list">{(requests ?? []).map(request => {
@@ -63,7 +80,7 @@ export default async function AdminSupportPage({ searchParams }: Props) {
             <div className="review-head">
               <div>
                 <h2>{request.subject}</h2>
-                <p>{member?.full_name ?? 'Member'} · {humanize(member?.participant_type)} · verification {humanize(member?.verification_status)}</p>
+                <p><Link href={`/admin/users/${request.user_id}`}>{member?.full_name ?? 'Member'}</Link> · {humanize(member?.participant_type)} · verification {humanize(member?.verification_status)}</p>
               </div>
               <div className="pill-row">
                 <span className={`status-dot status-support-${request.status}`}>{humanize(request.status)}</span>

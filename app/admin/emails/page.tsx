@@ -1,4 +1,5 @@
 import { requireAdminProfile } from '@/lib/auth/guards'
+import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { humanize } from '@/lib/auth/access'
 import { dateTime } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
@@ -17,9 +18,15 @@ export default async function AdminEmailsPage({ searchParams }: Props) {
   const { supabase } = await requireAdminProfile()
   const params = await searchParams
   const status = typeof params.status === 'string' && TABS.includes(params.status as 'queued') ? params.status : 'queued'
+  const q = typeof params.q === 'string' ? params.q.trim() : ''
+  const kind = typeof params.kind === 'string' ? params.kind : ''
+  const sort = typeof params.sort === 'string' && ['newest', 'oldest'].includes(params.sort) ? params.sort : 'newest'
 
-  const { data: emails } = await supabase.from('outbound_emails').select('*')
-    .eq('status', status).order('created_at', { ascending: false }).limit(100)
+  let query = supabase.from('outbound_emails').select('*').eq('status', status).limit(200)
+  if (q) query = query.or(`to_email.ilike.%${q}%,subject.ilike.%${q}%`)
+  if (kind) query = query.eq('kind', kind)
+  const [{ data: emails }, { data: kindRows }] = await Promise.all([query.order('created_at', { ascending: sort === 'oldest' }), supabase.from('outbound_emails').select('kind').limit(2000)])
+  const kinds = [...new Set((kindRows ?? []).map(k => k.kind))].sort()
 
   const counts = await Promise.all(TABS.map(async tab => {
     const { count } = await supabase.from('outbound_emails').select('*', { count: 'exact', head: true }).eq('status', tab)
@@ -28,10 +35,11 @@ export default async function AdminEmailsPage({ searchParams }: Props) {
   const queued = counts.find(c => c.status === 'queued')?.count ?? 0
 
   return <div className="page-stack">
+    <RealtimeRefresh tables={["outbound_emails"]} />
     <div>
       <p className="eyebrow">Delivery</p>
       <h1>Outbound email queue</h1>
-      <p className="muted">Every connection request generates a copy for both members and all administrators. This is where those copies wait.</p>
+      <p className="muted">Bid, connection, verification, plan and staff messages are queued here. Once custom SMTP is configured a worker sends them; until then this is the delivery backlog.</p>
     </div>
 
     {queued > 0 && <section className="restriction-banner">
@@ -47,8 +55,16 @@ export default async function AdminEmailsPage({ searchParams }: Props) {
       </a>)}
     </nav>
 
+    <form className="filter-row card" method="get">
+      <input type="hidden" name="status" value={status} />
+      <label>Recipient or subject<input name="q" defaultValue={q} placeholder="email or subject" /></label>
+      <label>Kind<select name="kind" defaultValue={kind}><option value="">All kinds</option>{kinds.map(k => <option key={k} value={k}>{humanize(k)}</option>)}</select></label>
+      <label>Sort<select name="sort" defaultValue={sort}><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select></label>
+      <button className="button button-outline" type="submit">Apply</button>
+    </form>
+
     {(emails ?? []).length === 0
-      ? <section className="card empty-state"><BrandCircle /><h2>Nothing {humanize(status)}</h2><p>Connection requests will appear here as members make them.</p></section>
+      ? <section className="card empty-state"><BrandCircle /><h2>Nothing {humanize(status)}</h2><p>Messages appear here as members and staff act.</p></section>
       : <div className="review-list">{(emails ?? []).map(mail => <article className="card review-card" key={mail.id}>
           <div className="review-head">
             <div>
