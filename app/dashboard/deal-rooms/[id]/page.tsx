@@ -32,7 +32,13 @@ export default async function DealRoomPage({ params, searchParams }: Props) {
     supabase.from('document_records').select('*').eq('deal_room_id', id).order('created_at', { ascending: false }),
   ])
   const peopleIds = [...new Set([...(members ?? []).map(m => m.user_id), ...(messages ?? []).map(m => m.author_id), ...(docs ?? []).map(d => d.owner_user_id)])]
-  const { data: people } = peopleIds.length ? await supabase.from('profiles').select('id,full_name,participant_type,job_title,system_role,avatar_url').in('id', peopleIds) : { data: [] }
+  // listing_owner_cards is SECURITY DEFINER, so counterparties (including staff) resolve even where profile RLS would hide them.
+  const [{ data: cards }, { data: staffRows }] = await Promise.all([
+    peopleIds.length ? supabase.rpc('listing_owner_cards', { owner_ids: peopleIds }) : Promise.resolve({ data: [] }),
+    peopleIds.length ? supabase.from('profiles').select('id,system_role').in('id', peopleIds) : Promise.resolve({ data: [] }),
+  ])
+  const roleById = new Map((staffRows ?? []).map(r => [r.id, r.system_role]))
+  const people = (cards ?? []).map(c => ({ ...c, system_role: roleById.get(c.id) ?? (c.participant_type === 'staff' ? 'staff' : 'user') }))
   const personById = new Map((people ?? []).map(p => [p.id, p]))
   const open = room.status === 'active'
 

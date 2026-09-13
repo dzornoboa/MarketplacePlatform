@@ -22,9 +22,7 @@ export default async function DealRoomsPage() {
   ])
 
   const peopleIds = [...new Set((members ?? []).map(m => m.user_id))]
-  const { data: people } = peopleIds.length
-    ? await supabase.from('profiles').select('id,full_name,job_title').in('id', peopleIds)
-    : { data: [] }
+  const { data: people } = peopleIds.length ? await supabase.rpc('listing_owner_cards', { owner_ids: peopleIds }) : { data: [] }
   const personById = new Map((people ?? []).map(p => [p.id, p]))
   const oppById = new Map((opportunities ?? []).map(o => [o.id, o]))
 
