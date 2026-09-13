@@ -8,6 +8,7 @@ import { requestSubscription, requestMembership, startPayment, cancelPlanChange 
 import { subscriptionDaysLeft } from '@/lib/auth/access'
 import { paystackConfigured } from '@/lib/payments/paystack'
 import { getSiteChrome } from '@/lib/content/site-content'
+import { PaymentDetails, methodTitle } from '@/components/payment-details'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,10 +28,13 @@ export default async function BillingPage({ searchParams }: Props) {
     supabase.from('membership_types').select('*').eq('active', true),
     readAccessState(supabase),
   ])
-  const [{ data: payments }, chrome] = await Promise.all([
+  const [{ data: payments }, chrome, { data: billingAddress }, { data: methods }] = await Promise.all([
     supabase.from('payments').select('*').order('created_at', { ascending: false }).limit(10),
     getSiteChrome(),
+    supabase.from('billing_addresses').select('*').eq('user_id', profile.id).maybeSingle(),
+    supabase.from('payment_methods').select('*').eq('user_id', profile.id).order('is_primary', { ascending: false }).order('created_at'),
   ])
+  const primaryMethod = (methods ?? []).find(m => m.is_primary) ?? null
   const active = (subscriptions ?? []).find(s => s.status === 'active')
   const pending = (subscriptions ?? []).find(s => s.status === 'pending')
   const awaiting = (subscriptions ?? []).find(s => s.status === 'awaiting_approval')
@@ -134,10 +138,12 @@ export default async function BillingPage({ searchParams }: Props) {
         : <form action={startPayment} className="form-stack">
             <p className="muted">{online ? `Pay by card or mobile money and your plan activates automatically${testMode ? ' (test mode — no money moves)' : ''}. Or pay by bank transfer and finance confirms it.` : 'Choose how you will pay. You will get a reference and the account details; WTC Accra finance confirms the payment and your plan activates.'}</p>
             <div className="pay-methods">
-              <label className="pay-method"><input type="radio" name="method" value="mobile_money" defaultChecked /> <span><strong>Mobile money</strong><small>MTN · Vodafone · AirtelTigo{online ? ' — instant' : ''}</small></span></label>
-              <label className="pay-method"><input type="radio" name="method" value="card" /> <span><strong>Card</strong><small>Visa · Mastercard{online ? ' — instant' : ''}</small></span></label>
-              <label className="pay-method"><input type="radio" name="method" value="bank_transfer" /> <span><strong>Bank transfer</strong><small>Confirmed by WTC Accra finance</small></span></label>
+              <label className="pay-method"><input type="radio" name="method" value="mobile_money" defaultChecked={(primaryMethod?.kind ?? 'mobile_money') === 'mobile_money'} /> <span><strong>Mobile money</strong><small>MTN · Telecel · AirtelTigo{online ? ' — instant' : ''}</small></span></label>
+              <label className="pay-method"><input type="radio" name="method" value="card" defaultChecked={primaryMethod?.kind === 'card'} /> <span><strong>Card</strong><small>Visa · Mastercard{online ? ' — instant' : ''}</small></span></label>
+              <label className="pay-method"><input type="radio" name="method" value="bank_transfer" defaultChecked={primaryMethod?.kind === 'bank_transfer'} /> <span><strong>Bank transfer</strong><small>Confirmed by WTC Accra finance</small></span></label>
             </div>
+            {primaryMethod && <p className="field-help">Primary method on file: <strong>{methodTitle(primaryMethod)}</strong>. <a className="arrow-link" href="#payment-details">Change →</a></p>}
+            {!billingAddress && <p className="field-help">Tip: add your <a className="arrow-link" href="#payment-details">billing address</a> so it appears on the receipt.</p>}
             <SubmitButton pendingLabel="Starting…">{online ? 'Continue to payment' : 'Get payment details'}</SubmitButton>
           </form>}
     </section>}
@@ -180,6 +186,8 @@ export default async function BillingPage({ searchParams }: Props) {
         <p className="muted">{money(p.amount, p.currency)} · {humanize(p.method)} · <span className={`status-dot status-pay-${p.status}`}>{humanize(p.status)}</span>{p.paid_at ? ` · paid ${date(p.paid_at)}` : ''}</p>
       </div>)}</div>
     </section>}
+
+    <PaymentDetails address={billingAddress ?? null} methods={methods ?? []} />
 
     <section className="card">
       <h2>Subscription history</h2>

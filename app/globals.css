@@ -1054,3 +1054,12 @@ a.contact-card:hover strong{color:var(--wtc-orange)}
 @media(max-width:900px){.deal-room-grid{grid-template-columns:1fr}}
 .deal-compose textarea{min-width:0;width:100%}
 @media(max-width:600px){.deal-compose{flex-direction:column;align-items:stretch}}
+
+.pay-details-grid{margin-top:12px}
+.pay-method-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px}
+.pay-method-primary{border-color:var(--wtc-teal);background:#f4fbf9}
+.pay-method-row strong{margin-right:8px}
+.pay-method-row .button-row form{display:inline}
+.pay-method-form{border:1px solid var(--line);border-radius:var(--radius);padding:12px}
+.pay-saved-card{background:#f3f5f8;border-radius:var(--radius);padding:10px 12px;font-size:13.5px}
+@media(max-width:900px){.pay-details-grid{grid-template-columns:1fr}}

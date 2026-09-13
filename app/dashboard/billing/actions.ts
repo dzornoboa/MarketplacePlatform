@@ -67,16 +67,22 @@ export async function startPayment(formData: FormData) {
   // Test mode: card and mobile money go to the simulated checkout page.
   const useTest = method !== 'bank_transfer' && !useProvider && testMode
 
+  // Attach the saved method of the chosen kind (primary first) and a snapshot of the billing address for the receipt.
+  const [{ data: savedMethod }, { data: billing }] = await Promise.all([
+    supabase.from('payment_methods').select('id').eq('user_id', userId).eq('kind', method as 'card').order('is_primary', { ascending: false }).limit(1).maybeSingle(),
+    supabase.from('billing_addresses').select('*').eq('user_id', userId).maybeSingle(),
+  ])
   if (!open) {
     const { error } = await supabase.from('payments').insert({
       user_id: userId, subscription_id: subscription.id, plan_code: subscription.plan_code,
       amount: Number(plan.price_usd), currency: 'USD',
       method: method as 'card' | 'mobile_money' | 'bank_transfer',
       provider: useProvider ? 'paystack' : useTest ? 'test' : 'manual', reference, status: 'pending',
+      payment_method_id: savedMethod?.id ?? null, billing_snapshot: billing ? (billing as unknown as Record<string, unknown>) : null,
     })
     if (error) redirect(back('error', error.message))
   } else if (open.method !== method) {
-    await supabase.from('payments').update({ method: method as 'card' | 'mobile_money' | 'bank_transfer', provider: useProvider ? 'paystack' : useTest ? 'test' : 'manual' }).eq('id', open.id)
+    await supabase.from('payments').update({ method: method as 'card' | 'mobile_money' | 'bank_transfer', provider: useProvider ? 'paystack' : useTest ? 'test' : 'manual', payment_method_id: savedMethod?.id ?? null }).eq('id', open.id)
   }
 
   if (useTest) redirect(`/dashboard/billing/checkout?ref=${encodeURIComponent(reference)}`)

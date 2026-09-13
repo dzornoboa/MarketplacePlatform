@@ -24,7 +24,11 @@ export default async function CheckoutPage({ searchParams }: Props) {
   if (!payment) redirect('/dashboard/billing?error=' + encodeURIComponent('Payment not found.'))
   if (payment.status !== 'pending') redirect('/dashboard/billing?message=' + encodeURIComponent(`This payment is already ${humanize(payment.status)}.`))
 
-  const { data: plan } = payment.plan_code ? await supabase.from('subscription_plans').select('name').eq('code', payment.plan_code).maybeSingle() : { data: null }
+  const [{ data: plan }, { data: saved }, { data: billing }] = await Promise.all([
+    payment.plan_code ? supabase.from('subscription_plans').select('name').eq('code', payment.plan_code).maybeSingle() : Promise.resolve({ data: null }),
+    payment.payment_method_id ? supabase.from('payment_methods').select('*').eq('id', payment.payment_method_id).maybeSingle() : Promise.resolve({ data: null }),
+    supabase.from('billing_addresses').select('*').maybeSingle(),
+  ])
   const momo = payment.method === 'mobile_money'
 
   return <div className="page-stack checkout-page">
@@ -40,20 +44,24 @@ export default async function CheckoutPage({ searchParams }: Props) {
         <div><dt>Amount</dt><dd><strong className="plan-price">{money(payment.amount, payment.currency)}</strong></dd></div>
         <div><dt>Reference</dt><dd className="pay-reference">{payment.reference}</dd></div>
         <div><dt>Method</dt><dd>{humanize(payment.method)}</dd></div>
+        {billing && <div><dt>Billed to</dt><dd>{billing.billing_name}{billing.company ? ` · ${billing.company}` : ''}<br /><small className="muted">{[billing.line1, billing.city, billing.country].filter(Boolean).join(', ')}</small></dd></div>}
       </dl>
 
       <form action={completeTestPayment} className="form-stack">
         <input type="hidden" name="paymentId" value={payment.id} />
         {momo
           ? <>
-              <label>Network<select name="network" defaultValue="mtn"><option value="mtn">MTN Mobile Money</option><option value="vodafone">Telecel Cash</option><option value="airteltigo">AirtelTigo Money</option></select></label>
-              <label>Mobile money number<input name="phone" inputMode="tel" placeholder="024 000 0000" /></label>
+              <label>Network<select name="network" defaultValue={saved?.momo_network === 'Telecel' ? 'vodafone' : saved?.momo_network === 'AirtelTigo' ? 'airteltigo' : 'mtn'}><option value="mtn">MTN Mobile Money</option><option value="vodafone">Telecel Cash</option><option value="airteltigo">AirtelTigo Money</option></select></label>
+              <label>Mobile money number<input name="phone" inputMode="tel" placeholder="024 000 0000" defaultValue={saved?.momo_number ?? ''} /></label>
+              {saved && <p className="field-help">Using your saved {saved.momo_network} number. <Link className="arrow-link" href="/dashboard/billing#payment-details">Change →</Link></p>}
               <p className="field-help">In live mode a prompt is sent to this number to approve the payment.</p>
             </>
           : <>
-              <label>Card number<input name="card" inputMode="numeric" placeholder="4242 4242 4242 4242" /></label>
+              {saved
+                ? <p className="pay-saved-card"><strong>{saved.brand} •••• {saved.last4}</strong> · expires {String(saved.exp_month).padStart(2, '0')}/{saved.exp_year} · {saved.holder_name}<br /><small className="muted">Saved card. <Link className="arrow-link" href="/dashboard/billing#payment-details">Use a different card →</Link></small></p>
+                : <label>Card number<input name="card" inputMode="numeric" placeholder="4242 4242 4242 4242" /></label>}
               <div className="split-grid">
-                <label>Expiry<input name="expiry" placeholder="MM / YY" /></label>
+                {!saved && <label>Expiry<input name="expiry" placeholder="MM / YY" /></label>}
                 <label>CVC<input name="cvc" inputMode="numeric" placeholder="123" /></label>
               </div>
               <p className="field-help">Test mode: any values are accepted and nothing is stored.</p>

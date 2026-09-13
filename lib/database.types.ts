@@ -183,9 +183,21 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['document_access_events']['Insert']>
         Relationships: []
       }
+      billing_addresses: {
+        Row: { user_id:string; billing_name:string; company:string|null; tax_id:string|null; email:string|null; phone:string|null; line1:string; line2:string|null; city:string; region:string|null; postal_code:string|null; country:string; updated_at:string }
+        Insert: { user_id:string; billing_name:string; company?:string|null; tax_id?:string|null; email?:string|null; phone?:string|null; line1:string; line2?:string|null; city:string; region?:string|null; postal_code?:string|null; country:string; updated_at?:string }
+        Update: Partial<Database['public']['Tables']['billing_addresses']['Insert']>
+        Relationships: []
+      }
+      payment_methods: {
+        Row: { id:string; user_id:string; kind:Database['public']['Enums']['payment_method']; label:string|null; brand:string|null; last4:string|null; exp_month:number|null; exp_year:number|null; holder_name:string|null; momo_network:string|null; momo_number:string|null; bank_name:string|null; provider:string; provider_token:string|null; is_primary:boolean; created_at:string; updated_at:string }
+        Insert: { id?:string; user_id:string; kind:Database['public']['Enums']['payment_method']; label?:string|null; brand?:string|null; last4?:string|null; exp_month?:number|null; exp_year?:number|null; holder_name?:string|null; momo_network?:string|null; momo_number?:string|null; bank_name?:string|null; provider?:string; provider_token?:string|null; is_primary?:boolean; created_at?:string; updated_at?:string }
+        Update: Partial<Database['public']['Tables']['payment_methods']['Insert']>
+        Relationships: []
+      }
       payments: {
-        Row: { id:string; user_id:string; subscription_id:string|null; plan_code:string|null; amount:number; currency:string; method:Database['public']['Enums']['payment_method']; provider:string; reference:string; provider_reference:string|null; status:Database['public']['Enums']['payment_status']; paid_at:string|null; confirmed_by:string|null; note:string|null; created_at:string; updated_at:string }
-        Insert: { id?:string; user_id:string; subscription_id?:string|null; plan_code?:string|null; amount:number; currency?:string; method:Database['public']['Enums']['payment_method']; provider?:string; reference:string; provider_reference?:string|null; status?:Database['public']['Enums']['payment_status']; paid_at?:string|null; confirmed_by?:string|null; note?:string|null; created_at?:string; updated_at?:string }
+        Row: { id:string; user_id:string; subscription_id:string|null; plan_code:string|null; amount:number; currency:string; method:Database['public']['Enums']['payment_method']; provider:string; reference:string; provider_reference:string|null; status:Database['public']['Enums']['payment_status']; paid_at:string|null; confirmed_by:string|null; note:string|null; payment_method_id:string|null; billing_snapshot:Record<string, unknown>|null; created_at:string; updated_at:string }
+        Insert: { id?:string; user_id:string; subscription_id?:string|null; plan_code?:string|null; amount:number; currency?:string; method:Database['public']['Enums']['payment_method']; provider?:string; reference:string; provider_reference?:string|null; status?:Database['public']['Enums']['payment_status']; paid_at?:string|null; confirmed_by?:string|null; note?:string|null; created_at?:string; updated_at?:string; payment_method_id?:string|null; billing_snapshot?:Record<string, unknown>|null }
         Update: Partial<Database['public']['Tables']['payments']['Insert']>
         Relationships: []
       }
@@ -239,6 +251,7 @@ export type Database = {
       refresh_my_matches: { Args: Record<string, never>; Returns: number }
       post_deal_room_message: { Args: { room: string; message_body: string }; Returns: string }
       withdraw_bid: { Args: { bid_id: string }; Returns: undefined }
+      set_primary_payment_method: { Args: { method_id: string }; Returns: undefined }
       review_bid: { Args: { bid_id: string; decision: string; review_note?: string | null }; Returns: undefined }
       confirm_payment: { Args: { payment_id: string; decision: string; note?: string | null }; Returns: undefined }
       record_provider_payment: { Args: { payment_reference: string; provider_ref: string; succeeded: boolean }; Returns: undefined }
