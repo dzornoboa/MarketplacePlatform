@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { requireCapability } from '@/lib/auth/guards'
 import { systemRoleLabels } from '@/lib/auth/access'
 import { LogoLink } from '@/components/brand'
+import { Avatar } from '@/components/avatar'
 import { NavLinks } from '@/components/nav-links'
 
 export const dynamic = 'force-dynamic'
@@ -33,7 +34,7 @@ export default async function EditorLayout({ children }: { children: ReactNode }
           <div className="mobile-menu-actions"><Link className="button button-outline" href="/dashboard">Member dashboard</Link><SignOutButton /></div>
         </div>
       </details>
-      <span className="console-user">{profile.full_name} · {systemRoleLabels[profile.system_role] ?? profile.system_role}</span>
+      <span className="console-user"><Avatar src={profile.avatar_url} name={profile.full_name} size={26} />{profile.full_name} · {systemRoleLabels[profile.system_role] ?? profile.system_role}</span>
       <div className="console-signout"><SignOutButton /></div>
     </header>
     <main className="admin-main">{children}</main>

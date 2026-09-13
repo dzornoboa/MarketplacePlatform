@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { Profile } from '@/lib/database.types'
 import { LogoLink } from '@/components/brand'
+import { Avatar } from '@/components/avatar'
 import { hasCapability, isAdminRole, isStaffRole } from '@/lib/auth/access'
 
 type NavLink = { href: string; label: string; verifiedOnly?: boolean; badge?: number }
@@ -82,7 +83,7 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, a
         {!open && unreadCount > 0 && <span className="nav-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>}
       </button></div>
     </div>
-    <p className="sidebar-label">{staff ? 'Staff workspace' : 'Member workspace'}</p>
+    <Link className="sidebar-user" href="/dashboard/profile"><Avatar src={profile.avatar_url} name={profile.full_name} size={36} /><span><strong>{profile.full_name || 'Your profile'}</strong><small>{staff ? 'Staff workspace' : 'Member workspace'}</small></span></Link>
     <nav id="dashboard-nav">
       {groups.map(group => <div className="nav-group" key={group.label}>
         <p className="nav-group-label">{group.label}</p>

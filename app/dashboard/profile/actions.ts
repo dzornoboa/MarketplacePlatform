@@ -35,3 +35,35 @@ export async function updateProfile(formData: FormData) {
   revalidatePath('/dashboard', 'layout')
   redirect('/dashboard/profile?message=Profile%20saved.')
 }
+
+/* Profile photo: stored in the public avatars bucket under the member's own
+   folder; the URL is saved on the profile and used everywhere the member
+   appears (sidebar, directory, listings, bids, deal rooms, consoles). */
+export async function uploadAvatar(formData: FormData) {
+  const { supabase, profile } = await requireUserProfile()
+  const file = formData.get('avatar')
+  if (!(file instanceof File) || file.size === 0) redirect('/dashboard/profile?error=Choose%20an%20image%20first.')
+  if (file.size > 5 * 1024 * 1024) redirect('/dashboard/profile?error=Images%20must%20be%205MB%20or%20smaller.')
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) redirect('/dashboard/profile?error=Use%20a%20JPG%2C%20PNG%20or%20WebP%20image.')
+  const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg'
+  const path = `${profile.id}/avatar-${Date.now().toString(36)}.${ext}`
+  const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { contentType: file.type, upsert: true })
+  if (uploadError) redirect(`/dashboard/profile?error=${encodeURIComponent(`Upload failed: ${uploadError.message}`)}`)
+  const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+  const { error } = await supabase.from('profiles').update({ avatar_url: data.publicUrl }).eq('id', profile.id)
+  if (error) redirect(`/dashboard/profile?error=${encodeURIComponent(error.message)}`)
+  // Tidy the previous file so the bucket does not accumulate old photos.
+  const old = profile.avatar_url?.split('/avatars/')[1]
+  if (old && old !== path) await supabase.storage.from('avatars').remove([old]).catch(() => undefined)
+  revalidatePath('/', 'layout')
+  redirect('/dashboard/profile?message=Profile%20photo%20updated.')
+}
+
+export async function removeAvatar() {
+  const { supabase, profile } = await requireUserProfile()
+  const old = profile.avatar_url?.split('/avatars/')[1]
+  if (old) await supabase.storage.from('avatars').remove([old]).catch(() => undefined)
+  await supabase.from('profiles').update({ avatar_url: null }).eq('id', profile.id)
+  revalidatePath('/', 'layout')
+  redirect('/dashboard/profile?message=Profile%20photo%20removed.')
+}

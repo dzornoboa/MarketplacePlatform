@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Avatar } from '@/components/avatar'
 import { notFound } from 'next/navigation'
 import { requireUserProfile } from '@/lib/auth/guards'
 import { RealtimeRefresh } from '@/components/realtime-refresh'
@@ -31,7 +32,7 @@ export default async function DealRoomPage({ params, searchParams }: Props) {
     supabase.from('document_records').select('*').eq('deal_room_id', id).order('created_at', { ascending: false }),
   ])
   const peopleIds = [...new Set([...(members ?? []).map(m => m.user_id), ...(messages ?? []).map(m => m.author_id), ...(docs ?? []).map(d => d.owner_user_id)])]
-  const { data: people } = peopleIds.length ? await supabase.from('profiles').select('id,full_name,participant_type,job_title,system_role').in('id', peopleIds) : { data: [] }
+  const { data: people } = peopleIds.length ? await supabase.from('profiles').select('id,full_name,participant_type,job_title,system_role,avatar_url').in('id', peopleIds) : { data: [] }
   const personById = new Map((people ?? []).map(p => [p.id, p]))
   const open = room.status === 'active'
 
@@ -59,7 +60,7 @@ export default async function DealRoomPage({ params, searchParams }: Props) {
             const mine = m.author_id === profile.id
             const who = personById.get(m.author_id)
             return <div key={m.id} className={mine ? 'deal-msg deal-msg-mine' : 'deal-msg'}>
-              <span className="deal-msg-meta">{mine ? 'You' : who?.full_name ?? 'Participant'}{who?.system_role && who.system_role !== 'user' ? ' · WTC Accra' : ''} · {dateTime(m.created_at)}</span>
+              <span className="deal-msg-meta avatar-stack">{!mine && <Avatar src={who?.avatar_url} name={who?.full_name} size={20} />}{mine ? 'You' : who?.full_name ?? 'Participant'}{who?.system_role && who.system_role !== 'user' ? ' · WTC Accra' : ''} · {dateTime(m.created_at)}</span>
               <p>{m.body}</p>
             </div>
           })}
@@ -75,7 +76,7 @@ export default async function DealRoomPage({ params, searchParams }: Props) {
         <section className="card">
           <h2>In this room</h2>
           <div className="history-list compact">{(members ?? []).map(m => { const p = personById.get(m.user_id); return <div key={m.user_id}>
-            <strong>{p?.full_name ?? 'Participant'}{m.user_id === profile.id ? ' (you)' : ''}</strong><span>{humanize(m.role)}</span>
+            <strong className="avatar-stack"><Avatar src={p?.avatar_url} name={p?.full_name} size={28} />{p?.full_name ?? 'Participant'}{m.user_id === profile.id ? ' (you)' : ''}</strong><span>{humanize(m.role)}</span>
             <p className="muted">{p?.system_role && p.system_role !== 'user' ? 'WTC Accra staff' : labelForParticipantType(p?.participant_type)}{p?.job_title ? ` · ${p.job_title}` : ''}</p>
           </div> })}</div>
           <p className="field-help">WTC Accra staff can see this room and step in if needed.</p>

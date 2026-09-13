@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Avatar } from '@/components/avatar'
 import { notFound } from 'next/navigation'
 import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
 import { marketplaceLockFor, humanize, labelForIntent, labelForParticipantType } from '@/lib/auth/access'
@@ -123,7 +124,7 @@ export default async function OpportunityDetailPage({ params, searchParams }: Pr
         </section>
       : !lock.locked && <section className="card">
           <h2>About the poster</h2>
-          {owner && <p className="muted">{owner.organisation ?? owner.full_name} · {labelForParticipantType(owner.participant_type)}{owner.country ? ` · ${owner.country}` : ''}</p>}
+          {owner && <div className="owner-card"><Avatar src={owner.avatar_url} name={owner.full_name} size={48} /><div><strong>{owner.full_name}</strong><p className="muted">{owner.organisation ? `${owner.organisation} · ` : ''}{labelForParticipantType(owner.participant_type)}{owner.country ? ` · ${owner.country}` : ''}</p></div></div>}
           <div className="feed-actions">
             <div className="button-row">
               <form action={toggleSaved}>

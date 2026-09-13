@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Avatar } from '@/components/avatar'
 import { SubmitButton } from '@/components/submit-button'
 import { notFound, redirect } from 'next/navigation'
 import { PublicHeader } from '@/components/public-header'
@@ -104,9 +105,9 @@ export default async function ListingDetailPage({ params, searchParams }: Props)
           <div className="card">
             <h2>Posted by</h2>
             <div className="member-identity">
-              <span className="member-avatar" aria-hidden="true">{(ownerCard?.organisation ?? ownerCard?.full_name ?? '?').charAt(0)}</span>
+              <Avatar src={ownerCard?.avatar_url} name={ownerCard?.full_name} size={48} />
               <div>
-                <strong>{ownerCard?.organisation ?? ownerCard?.full_name ?? 'Verified member'}</strong>
+                <strong>{ownerCard?.full_name ?? 'Verified member'}</strong>{ownerCard?.organisation && <span className="member-role">{ownerCard.organisation}</span>}
                 <span className="member-role">{labelForParticipantType(ownerCard?.participant_type)}</span>
               </div>
             </div>

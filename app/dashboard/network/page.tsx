@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Avatar } from '@/components/avatar'
 import { SubmitButton } from '@/components/submit-button'
 import { requireUserProfile } from '@/lib/auth/guards'
 import { humanize, labelForParticipantType, selectableParticipantTypes, participantTypeLabels } from '@/lib/auth/access'
@@ -142,7 +143,7 @@ export default async function NetworkPage({ searchParams }: Props) {
         ? <section className="card empty-state"><BrandCircle /><h2>No members match</h2><p>Widen your search, or check back as WTC Accra verifies more participants.</p></section>
         : <div className="member-grid">{(directory ?? []).map(person => <article className="card member-card" key={person.id}>
             <div className="member-identity">
-              <span className="member-avatar" aria-hidden="true">{(person.full_name || '?').charAt(0)}</span>
+              <Avatar src={person.avatar_url} name={person.full_name} size={44} />
               <div>
                 <strong>{person.full_name}</strong>{person.is_staff && <span className="status-dot status-verified">WTC Accra staff</span>}
                 <span className="member-role">{labelForParticipantType(person.participant_type)}</span>

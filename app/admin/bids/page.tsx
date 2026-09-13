@@ -1,4 +1,6 @@
+import Link from 'next/link'
 import { requireCapability } from '@/lib/auth/guards'
+import { Avatar } from '@/components/avatar'
 import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { humanize, labelForParticipantType } from '@/lib/auth/access'
 import { money, dateTime } from '@/lib/format'
@@ -34,7 +36,7 @@ export default async function AdminBidsPage({ searchParams }: Props) {
   const userIds = [...new Set((allBids ?? []).map(b => b.applicant_id))]
   const [{ data: opportunities }, { data: applicants }] = await Promise.all([
     oppIds.length ? supabase.from('opportunities').select('id,title,sector,country,owner_user_id,capital_required,currency').in('id', oppIds) : Promise.resolve({ data: [] }),
-    userIds.length ? supabase.from('profiles').select('id,full_name,participant_type,country,verification_status').in('id', userIds) : Promise.resolve({ data: [] }),
+    userIds.length ? supabase.from('profiles').select('id,full_name,participant_type,country,verification_status,avatar_url').in('id', userIds) : Promise.resolve({ data: [] }),
   ])
   const ownerIds = [...new Set((opportunities ?? []).map(o => o.owner_user_id))]
   const { data: owners } = ownerIds.length
@@ -89,7 +91,7 @@ export default async function AdminBidsPage({ searchParams }: Props) {
               <span>{dateTime(bid.created_at)}</span>
             </div>
             <dl className="detail-grid">
-              <div><dt>Bidder</dt><dd>{applicant?.full_name ?? 'Member'}</dd></div>
+              <div><dt>Bidder</dt><dd className="avatar-stack"><Avatar src={applicant?.avatar_url} name={applicant?.full_name} size={26} /><Link href={`/admin/users/${bid.applicant_id}`}>{applicant?.full_name ?? 'Member'}</Link></dd></div>
               <div><dt>Participant type</dt><dd>{labelForParticipantType(applicant?.participant_type)}</dd></div>
               <div><dt>Bidder verification</dt><dd>{humanize(applicant?.verification_status)}</dd></div>
               <div><dt>Country</dt><dd>{applicant?.country ?? '—'}</dd></div>

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Avatar } from '@/components/avatar'
 import { SubmitButton } from '@/components/submit-button'
 import { requireUserProfile } from '@/lib/auth/guards'
 import { humanize } from '@/lib/auth/access'
@@ -26,6 +27,9 @@ export default async function InterestsPage({ searchParams }: Props) {
 
   const sent = (interests ?? []).filter(i => i.applicant_id === profile.id)
   const received = (interests ?? []).filter(i => i.applicant_id !== profile.id)
+  const applicantIds = [...new Set(received.map(i => i.applicant_id))]
+  const { data: applicants } = applicantIds.length ? await supabase.rpc('listing_owner_cards', { owner_ids: applicantIds }) : { data: [] }
+  const applicantById = new Map((applicants ?? []).map(a => [a.id, a]))
 
   return <div className="page-stack">
     <div>
@@ -48,6 +52,7 @@ export default async function InterestsPage({ searchParams }: Props) {
                 <div>
                   <span className={`status-dot status-eoi-${item.status}`}>{humanize(item.status)}</span>
                   <h3>{opportunity?.title ?? 'Opportunity'}</h3>
+                  {applicantById.get(item.applicant_id) && <p className="muted avatar-stack"><Avatar src={applicantById.get(item.applicant_id)?.avatar_url} name={applicantById.get(item.applicant_id)?.full_name} size={24} />{applicantById.get(item.applicant_id)?.full_name}{applicantById.get(item.applicant_id)?.organisation ? ` · ${applicantById.get(item.applicant_id)?.organisation}` : ''}</p>}
                   <p className="muted">Received {dateTime(item.created_at)}</p>
                 </div>
               </div>
