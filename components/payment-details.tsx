@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { Database } from '@/lib/database.types'
 import { SubmitButton } from '@/components/submit-button'
+import { methodTitle } from '@/lib/payments/method-title'
 import { saveBillingAddress, savePaymentMethod, setPrimaryPaymentMethod, removePaymentMethod } from '@/app/dashboard/billing/methods'
 
 type Address = Database['public']['Tables']['billing_addresses']['Row']
@@ -11,11 +12,6 @@ type Kind = 'card' | 'mobile_money' | 'bank_transfer'
 
 const YEARS = Array.from({ length: 12 }, (_, i) => new Date().getFullYear() + i)
 
-export function methodTitle(m: Method): string {
-  if (m.kind === 'card') return `${m.brand ?? 'Card'} •••• ${m.last4 ?? '????'}`
-  if (m.kind === 'mobile_money') return `${m.momo_network ?? 'Mobile money'} ${m.momo_number ? `•••• ${m.momo_number.slice(-4)}` : ''}`
-  return `Bank transfer${m.bank_name ? ` · ${m.bank_name}` : ''}`
-}
 
 /* Billing address + saved payment methods. Members add cards (stored as
    brand/last4/expiry only), mobile-money numbers or a bank, edit them, pick

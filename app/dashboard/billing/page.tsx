@@ -8,7 +8,8 @@ import { requestSubscription, requestMembership, startPayment, cancelPlanChange 
 import { subscriptionDaysLeft } from '@/lib/auth/access'
 import { paystackConfigured } from '@/lib/payments/paystack'
 import { getSiteChrome } from '@/lib/content/site-content'
-import { PaymentDetails, methodTitle } from '@/components/payment-details'
+import { PaymentDetails } from '@/components/payment-details'
+import { methodTitle } from '@/lib/payments/method-title'
 
 export const dynamic = 'force-dynamic'
 
