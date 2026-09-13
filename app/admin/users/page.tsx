@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { requireAdminProfile } from '@/lib/auth/guards'
 import { humanize, labelForParticipantType, systemRoleLabels, systemRoles, accountStatuses } from '@/lib/auth/access'
 import { date } from '@/lib/format'
@@ -60,7 +61,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
           return <article className="card review-card" key={person.id}>
             <div className="review-head">
               <div>
-                <h2>{person.full_name || 'Unnamed member'}</h2>
+                <h2><Link href={`/admin/users/${person.id}`}>{person.full_name || 'Unnamed member'}</Link></h2>
                 <p>{labelForParticipantType(person.participant_type)} · {person.country || 'Country not set'} · joined {date(person.created_at)}</p>
               </div>
               <div className="pill-row">
@@ -77,6 +78,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
               <div><dt>Subscription</dt><dd>{sub ? `Active to ${date(sub.ends_at)}` : 'None'}</dd></div>
             </dl>
 
+            <p><Link className="button button-outline" href={`/admin/users/${person.id}`}>Open member · documents, plan, messages</Link></p>
             {self
               ? <p className="field-help">This is your own account. Use another administrator to change it.</p>
               : <div className="admin-action-grid">

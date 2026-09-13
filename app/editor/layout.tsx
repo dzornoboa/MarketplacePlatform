@@ -10,7 +10,8 @@ export const dynamic = 'force-dynamic'
 const EDITOR_LINKS = [
   { href: '/editor', label: 'Overview' },
   { href: '/editor/news', label: 'News and resources' },
-  { href: '/editor/pages', label: 'Page sections' },
+  { href: '/editor/builder', label: 'Website builder' },
+  { href: '/editor/pages', label: 'Page sections (form view)' },
   { href: '/editor/settings', label: 'Settings and navigation' },
   { href: '/dashboard', label: 'Member dashboard' },
 ]

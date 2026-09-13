@@ -217,8 +217,13 @@ export type Database = {
       request_membership: { Args: { membership_type_code: string }; Returns: string }
       complete_initial_password_change: { Args: { target_user: string }; Returns: undefined }
       get_platform_report_metrics: { Args: Record<string, never>; Returns: Json }
-      public_listing_teasers: { Args: { listing_kind?: string | null; listing_intent?: string | null; listing_sector?: string | null; listing_country?: string | null; max_rows?: number }; Returns: { id: string; title: string; kind: string; intent: string; sector: string; country: string; region: string | null; importance: number; teaser: string; tags: string[]; deadline: string | null; published_at: string | null }[] }
+      public_listing_teasers: { Args: { listing_kind?: string | null; listing_intent?: string | null; listing_sector?: string | null; listing_country?: string | null; max_rows?: number }; Returns: { id: string; title: string; kind: string; intent: string; sector: string; country: string; region: string | null; importance: number; teaser: string; tags: string[]; deadline: string | null; published_at: string | null; title_hidden: boolean }[] }
       public_listing_facets: { Args: Record<string, never>; Returns: { facet: string; value: string; listings: number }[] }
+      withdraw_opportunity: { Args: { opportunity_id: string }; Returns: undefined }
+      complete_test_payment: { Args: { payment_id: string }; Returns: undefined }
+      set_verification_status: { Args: { target_user: string; new_status: string; note?: string | null }; Returns: undefined }
+      message_member: { Args: { target_user: string; message_title: string; message_body: string; message_href?: string | null }; Returns: undefined }
+      set_member_subscription: { Args: { target_user: string; plan: string; new_status: string; starts?: string | null; ends?: string | null; note?: string | null }; Returns: string }
       review_bid: { Args: { bid_id: string; decision: string; review_note?: string | null }; Returns: undefined }
       confirm_payment: { Args: { payment_id: string; decision: string; note?: string | null }; Returns: undefined }
       record_provider_payment: { Args: { payment_reference: string; provider_ref: string; succeeded: boolean }; Returns: undefined }

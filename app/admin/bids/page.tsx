@@ -1,4 +1,5 @@
 import { requireCapability } from '@/lib/auth/guards'
+import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { humanize, labelForParticipantType } from '@/lib/auth/access'
 import { money, dateTime } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
@@ -53,6 +54,7 @@ export default async function AdminBidsPage({ searchParams }: Props) {
   }))
 
   return <div className="page-stack">
+    <RealtimeRefresh tables={["expressions_of_interest"]} />
     <div>
       <p className="eyebrow">Trade desk</p>
       <h1>Bid due diligence</h1>

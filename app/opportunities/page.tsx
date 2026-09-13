@@ -2,12 +2,12 @@ import Link from 'next/link'
 import { PublicHeader } from '@/components/public-header'
 import { PublicFooter } from '@/components/public-footer'
 import { BrandCircle } from '@/components/brand'
-import { createPublicClient } from '@/lib/supabase/public'
+import { createClient } from '@/lib/supabase/server'
 import { humanize, labelForIntent, listingIntents, listingIntentLabels } from '@/lib/auth/access'
 import { relativeDays } from '@/lib/format'
 import { SessionCta } from '@/components/header-session'
 
-export const revalidate = 120
+export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: 'Live listings',
@@ -29,7 +29,8 @@ export default async function PublicListingsPage({ searchParams }: Props) {
   const str = (k: string) => (typeof params[k] === 'string' ? (params[k] as string) : '')
   const kind = str('kind'), intent = str('intent'), sector = str('sector'), country = str('country')
 
-  const supabase = createPublicClient()
+  // Session-aware: the function returns real titles only to signed-in users.
+  const supabase = await createClient()
   const [{ data: listings }, { data: facets }] = await Promise.all([
     supabase.rpc('public_listing_teasers', {
       listing_kind: kind || null, listing_intent: intent || null,
@@ -89,13 +90,13 @@ export default async function PublicListingsPage({ searchParams }: Props) {
               <span className="eyebrow">{labelForIntent(item.intent)}</span>
               <Stars rating={item.importance} />
             </div>
-            <h3><Link href={`/opportunities/${item.id}`}>{item.title}</Link></h3>
+            <h3 className={item.title_hidden ? 'teaser-title-hidden' : undefined}><Link href={`/opportunities/${item.id}`}>{item.title}</Link></h3>
             <p className="muted">{humanize(item.kind)} · {item.sector} · {item.country}{item.region ? ` · ${item.region}` : ''}</p>
             <p>{item.teaser}</p>
             {item.tags.length > 0 && <div className="trust-row">{item.tags.slice(0, 4).map(t => <span key={t}>{t}</span>)}</div>}
             <div className="teaser-foot">
               <span className="field-help">{item.deadline ? relativeDays(item.deadline) : 'Open'}</span>
-              <Link className="arrow-link" href={`/opportunities/${item.id}`}>Sign in to view details →</Link>
+              <Link className="arrow-link" href={`/opportunities/${item.id}`}>{item.title_hidden ? 'Sign in to see this deal →' : 'View details →'}</Link>
             </div>
           </article>)}</div>}
     </section>

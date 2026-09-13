@@ -825,3 +825,126 @@ a.contact-card:hover strong{color:var(--wtc-orange)}
 /* A member's own published listing shown among everyone else's */
 .opportunity-own { border-color: var(--wtc-gold, #c9a227); }
 .own-badge { display: inline-block; margin-left: .5rem; padding: .1rem .5rem; border-radius: 999px; background: var(--wtc-gold, #c9a227); color: #1b1b1b; font-size: .7rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; vertical-align: middle; }
+.teaser-title-hidden{color:var(--wtc-navy,#123b6d);opacity:.7;font-weight:600}
+
+/* ---------- Density pass: dashboards and consoles ----------
+   The public site keeps its generous scale; the working screens are tighter
+   so queues, lists and cards fit more on one screen. */
+.dashboard-shell,.admin-shell{font-size:14px;line-height:1.5}
+.dashboard-shell{grid-template-columns:236px 1fr}
+.dashboard-sidebar{padding:18px 14px 18px}
+.dashboard-sidebar nav a{padding:8px 11px;font-size:13px}
+.dashboard-sidebar .sidebar-label,.nav-group-label{font-size:9.5px;margin-top:10px}
+.dashboard-main,.admin-main{padding:clamp(18px,2.4vw,30px) clamp(16px,2.6vw,36px)}
+.dashboard-shell .page-stack,.admin-shell .page-stack{gap:16px}
+.dashboard-shell .page-stack h1,.admin-shell .page-stack h1{font-size:clamp(20px,2.1vw,26px);margin:0}
+.dashboard-shell .page-stack h2,.admin-shell .page-stack h2{font-size:16px;margin:0 0 6px}
+.dashboard-shell .page-stack h3,.admin-shell .page-stack h3{font-size:14px;margin:0 0 4px}
+.dashboard-shell .page-stack>div>p.muted,.admin-shell .page-stack>div>p.muted{font-size:13px;margin:4px 0 0;max-width:80ch}
+.dashboard-shell .eyebrow,.admin-shell .eyebrow{font-size:10px;letter-spacing:.18em}
+.dashboard-shell .card,.admin-shell .card{padding:16px 18px}
+.dashboard-shell .metric-card,.admin-shell .metric-card{padding:14px 16px;gap:4px}
+.dashboard-shell .metric-card strong,.admin-shell .metric-card strong{font-size:20px}
+.dashboard-shell .metric-card p,.admin-shell .metric-card p{font-size:12.5px;margin:0}
+.dashboard-shell .metric-card a,.admin-shell .metric-card a{font-size:12.5px;padding-top:4px}
+.dashboard-shell .dashboard-grid,.admin-shell .dashboard-grid{gap:12px}
+.dashboard-shell .review-list,.admin-shell .review-list{gap:10px}
+.dashboard-shell .review-head h2,.admin-shell .review-head h2{font-size:15px}
+.dashboard-shell .review-head p,.dashboard-shell .review-head span,.admin-shell .review-head p,.admin-shell .review-head span{font-size:12px}
+.dashboard-shell .detail-grid,.admin-shell .detail-grid{gap:10px 14px;margin-top:12px}
+.dashboard-shell .detail-grid dt,.admin-shell .detail-grid dt{font-size:9.5px}
+.dashboard-shell .detail-grid dd,.admin-shell .detail-grid dd{font-size:13px;margin-top:3px}
+.dashboard-shell .history-list>div,.admin-shell .history-list>div{padding:9px 0}
+.dashboard-shell .history-list p,.admin-shell .history-list p{font-size:12.5px;margin-top:2px}
+.dashboard-shell .history-list strong,.admin-shell .history-list strong{font-size:13.5px}
+.history-list.compact>div{padding:7px 0}
+.dashboard-shell .status-dot,.admin-shell .status-dot{padding:4px 9px;font-size:10px}
+.dashboard-shell .button,.admin-shell .button{padding:9px 14px;font-size:13px}
+.dashboard-shell .form-stack,.admin-shell .form-stack{gap:12px}
+.dashboard-shell .form-stack label,.admin-shell .form-stack label,.dashboard-shell .filter-row label,.admin-shell .filter-row label,.dashboard-shell .review-form label,.admin-shell .review-form label{font-size:10.5px;gap:5px}
+.dashboard-shell .form-stack input,.dashboard-shell .form-stack select,.dashboard-shell .form-stack textarea,.admin-shell .form-stack input,.admin-shell .form-stack select,.admin-shell .form-stack textarea,
+.dashboard-shell .filter-row input,.dashboard-shell .filter-row select,.admin-shell .filter-row input,.admin-shell .filter-row select,
+.admin-shell .review-form textarea,.dashboard-shell .review-form textarea,.admin-action-grid input,.admin-action-grid select,.admin-action-grid textarea{padding:8px 10px;font-size:13.5px}
+.dashboard-shell .filter-row,.admin-shell .filter-row{gap:10px}
+.dashboard-shell .field-help,.admin-shell .field-help{font-size:11.5px;margin-top:-4px}
+.dashboard-shell .alert,.admin-shell .alert{padding:9px 12px;font-size:13px;margin:0}
+.dashboard-shell .queue-tabs,.admin-shell .queue-tabs{gap:6px}
+.dashboard-shell .queue-tab,.admin-shell .queue-tab{padding:7px 11px;font-size:12.5px}
+.dashboard-shell .opportunity-card,.admin-shell .opportunity-card{gap:8px}
+.dashboard-shell .opportunity-card h3,.admin-shell .opportunity-card h3{font-size:15px}
+.dashboard-shell .opportunity-figures strong{font-size:16px}
+.dashboard-shell .plan-card .plan-price,.dashboard-shell .pay-card .plan-price{font-size:22px}
+.dashboard-shell .empty-state h2,.admin-shell .empty-state h2{font-size:16px}
+.dashboard-shell .empty-state span,.admin-shell .empty-state span{font-size:24px}
+.dashboard-shell .restriction-banner strong,.admin-shell .restriction-banner strong{font-size:14px}
+.dashboard-shell .admin-action-grid,.admin-shell .admin-action-grid{gap:12px;margin-top:12px;padding-top:12px}
+.admin-action-grid textarea{border:1px solid var(--line-strong);border-radius:var(--radius);background:#fff;width:100%;font:inherit}
+.admin-detail-grid{gap:14px}
+.listing-actions form{display:inline}
+
+/* Console header: never let the tabs overlap the badge or the user name. */
+.admin-header{height:auto;min-height:62px;padding-top:8px;padding-bottom:8px;gap:16px;flex-wrap:wrap}
+.admin-header>div{flex:0 0 auto;gap:10px}
+.admin-header .logo{height:24px}
+.admin-header nav{flex:1 1 auto;flex-wrap:wrap;gap:4px 16px;font-size:13px;margin-left:0;justify-content:flex-start;min-width:0}
+.admin-header nav a{white-space:nowrap;padding:6px 0}
+.admin-label{font-size:9px;padding:4px 7px;letter-spacing:.14em;white-space:nowrap}
+.console-user{font-size:12px;margin-left:auto;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+.console-signout{margin-left:8px}
+@media (max-width:1100px){.admin-header nav{order:3;flex-basis:100%}}
+
+/* ---------- Website builder (editor console) ---------- */
+.builder{display:flex;flex-direction:column;height:calc(100vh - 62px);margin:calc(-1*clamp(18px,2.4vw,30px)) calc(-1*clamp(16px,2.6vw,36px));background:#e9edf2}
+.builder-bar{display:flex;align-items:center;gap:14px;padding:8px 14px;background:#fff;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.builder-pages{display:flex;gap:4px;flex-wrap:wrap}
+.builder-page{padding:6px 10px;border-radius:var(--radius);font-size:12.5px;font-weight:700;color:var(--ink)}
+.builder-page:hover{background:var(--wtc-mist)}
+.builder-page-active{background:var(--wtc-navy);color:#fff}
+.builder-devices{display:flex;gap:4px;margin-left:auto;align-items:center}
+.builder-devices button{border:1px solid var(--line-strong);background:#fff;border-radius:var(--radius);padding:5px 9px;font-size:11px;font-weight:700;text-transform:capitalize;cursor:pointer}
+.builder-devices button.active{background:var(--wtc-orange);border-color:var(--wtc-orange);color:#fff}
+.builder-status{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--navy-soft);color:var(--wtc-navy)}
+.builder-status-error{background:#fde8e6;color:#a4231a}
+.builder-body{display:grid;grid-template-columns:1fr 400px;flex:1;min-height:0}
+.builder-preview{overflow:auto;padding:14px;background:#e9edf2}
+.builder-preview iframe{display:block;width:100%;height:100%;min-height:calc(100vh - 140px);border:0;background:#fff;box-shadow:var(--shadow);border-radius:6px}
+.builder-panel{background:#fff;border-left:1px solid var(--line);overflow-y:auto;padding:12px 14px 40px;font-size:13px}
+.builder-tabs{display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid var(--line)}
+.builder-tabs button{background:none;border:0;padding:8px 10px;font-weight:700;font-size:12.5px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent}
+.builder-tabs button.active{color:var(--wtc-navy);border-bottom-color:var(--wtc-orange)}
+.builder-outline{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:2px}
+.builder-outline li{display:flex;align-items:center;gap:6px;border-radius:var(--radius);padding:2px 4px}
+.builder-outline li.selected{background:var(--navy-soft)}
+.outline-name{flex:1;background:none;border:0;text-align:left;padding:5px 6px;cursor:pointer;display:flex;flex-direction:column;font:inherit;color:var(--ink)}
+.outline-name span{font-weight:700;text-transform:capitalize;font-size:12.5px}
+.outline-name small{color:var(--muted);font-size:10.5px;text-transform:capitalize}
+.outline-tools{display:flex;gap:2px}
+.outline-tools button{border:1px solid var(--line);background:#fff;border-radius:4px;width:24px;height:24px;font-size:11px;cursor:pointer}
+.outline-tools button:disabled{opacity:.35;cursor:default}
+.builder-form{display:flex;flex-direction:column;gap:9px;padding-top:6px;border-top:1px solid var(--line)}
+.builder-form h3{margin:6px 0 0;font-size:14px;text-transform:capitalize;color:var(--wtc-navy)}
+.builder-form label,.builder-item label{display:flex;flex-direction:column;gap:4px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--wtc-navy)}
+.builder-form label.switch,.builder-item label.switch{flex-direction:row;align-items:center;text-transform:none;letter-spacing:0;font-size:12.5px;font-weight:600}
+.builder-form input:not([type=checkbox]):not([type=file]),.builder-form textarea,.builder-form select,.builder-item input:not([type=checkbox]):not([type=file]),.builder-item textarea{border:1px solid var(--line-strong);border-radius:var(--radius);padding:7px 9px;font:inherit;font-size:13px;text-transform:none;letter-spacing:0;font-weight:400;width:100%}
+.builder-form label small{font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:11px}
+.builder-form details{border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.builder-form details summary{font-weight:700;cursor:pointer;font-size:12.5px;color:var(--wtc-navy)}
+.builder-form details label{margin-top:8px}
+.builder-form details .button{align-self:flex-start;margin-top:4px}
+.builder-two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.accent-swatches{display:flex;gap:6px}
+.swatch{width:22px;height:22px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--line-strong);cursor:pointer}
+.swatch.on{box-shadow:0 0 0 2px var(--wtc-orange)}
+.swatch-navy{background:var(--wtc-navy)}.swatch-orange{background:var(--wtc-orange)}.swatch-teal{background:var(--wtc-teal)}.swatch-gold{background:var(--wtc-gold)}.swatch-sky{background:#8fb8de}.swatch-peach{background:#f7c9a8}
+.builder-image{display:flex;flex-direction:column;gap:6px}
+.builder-image img{max-height:90px;object-fit:cover;border-radius:var(--radius);border:1px solid var(--line)}
+.builder-image input[type=file]{font-size:11px;font-weight:400;text-transform:none;letter-spacing:0}
+.builder-items{margin-top:14px;border-top:1px solid var(--line);padding-top:8px}
+.builder-items-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.builder-items-head h3{margin:0;font-size:13px}
+.builder-item{border:1px solid var(--line);border-radius:var(--radius);margin-top:6px;padding:4px 8px}
+.builder-item summary{cursor:pointer;font-weight:700;font-size:12.5px;display:flex;justify-content:space-between;padding:4px 0}
+.builder-item summary small{color:var(--muted);font-weight:400}
+.builder-item form{display:flex;flex-direction:column;gap:8px;padding:6px 0 8px}
+.builder .button{padding:7px 12px;font-size:12px}
+@media (max-width:1000px){.builder-body{grid-template-columns:1fr}.builder-preview{min-height:50vh}.builder-panel{border-left:0;border-top:1px solid var(--line)}}

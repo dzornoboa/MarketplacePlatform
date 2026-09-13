@@ -4,7 +4,7 @@ import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
 import { marketplaceLockFor, postingLockFor, humanize, labelForIntent } from '@/lib/auth/access'
 import { money, date, relativeDays } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
-import { submitOpportunity, expressInterest, toggleSaved } from './actions'
+import { submitOpportunity, expressInterest, toggleSaved, withdrawOpportunity, deleteOpportunity } from './actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -88,11 +88,25 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
         </div>
         <p>{item.summary}</p>
         {item.review_note && <p className="field-help">Reviewer note: {item.review_note}</p>}
-        {(item.status === 'draft' || item.status === 'changes_requested') && !postLock.locked &&
-          <form action={submitOpportunity}>
-            <input type="hidden" name="opportunityId" value={item.id} />
-            <button className="button button-secondary" type="submit">Submit for review</button>
-          </form>}
+        <div className="button-row listing-actions">
+          <Link className="button button-outline" href={`/dashboard/opportunities/${item.id}`}>View</Link>
+          {['draft', 'changes_requested', 'rejected'].includes(item.status) && <Link className="button button-outline" href={`/dashboard/opportunities/${item.id}/edit`}>Edit</Link>}
+          {(item.status === 'draft' || item.status === 'changes_requested') && !postLock.locked &&
+            <form action={submitOpportunity}>
+              <input type="hidden" name="opportunityId" value={item.id} />
+              <SubmitButton pendingLabel="Submitting…">Submit for review</SubmitButton>
+            </form>}
+          {['submitted', 'in_review', 'published'].includes(item.status) &&
+            <form action={withdrawOpportunity}>
+              <input type="hidden" name="opportunityId" value={item.id} />
+              <SubmitButton className="button button-outline" pendingLabel="Withdrawing…">{item.status === 'published' ? 'Unpublish' : 'Withdraw from review'}</SubmitButton>
+            </form>}
+          {['draft', 'changes_requested', 'rejected'].includes(item.status) &&
+            <form action={deleteOpportunity}>
+              <input type="hidden" name="opportunityId" value={item.id} />
+              <SubmitButton className="button button-danger" pendingLabel="Deleting…">Delete</SubmitButton>
+            </form>}
+        </div>
       </article>)}
     </div>}
 

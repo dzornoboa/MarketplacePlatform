@@ -1,4 +1,5 @@
 import { requireCapability } from '@/lib/auth/guards'
+import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { humanize, labelForParticipantType } from '@/lib/auth/access'
 import { dateTime, money } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
@@ -45,6 +46,7 @@ export default async function AdminVerificationPage({ searchParams }: Props) {
   })
 
   return <div className="page-stack">
+    <RealtimeRefresh tables={["verification_requests","profiles","document_records"]} />
     <div>
       <p className="eyebrow">Verification queue</p>
       <h1>Review member applications</h1>
@@ -80,7 +82,7 @@ export default async function AdminVerificationPage({ searchParams }: Props) {
           return <article className="card review-card" key={request.id}>
             <div className="review-head">
               <div>
-                <h2>{profile.full_name || 'Unnamed user'}</h2>
+                <h2><a href={`/admin/users/${profile.id}`}>{profile.full_name || 'Unnamed user'}</a></h2>
                 <p>{labelForParticipantType(profile.requested_participant_type)} · {profile.country || 'Country not provided'}{org ? ` · ${org.name}` : ''}</p>
               </div>
               <span>{dateTime(request.submitted_at)}</span>

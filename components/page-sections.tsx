@@ -46,7 +46,7 @@ const HERO_PLATES: Record<string, string> = {
 
 function PageHero({ section }: { section: ContentSection }) {
   const plate = HERO_PLATES[section.accent] ?? HERO_PLATES.navy
-  return <section className={`page-hero accent-${section.accent}`}>
+  return <section data-section={section.section_key} className={`page-hero accent-${section.accent}`}>
     {section.image_url && <img className="page-hero-photo" src={section.image_url} alt="" aria-hidden="true" />}
     <img className="page-hero-plate" src={plate} alt="" aria-hidden="true" />
     <div className="page-hero-scrim" aria-hidden="true" />
@@ -61,7 +61,7 @@ function PageHero({ section }: { section: ContentSection }) {
 }
 
 function FeatureGrid({ section }: { section: ContentSection }) {
-  return <section className="section">
+  return <section data-section={section.section_key} className="section">
     <SectionHead section={section} />
     <div className="feature-grid">{section.items.map(feature =>
       <article className={`accent-${feature.accent}`} key={feature.item_key}>
@@ -73,7 +73,7 @@ function FeatureGrid({ section }: { section: ContentSection }) {
 }
 
 function Steps({ section }: { section: ContentSection }) {
-  return <section className="section section-soft">
+  return <section data-section={section.section_key} className="section section-soft">
     <SectionHead section={section} />
     <div className="steps">{section.items.map(step =>
       <article className={`accent-${step.accent}`} key={step.item_key}>
@@ -85,7 +85,7 @@ function Steps({ section }: { section: ContentSection }) {
 }
 
 function ValueGrid({ section }: { section: ContentSection }) {
-  return <section className="section">
+  return <section data-section={section.section_key} className="section">
     <SectionHead section={section} />
     <div className="value-grid">{section.items.map(entry =>
       <article className={`accent-${entry.accent}`} key={entry.item_key}>
@@ -96,7 +96,7 @@ function ValueGrid({ section }: { section: ContentSection }) {
 }
 
 function MediaRow({ section }: { section: ContentSection }) {
-  return <section className="section section-media">
+  return <section data-section={section.section_key} className="section section-media">
     {section.heading && <p className="media-caption">{section.heading}</p>}
     <div className="media-row">{section.items.map(shot =>
       <figure className={`media-circle accent-${shot.accent}`} key={shot.item_key}>
@@ -111,7 +111,7 @@ function MediaRow({ section }: { section: ContentSection }) {
 function Leadership({ section }: { section: ContentSection }) {
   const person = section.items[0]
   if (!person) return null
-  return <section className="section section-soft">
+  return <section data-section={section.section_key} className="section section-soft">
     <div className="leadership">
       <figure className={`leadership-portrait accent-${person.accent}`}>
         {person.image_url
@@ -133,7 +133,7 @@ function Leadership({ section }: { section: ContentSection }) {
 }
 
 function Faq({ section }: { section: ContentSection }) {
-  return <section className="section">
+  return <section data-section={section.section_key} className="section">
     <SectionHead section={section} />
     <div className="faq-list">{section.items.map(entry =>
       <details className="faq-item" key={entry.item_key}>
@@ -144,7 +144,7 @@ function Faq({ section }: { section: ContentSection }) {
 }
 
 function Plans({ section, plans }: { section: ContentSection; plans: PlanSummary[] }) {
-  return <section className="section section-soft">
+  return <section data-section={section.section_key} className="section section-soft">
     <SectionHead section={section} />
     {plans.length === 0
       ? <p className="muted">Plan information is being updated. Contact WTC Accra for current pricing.</p>
@@ -159,7 +159,7 @@ function Plans({ section, plans }: { section: ContentSection; plans: PlanSummary
 }
 
 function CtaBand({ section }: { section: ContentSection }) {
-  return <section className="cta-section">
+  return <section data-section={section.section_key} className="cta-section">
     <BrandCircle className="motif motif-cta" stroke={2} />
     <div>
       {section.eyebrow && <p className="eyebrow light">{section.eyebrow}</p>}
@@ -171,7 +171,7 @@ function CtaBand({ section }: { section: ContentSection }) {
 }
 
 function ContactBlock({ section, settings }: { section: ContentSection; settings: Record<string, string> }) {
-  return <section className="section">
+  return <section data-section={section.section_key} className="section">
     <SectionHead section={section} />
     <div className="contact-cards">
       {settings.contact_email && <a className="card contact-card accent-navy" href={`mailto:${settings.contact_email}`}>
@@ -185,7 +185,7 @@ function ContactBlock({ section, settings }: { section: ContentSection; settings
 }
 
 function Prose({ section }: { section: ContentSection }) {
-  return <section className="section"><div className="narrow-content"><SectionHead section={section} /></div></section>
+  return <section data-section={section.section_key} className="section"><div className="narrow-content"><SectionHead section={section} /></div></section>
 }
 
 export function PageSections({ sections, plans = [], settings = {} }: {

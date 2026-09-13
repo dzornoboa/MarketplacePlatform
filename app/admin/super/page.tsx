@@ -74,7 +74,7 @@ export default async function SuperAdminPage({ searchParams }: Props) {
         <tbody>{people.map(person => {
           const sub = subByUser.get(person.id)
           return <tr key={person.id}>
-            <td><strong>{person.full_name || 'Unnamed'}</strong>{person.id === me.id && <span className="thread-badge">You</span>}</td>
+            <td><strong><Link href={`/admin/users/${person.id}`}>{person.full_name || 'Unnamed'}</Link></strong>{person.id === me.id && <span className="thread-badge">You</span>}</td>
             <td>{systemRoleLabels[person.system_role] ?? person.system_role}</td>
             <td>{labelForParticipantType(person.participant_type)}</td>
             <td><span className={`status-dot status-${person.account_status}`}>{humanize(person.account_status)}</span></td>

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { requireStaffConsole } from '@/lib/auth/guards'
 import { hasCapability, isAdminRole, humanize } from '@/lib/auth/access'
 import { money, dateTime } from '@/lib/format'
@@ -47,10 +48,11 @@ export default async function AdminPage() {
     { label: 'Bids awaiting due diligence', value: pendingBids, href: '/admin/bids', show: hasCapability(role, 'opportunities'), hint: 'Member bids that must be cleared before the owner sees them.' },
     { label: 'Payments to confirm', value: pendingPayments, href: '/admin/payments', show: hasCapability(role, 'finance'), hint: 'Bank and mobile-money payments awaiting confirmation.' },
     { label: 'Subscriptions to confirm', value: pendingSubs, href: '/admin/subscriptions', show: hasCapability(role, 'finance'), hint: 'Requested plans awaiting payment confirmation.' },
-    { label: 'Open support requests', value: openSupport, href: '/admin', show: hasCapability(role, 'support'), hint: 'Member questions needing a reply.' },
+    { label: 'Open support requests', value: openSupport, href: '/admin/support', show: hasCapability(role, 'support'), hint: 'Member questions needing a reply.' },
   ].filter(q => q.show)
 
   return <div className="page-stack">
+    <RealtimeRefresh tables={["profiles","subscriptions","payments","opportunities","expressions_of_interest","verification_requests"]} />
     <div>
       <p className="eyebrow">WTC Accra administration</p>
       <h1>Platform control centre</h1>

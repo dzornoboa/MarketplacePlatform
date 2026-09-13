@@ -177,9 +177,35 @@ export async function updateOpportunity(formData: FormData) {
     currency,
     deadline: deadline || null,
     tags: String(formData.get('tags') ?? '').split(',').map(t => t.trim()).filter(Boolean).slice(0, 12),
+    status: 'draft', review_note: null, // a rejected/changes-requested listing goes back to draft once edited
   }).eq('id', id)
 
   if (error) redirect(to(target, 'error', error.message))
   revalidatePath('/dashboard/opportunities')
   redirect(to('/dashboard/opportunities', 'message', 'Listing updated. Submit it when you are ready for review.'))
+}
+
+/* Pulls a submitted or published listing back to draft so the owner can
+   edit or remove it. withdraw_opportunity() checks ownership and status. */
+export async function withdrawOpportunity(formData: FormData) {
+  const id = String(formData.get('opportunityId') ?? '')
+  if (!id) redirect(to('/dashboard/opportunities', 'error', 'Opportunity not found.'))
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('withdraw_opportunity', { opportunity_id: id })
+  if (error) redirect(to('/dashboard/opportunities', 'error', error.message))
+  revalidatePath('/dashboard/opportunities'); revalidatePath('/opportunities')
+  redirect(to('/dashboard/opportunities', 'message', 'Listing withdrawn to draft. Edit it or delete it below.'))
+}
+
+/* Deletes a listing that is not live. RLS only allows the owner to delete
+   drafts, changes-requested and rejected listings. */
+export async function deleteOpportunity(formData: FormData) {
+  const id = String(formData.get('opportunityId') ?? '')
+  if (!id) redirect(to('/dashboard/opportunities', 'error', 'Opportunity not found.'))
+  const supabase = await createClient()
+  const { data, error } = await supabase.from('opportunities').delete().eq('id', id).select('id')
+  if (error) redirect(to('/dashboard/opportunities', 'error', error.message))
+  if (!data?.length) redirect(to('/dashboard/opportunities', 'error', 'Only draft, changes-requested or rejected listings can be deleted. Withdraw a live listing first.'))
+  revalidatePath('/dashboard/opportunities')
+  redirect(to('/dashboard/opportunities', 'message', 'Listing deleted.'))
 }

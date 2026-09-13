@@ -3,7 +3,8 @@ import { notFound } from 'next/navigation'
 import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
 import { marketplaceLockFor, humanize, labelForIntent, labelForParticipantType } from '@/lib/auth/access'
 import { money, date, dateTime, relativeDays } from '@/lib/format'
-import { submitOpportunity, expressInterest, toggleSaved } from '../actions'
+import { submitOpportunity, expressInterest, toggleSaved, withdrawOpportunity, deleteOpportunity } from '../actions'
+import { SubmitButton } from '@/components/submit-button'
 import { requestConnection, toggleFollow } from '../../feed/actions'
 import { openDocument } from '../../documents/actions'
 
@@ -102,13 +103,22 @@ export default async function OpportunityDetailPage({ params, searchParams }: Pr
       ? <section className="card listing-head">
           <div><h2>Manage this listing</h2><p className="muted">{humanize(item.status)}</p></div>
           <div className="button-row">
-            {(item.status === 'draft' || item.status === 'changes_requested') && <>
-              <Link className="button button-secondary" href={`/dashboard/opportunities/${item.id}/edit`}>Edit</Link>
+            {['draft', 'changes_requested', 'rejected'].includes(item.status) && <Link className="button button-secondary" href={`/dashboard/opportunities/${item.id}/edit`}>Edit</Link>}
+            {(item.status === 'draft' || item.status === 'changes_requested') &&
               <form action={submitOpportunity}>
                 <input type="hidden" name="opportunityId" value={item.id} />
-                <button className="button button-primary" type="submit">Submit for review</button>
-              </form>
-            </>}
+                <SubmitButton pendingLabel="Submitting…">Submit for review</SubmitButton>
+              </form>}
+            {['submitted', 'in_review', 'published'].includes(item.status) &&
+              <form action={withdrawOpportunity}>
+                <input type="hidden" name="opportunityId" value={item.id} />
+                <SubmitButton className="button button-outline" pendingLabel="Withdrawing…">{item.status === 'published' ? 'Unpublish' : 'Withdraw from review'}</SubmitButton>
+              </form>}
+            {['draft', 'changes_requested', 'rejected'].includes(item.status) &&
+              <form action={deleteOpportunity}>
+                <input type="hidden" name="opportunityId" value={item.id} />
+                <SubmitButton className="button button-danger" pendingLabel="Deleting…">Delete</SubmitButton>
+              </form>}
           </div>
         </section>
       : !lock.locked && <section className="card">

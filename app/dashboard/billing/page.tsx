@@ -1,3 +1,5 @@
+import Link from 'next/link'
+import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
 import { SubmitButton } from '@/components/submit-button'
 import { humanize, labelForParticipantType } from '@/lib/auth/access'
@@ -30,16 +32,18 @@ export default async function BillingPage({ searchParams }: Props) {
   ])
   const active = (subscriptions ?? []).find(s => s.status === 'active')
   const pending = (subscriptions ?? []).find(s => s.status === 'pending')
-  const online = paystackConfigured()
+  const testMode = (st => (st.payment_mode ?? 'test') !== 'live')(chrome.settings as Record<string, string | undefined>)
+  const online = testMode || paystackConfigured()
   const pendingPlan = pending ? (plans ?? []).find(p => p.code === pending.plan_code) : null
   const openPayment = (payments ?? []).find(p => p.status === 'pending' && (payRef ? p.reference === payRef : true))
-  const st = chrome.settings
+  const st = chrome.settings as Record<string, string | undefined>
   const eligible = (plans ?? []).filter(p =>
     p.target_participant_types.length === 0 ||
     (profile.participant_type ? p.target_participant_types.includes(profile.participant_type) : false))
   const offered = eligible.length > 0 ? eligible : (plans ?? [])
 
   return <div className="page-stack">
+    <RealtimeRefresh tables={["payments","subscriptions"]} />
     <div>
       <p className="eyebrow">Billing and membership</p>
       <h1>Subscription and membership</h1>
@@ -52,6 +56,7 @@ export default async function BillingPage({ searchParams }: Props) {
       <h2>Pay for your {pendingPlan.name} plan</h2>
       <p className="muted">Amount due: <strong className="plan-price">{money(pendingPlan.price_usd)}</strong> for one year. Marketplace access opens the moment payment is confirmed.</p>
 
+      {openPayment && openPayment.provider !== 'manual' && <p className="alert alert-success">A {humanize(openPayment.method)} checkout is open for reference <strong>{openPayment.reference}</strong>. <Link className="arrow-link" href={`/dashboard/billing/checkout?ref=${encodeURIComponent(openPayment.reference)}`}>Continue to checkout →</Link></p>}
       {openPayment && openPayment.provider === 'manual'
         ? <div className="pay-instructions">
             <p className="eyebrow">Your payment reference</p>
@@ -79,7 +84,7 @@ export default async function BillingPage({ searchParams }: Props) {
             <p className="field-help">Amount: <strong>{money(openPayment.amount, openPayment.currency)}</strong> · Method chosen: {humanize(openPayment.method)} · Started {date(openPayment.created_at)}</p>
           </div>
         : <form action={startPayment} className="form-stack">
-            <p className="muted">{online ? 'Pay by card or mobile money and your plan activates automatically. Or pay by bank transfer and finance confirms it.' : 'Choose how you will pay. You will get a reference and the account details; WTC Accra finance confirms the payment and your plan activates.'}</p>
+            <p className="muted">{online ? `Pay by card or mobile money and your plan activates automatically${testMode ? ' (test mode — no money moves)' : ''}. Or pay by bank transfer and finance confirms it.` : 'Choose how you will pay. You will get a reference and the account details; WTC Accra finance confirms the payment and your plan activates.'}</p>
             <div className="pay-methods">
               <label className="pay-method"><input type="radio" name="method" value="mobile_money" defaultChecked /> <span><strong>Mobile money</strong><small>MTN · Vodafone · AirtelTigo{online ? ' — instant' : ''}</small></span></label>
               <label className="pay-method"><input type="radio" name="method" value="card" /> <span><strong>Card</strong><small>Visa · Mastercard{online ? ' — instant' : ''}</small></span></label>
@@ -109,7 +114,7 @@ export default async function BillingPage({ searchParams }: Props) {
 
     <section>
       <h2>Plans</h2>
-      <p className="muted">Prices are annual and billed by WTC Accra directly. Requesting a plan does not take payment.</p>
+      <p className="muted">Prices are annual. Choose a plan, then pay by card, mobile money or bank transfer; the marketplace opens as soon as the payment is confirmed.</p>
       <div className="plan-grid">
         {offered.map(plan => {
           const current = active?.plan_code === plan.code

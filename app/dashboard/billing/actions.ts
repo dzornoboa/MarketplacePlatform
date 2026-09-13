@@ -18,8 +18,10 @@ export async function requestSubscription(formData: FormData) {
   const supabase = await createClient()
   const { error } = await supabase.rpc('request_subscription', { plan_code: planCode })
   if (error) redirect(back('error', error.message))
-  revalidatePath('/dashboard/billing')
-  redirect(back('message', 'Subscription requested. WTC Accra finance will confirm once payment is received.'))
+  revalidatePath('/dashboard/billing'); revalidatePath('/dashboard')
+  const { data: plan } = await supabase.from('subscription_plans').select('price_usd').eq('code', planCode).maybeSingle()
+  if (plan && Number(plan.price_usd) === 0) redirect(back('message', 'Your free plan is active. The marketplace is open.'))
+  redirect('/dashboard/billing?message=' + encodeURIComponent('Plan selected. Complete the payment below to open the marketplace.') + '#pay')
 }
 
 export async function requestMembership(formData: FormData) {
@@ -59,17 +61,25 @@ export async function startPayment(formData: FormData) {
     .eq('subscription_id', subscription.id).eq('status', 'pending').order('created_at', { ascending: false }).limit(1).maybeSingle()
 
   const reference = open?.reference ?? `WTC-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`
-  const useProvider = method !== 'bank_transfer' && paystackConfigured()
+  const { data: modeRow } = await supabase.from('site_settings').select('value').eq('key', 'payment_mode').maybeSingle()
+  const testMode = (modeRow?.value ?? 'test') !== 'live'
+  const useProvider = method !== 'bank_transfer' && !testMode && paystackConfigured()
+  // Test mode: card and mobile money go to the simulated checkout page.
+  const useTest = method !== 'bank_transfer' && !useProvider && testMode
 
   if (!open) {
     const { error } = await supabase.from('payments').insert({
       user_id: userId, subscription_id: subscription.id, plan_code: subscription.plan_code,
       amount: Number(plan.price_usd), currency: 'USD',
       method: method as 'card' | 'mobile_money' | 'bank_transfer',
-      provider: useProvider ? 'paystack' : 'manual', reference, status: 'pending',
+      provider: useProvider ? 'paystack' : useTest ? 'test' : 'manual', reference, status: 'pending',
     })
     if (error) redirect(back('error', error.message))
+  } else if (open.method !== method) {
+    await supabase.from('payments').update({ method: method as 'card' | 'mobile_money' | 'bank_transfer', provider: useProvider ? 'paystack' : useTest ? 'test' : 'manual' }).eq('id', open.id)
   }
+
+  if (useTest) redirect(`/dashboard/billing/checkout?ref=${encodeURIComponent(reference)}`)
 
   if (useProvider && email) {
     try {
@@ -88,4 +98,22 @@ export async function startPayment(formData: FormData) {
 
   revalidatePath('/dashboard/billing')
   redirect(`/dashboard/billing?pay=${encodeURIComponent(reference)}`)
+}
+
+/* Test-mode checkout: marks the member's own pending card / mobile-money
+   payment as paid. complete_test_payment() refuses once payment_mode is live. */
+export async function completeTestPayment(formData: FormData) {
+  const paymentId = String(formData.get('paymentId') ?? '')
+  const outcome = String(formData.get('outcome') ?? 'success')
+  if (!paymentId) redirect(back('error', 'Payment not found.'))
+  const supabase = await createClient()
+  if (outcome === 'cancel') {
+    await supabase.from('payments').update({ status: 'cancelled' }).eq('id', paymentId).eq('status', 'pending')
+    revalidatePath('/dashboard/billing')
+    redirect(back('message', 'Checkout cancelled. You can start again whenever you are ready.'))
+  }
+  const { error } = await supabase.rpc('complete_test_payment', { payment_id: paymentId })
+  if (error) redirect(back('error', error.message))
+  revalidatePath('/dashboard/billing'); revalidatePath('/dashboard'); revalidatePath('/admin/payments'); revalidatePath('/admin/subscriptions')
+  redirect(back('message', 'Payment received. Your subscription is active and the marketplace is open.'))
 }

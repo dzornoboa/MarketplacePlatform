@@ -4,7 +4,6 @@ import { notFound, redirect } from 'next/navigation'
 import { PublicHeader } from '@/components/public-header'
 import { PublicFooter } from '@/components/public-footer'
 import { createClient } from '@/lib/supabase/server'
-import { createPublicClient } from '@/lib/supabase/public'
 import { readAccessState } from '@/lib/auth/guards'
 import { humanize, labelForIntent, labelForParticipantType, marketplaceLockFor } from '@/lib/auth/access'
 import { money, date, relativeDays } from '@/lib/format'
@@ -36,8 +35,7 @@ export default async function ListingDetailPage({ params, searchParams }: Props)
   if (!userId) redirect(`/login?next=${encodeURIComponent(`/opportunities/${id}`)}`)
 
   // Teaser is always available to a signed-in user; it confirms the listing exists.
-  const anon = createPublicClient()
-  const { data: teasers } = await anon.rpc('public_listing_teasers', { max_rows: 200 })
+  const { data: teasers } = await supabase.rpc('public_listing_teasers', { max_rows: 200 })
   const teaser = (teasers ?? []).find(t => t.id === id)
   if (!teaser) notFound()
 

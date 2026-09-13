@@ -37,7 +37,7 @@ export default async function HomePage() {
 
   return <><PublicHeader /><main>
 
-    <section className={hero.image_url ? 'hero hero-photo' : 'hero'}>
+    <section data-section="hero" className={hero.image_url ? 'hero hero-photo' : 'hero'}>
       {hero.image_url && <>
         <img className="page-hero-photo" src={hero.image_url} alt="" aria-hidden="true" />
         <img className="page-hero-plate" src="/brand/hero-band-navy.jpg" alt="" aria-hidden="true" />
@@ -50,7 +50,7 @@ export default async function HomePage() {
         <Cta section={hero} primaryClass="button button-primary" secondaryClass="button button-ghost" />
         <p className="hero-tagline">{chrome.settings.site_tagline}</p>
       </div>
-      <div className="hero-card">
+      <div className="hero-card" data-section="hero_card">
         <BrandArc className="hero-lock" color="var(--wtc-navy)" />
         {heroCard.eyebrow && <p className="eyebrow">{heroCard.eyebrow}</p>}
         <h2>{heroCard.heading}</h2>
@@ -59,7 +59,7 @@ export default async function HomePage() {
       </div>
     </section>
 
-    <section id="about" className="section">
+    <section id="about" data-section="about" className="section">
       <SectionHead section={about} />
       <div className="feature-grid">{about.items.map(feature =>
         <article className={`accent-${feature.accent}`} key={feature.item_key}>
@@ -67,13 +67,13 @@ export default async function HomePage() {
           <strong>{feature.heading}</strong>
           {feature.body && <p>{feature.body}</p>}
         </article>)}</div>
-      {media.items.length > 0 && <div className="media-row">{media.items.map(shot =>
+      {media.items.length > 0 && <div className="media-row" data-section="about_media">{media.items.map(shot =>
         <figure className={`media-circle accent-${shot.accent}`} key={shot.item_key}>
           <img src={shot.image_url ?? ''} alt={shot.image_alt ?? shot.heading} />
         </figure>)}</div>}
     </section>
 
-    <section id="how-it-works" className="section section-soft">
+    <section id="how-it-works" data-section="how-it-works" className="section section-soft">
       <SectionHead section={steps} />
       <div className="steps">{steps.items.map(step =>
         <article className={`accent-${step.accent}`} key={step.item_key}>
@@ -83,7 +83,7 @@ export default async function HomePage() {
         </article>)}</div>
     </section>
 
-    <section id="value" className="section">
+    <section id="value" data-section="value" className="section">
       <SectionHead section={value} />
       <div className="value-grid">{value.items.map(proposition =>
         <article className={`accent-${proposition.accent}`} key={proposition.item_key}>
@@ -92,7 +92,7 @@ export default async function HomePage() {
         </article>)}</div>
     </section>
 
-    <section id="membership" className="cta-section">
+    <section id="membership" data-section="membership" className="cta-section">
       <BrandCircle className="motif motif-cta" stroke={2} />
       <div>
         {membership.eyebrow && <p className="eyebrow light">{membership.eyebrow}</p>}
@@ -102,7 +102,7 @@ export default async function HomePage() {
       <Cta section={membership} primaryClass="button button-light" secondaryClass="button button-ghost" />
     </section>
 
-    <section id="contact" className="section">
+    <section id="contact" data-section="contact" className="section">
       <SectionHead section={contact} />
       <div className="contact-details">{chrome.settings.contact_email && <a className="arrow-link" href={`mailto:${chrome.settings.contact_email}`}>{chrome.settings.contact_email}</a>}{chrome.settings.contact_phone && <a className="arrow-link" href={`tel:${chrome.settings.contact_phone.replace(/\s+/g, '')}`}>{chrome.settings.contact_phone}</a>}{chrome.settings.contact_address && <span className="muted">{chrome.settings.contact_address}</span>}</div>{contact.cta_label && <Link className="arrow-link" href={contact.cta_href ?? '/register'}>{contact.cta_label} →</Link>}
     </section>

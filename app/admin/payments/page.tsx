@@ -1,4 +1,5 @@
 import { requireCapability } from '@/lib/auth/guards'
+import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { humanize } from '@/lib/auth/access'
 import { money, dateTime } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
@@ -29,6 +30,7 @@ export default async function AdminPaymentsPage({ searchParams }: Props) {
   const total = (payments ?? []).reduce((sum, p) => sum + Number(p.amount), 0)
 
   return <div className="page-stack">
+    <RealtimeRefresh tables={["payments","subscriptions"]} />
     <div>
       <p className="eyebrow">Finance</p>
       <h1>Payments</h1>

@@ -23,6 +23,7 @@ export default async function EditorOverviewPage() {
       <p className="muted">Everything the public sees is stored in the database and edited here. No code change is needed to update the marketing site.</p>
     </div>
 
+    <p><Link className="button button-primary" href="/editor/builder">Open the website builder — edit the live site visually →</Link></p>
     <section className="dashboard-grid">
       <article className="metric-card">
         <span>Draft articles</span><strong>{drafts ?? 0}</strong>

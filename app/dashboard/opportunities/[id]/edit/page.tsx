@@ -12,7 +12,7 @@ type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
-const EDITABLE = new Set(['draft', 'changes_requested'])
+const EDITABLE = new Set(['draft', 'changes_requested', 'rejected'])
 
 export default async function EditOpportunityPage({ params, searchParams }: Props) {
   const { supabase, profile } = await requireUserProfile()
