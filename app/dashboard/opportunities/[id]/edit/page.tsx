@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { SubmitButton } from '@/components/submit-button'
 import { notFound, redirect } from 'next/navigation'
 import { requireUserProfile } from '@/lib/auth/guards'
 import { humanize, listingIntents, listingIntentLabels, listingIntentHelp } from '@/lib/auth/access'
@@ -90,7 +91,7 @@ export default async function EditOpportunityPage({ params, searchParams }: Prop
       <p className="field-help">The deal rating and publication status are set by the WTC Accra trade desk and cannot be changed here.</p>
 
       <div className="button-row">
-        <button className="button button-primary" type="submit">Save changes</button>
+        <SubmitButton>Save changes</SubmitButton>
         <Link className="button button-outline" href={`/dashboard/opportunities/${id}`}>Cancel</Link>
       </div>
     </form>

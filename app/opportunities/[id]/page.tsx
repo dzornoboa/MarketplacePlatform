@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { SubmitButton } from '@/components/submit-button'
 import { notFound, redirect } from 'next/navigation'
 import { PublicHeader } from '@/components/public-header'
 import { PublicFooter } from '@/components/public-footer'
@@ -137,7 +138,7 @@ export default async function ListingDetailPage({ params, searchParams }: Props)
                   <input type="hidden" name="opportunityId" value={full.id} />
                   <input type="hidden" name="returnTo" value={`/opportunities/${full.id}`} />
                   <label>Your bid<textarea name="message" rows={5} minLength={20} maxLength={3000} required placeholder="Who you are, what you are proposing, and on what terms." /></label>
-                  <button className="button button-primary" type="submit">Submit bid for due diligence</button>
+                  <SubmitButton>Submit bid for due diligence</SubmitButton>
                 </form>
               </>}
           <p className="field-help"><Link href="/dashboard/interests">Track all your bids →</Link></p>

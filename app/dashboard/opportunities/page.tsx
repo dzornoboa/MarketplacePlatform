@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { SubmitButton } from '@/components/submit-button'
 import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
 import { marketplaceLockFor, postingLockFor, humanize, labelForIntent } from '@/lib/auth/access'
 import { money, date, relativeDays } from '@/lib/format'
@@ -130,7 +131,7 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
                 <form action={expressInterest} className="form-stack">
                   <input type="hidden" name="opportunityId" value={item.id} />
                   <label>Message to the owner<textarea name="message" rows={4} minLength={20} maxLength={3000} required placeholder="Introduce yourself and explain the fit." /></label>
-                  <button className="button button-primary" type="submit">Send expression of interest</button>
+                  <SubmitButton>Send expression of interest</SubmitButton>
                 </form>
               </details>
               <p className="field-help">Published {date(item.published_at)}</p>

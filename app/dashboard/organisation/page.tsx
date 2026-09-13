@@ -1,4 +1,5 @@
 import { requireUserProfile } from '@/lib/auth/guards'
+import { SubmitButton } from '@/components/submit-button'
 import { humanize } from '@/lib/auth/access'
 import { date } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
@@ -55,7 +56,7 @@ export default async function OrganisationPage({ searchParams }: Props) {
               <label>City<input name="city" placeholder="Accra" /></label>
             </div>
             <label>Description<textarea name="description" rows={4} placeholder="What the organisation does." /></label>
-            <button className="button button-primary" type="submit">Create organisation</button>
+            <SubmitButton>Create organisation</SubmitButton>
           </form>
         </>
       : (organisations ?? []).map(org => {
@@ -81,7 +82,7 @@ export default async function OrganisationPage({ searchParams }: Props) {
                     <label>City<input name="city" defaultValue={org.city ?? ''} /></label>
                   </div>
                   <label>Description<textarea name="description" rows={4} defaultValue={org.description ?? ''} /></label>
-                  <button className="button button-primary" type="submit">Save organisation</button>
+                  <SubmitButton>Save organisation</SubmitButton>
                 </form>
               : <p className="muted">{org.description || 'No description provided.'}</p>}
 

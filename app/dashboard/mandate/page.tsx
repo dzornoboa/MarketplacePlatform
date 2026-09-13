@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { SubmitButton } from '@/components/submit-button'
 import { requireUserProfile } from '@/lib/auth/guards'
 import { labelForParticipantType } from '@/lib/auth/access'
 import { money } from '@/lib/format'
@@ -57,7 +58,7 @@ export default async function MandatePage({ searchParams }: Props) {
         <label>Currency<input name="currency" maxLength={3} pattern="[A-Za-z]{3}" defaultValue={mandate?.currency ?? 'USD'} required /></label>
         <label>Notes for the trade desk<textarea name="notes" rows={4} defaultValue={mandate?.notes ?? ''} placeholder="Stage, structure, exclusions, board requirements." /></label>
         <label className="switch"><input type="checkbox" name="active" defaultChecked={mandate?.active ?? true} /> Actively looking</label>
-        <button className="button button-primary" type="submit">{mandate ? 'Save mandate' : 'Create mandate'}</button>
+        <SubmitButton>{mandate ? 'Save mandate' : 'Create mandate'}</SubmitButton>
       </form>
       {mandate && <p className="field-help">Current range: {money(mandate.ticket_min, mandate.currency)} – {money(mandate.ticket_max, mandate.currency)}</p>}
     </section>}

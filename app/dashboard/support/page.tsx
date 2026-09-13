@@ -1,4 +1,5 @@
 import { requireUserProfile } from '@/lib/auth/guards'
+import { SubmitButton } from '@/components/submit-button'
 import { humanize } from '@/lib/auth/access'
 import { dateTime } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
@@ -63,7 +64,7 @@ export default async function SupportPage({ searchParams }: Props) {
         </label>
       </div>
       <label>Details<textarea name="body" rows={5} maxLength={5000} required placeholder="What you were doing, what happened, and what you expected." /></label>
-      <button className="button button-primary" type="submit">Open request</button>
+      <SubmitButton>Open request</SubmitButton>
     </form>
 
     {(requests ?? []).length === 0

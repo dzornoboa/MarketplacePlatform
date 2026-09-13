@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { SubmitButton } from '@/components/submit-button'
 import { redirect } from 'next/navigation'
 import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
 import { postingLockFor, listingIntents, listingIntentLabels, listingIntentHelp } from '@/lib/auth/access'
@@ -74,7 +75,7 @@ export default async function NewOpportunityPage({ searchParams }: Props) {
       <label>Tags<input name="tags" placeholder="processing, export, expansion" /></label>
       <p className="field-help">Comma separated, up to 12 tags.</p>
       <div className="button-row">
-        <button className="button button-primary" type="submit">Save draft</button>
+        <SubmitButton>Save draft</SubmitButton>
         <Link className="button button-outline" href="/dashboard/opportunities">Cancel</Link>
       </div>
     </form>

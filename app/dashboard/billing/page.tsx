@@ -1,4 +1,5 @@
 import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
+import { SubmitButton } from '@/components/submit-button'
 import { humanize, labelForParticipantType } from '@/lib/auth/access'
 import { money, date } from '@/lib/format'
 import { requestSubscription, requestMembership } from './actions'
@@ -70,7 +71,7 @@ export default async function BillingPage({ searchParams }: Props) {
               ? <span className="status-dot status-verified">Current plan</span>
               : <form action={requestSubscription}>
                   <input type="hidden" name="planCode" value={plan.code} />
-                  <button className="button button-primary" type="submit" disabled={!!pending}>{pending ? 'Request pending' : 'Request this plan'}</button>
+                  <SubmitButton pendingLabel="Requesting…">{pending ? 'Request pending' : 'Request this plan'}</SubmitButton>
                 </form>}
           </article>
         })}

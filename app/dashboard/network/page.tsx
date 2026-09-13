@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { SubmitButton } from '@/components/submit-button'
 import { requireUserProfile } from '@/lib/auth/guards'
 import { humanize, labelForParticipantType, selectableParticipantTypes, participantTypeLabels } from '@/lib/auth/access'
 import { dateTime } from '@/lib/format'
@@ -168,7 +169,7 @@ export default async function NetworkPage({ searchParams }: Props) {
                         </select>
                       </label>
                       <label>Message<textarea name="note" rows={3} maxLength={2000} /></label>
-                      <button className="button button-primary" type="submit">Send request</button>
+                      <SubmitButton>Send request</SubmitButton>
                     </form>
                   </details>}
 

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { SubmitButton } from '@/components/submit-button'
 import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
 import { marketplaceLockFor, humanize, labelForIntent, labelForParticipantType, listingIntents, listingIntentLabels } from '@/lib/auth/access'
 import { money, date, relativeDays } from '@/lib/format'
@@ -203,7 +204,7 @@ export default async function FeedPage({ searchParams }: Props) {
                     </label>
                     <label>Message<textarea name="note" rows={3} maxLength={2000} placeholder="Introduce yourself and say what you are proposing." /></label>
                     <p className="field-help">WTC Accra is copied on every request, with the deal summary and the process. Keep the transaction on the platform.</p>
-                    <button className="button button-primary" type="submit">Send request</button>
+                    <SubmitButton>Send request</SubmitButton>
                   </form>
                 </details>
               </div>

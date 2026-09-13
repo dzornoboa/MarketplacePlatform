@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { SubmitButton } from '@/components/submit-button'
 import { selectableParticipantTypes, participantTypeLabels } from '@/lib/auth/access'
 import { signup } from '../actions'
 import { BrandCircle, Logo, LogoLink } from '@/components/brand'
@@ -28,7 +29,7 @@ export default async function RegisterPage({ searchParams }: Props) {
           </label>
           <label>Password<input name="password" type="password" autoComplete="new-password" minLength={8} required /></label>
           <p className="field-help">Use at least 8 characters with upper and lowercase letters and a number.</p>
-          <button className="button button-primary" type="submit">Create account</button>
+          <SubmitButton>Create account</SubmitButton>
         </form>
         <div className="auth-links"><span>Already registered?</span><Link href="/login">Sign in</Link></div>
       </section>
