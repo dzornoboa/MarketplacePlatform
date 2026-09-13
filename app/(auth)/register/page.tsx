@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { SubmitButton } from '@/components/submit-button'
-import { selectableParticipantTypes, participantTypeLabels } from '@/lib/auth/access'
+import { RegisterFields } from '@/components/register-fields'
 import { signup } from '../actions'
 import { BrandCircle, Logo, LogoLink } from '@/components/brand'
 
@@ -19,16 +19,7 @@ export default async function RegisterPage({ searchParams }: Props) {
         <p className="muted">You can sign in immediately after email confirmation, but opportunity access remains restricted until admin verification.</p>
         {error && <div className="alert alert-error">{error}</div>}
         <form action={signup} className="form-stack">
-          <label>Full name<input name="fullName" autoComplete="name" required /></label>
-          <label>Email<input name="email" type="email" autoComplete="email" required /></label>
-          <label>Account type
-            <select name="participantType" required defaultValue="">
-              <option value="" disabled>Select account type</option>
-              {selectableParticipantTypes.map(type => <option key={type} value={type}>{participantTypeLabels[type]}</option>)}
-            </select>
-          </label>
-          <label>Password<input name="password" type="password" autoComplete="new-password" minLength={8} required /></label>
-          <p className="field-help">Use at least 8 characters with upper and lowercase letters and a number.</p>
+          <RegisterFields />
           <SubmitButton>Create account</SubmitButton>
         </form>
         <div className="auth-links"><span>Already registered?</span><Link href="/login">Sign in</Link></div>

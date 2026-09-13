@@ -40,7 +40,18 @@ export async function signup(formData: FormData) {
   const validation = validateSignupInput({ fullName, email, password, participantType })
   if (!validation.ok) redirect(withMessage('/register', 'error', Object.values(validation.errors)[0] ?? 'Check your registration details.'))
   const supabase = await createClient()
-  const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, participant_type: participantType }, emailRedirectTo: `${getSiteUrl()}/auth/confirm` } })
+  const COMPANY_TYPES = new Set(['business', 'project_sponsor', 'institutional_partner', 'wtc_association_member', 'wtc_accra_member'])
+  const organisationName = String(formData.get('organisationName') ?? '').trim()
+  if (COMPANY_TYPES.has(participantType) && organisationName.length < 2) redirect(withMessage('/register', 'error', 'Enter your organisation name.'))
+  if (participantType === 'wtc_accra_member' && !email.toLowerCase().endsWith('@wtcaccra.com')) redirect(withMessage('/register', 'error', 'WTC Accra member accounts must register with an @wtcaccra.com email address.'))
+  const extra = {
+    organisation_name: organisationName || null,
+    wtca_membership_number: String(formData.get('wtcaMembershipNumber') ?? '').trim() || null,
+    wtca_chapter: String(formData.get('wtcaChapter') ?? '').trim() || null,
+    phone: String(formData.get('phone') ?? '').trim() || null,
+    country: String(formData.get('country') ?? '').trim() || null,
+  }
+  const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, participant_type: participantType, ...extra }, emailRedirectTo: `${getSiteUrl()}/auth/confirm` } })
   if (error) redirect(withMessage('/register', 'error', error.message))
   if (data.session) { revalidatePath('/', 'layout'); redirect('/dashboard') }
   redirect(withMessage('/login', 'message', 'Check your email to confirm your account before signing in.'))
