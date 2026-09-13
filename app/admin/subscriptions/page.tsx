@@ -93,7 +93,7 @@ export default async function AdminSubscriptionsPage({ searchParams }: Props) {
               <div><dt>Ends</dt><dd>{date(item.ends_at)}</dd></div>
               <div><dt>Reference</dt><dd>{item.external_reference || '—'}</dd></div>
             </dl>
-            {prev && <p className="field-help">{plan && prevPlan && plan.tier > prevPlan.tier ? 'Upgrade' : 'Change'} from {prevPlan?.name ?? prev.plan_code}; the old plan is cancelled when this one activates.</p>}
+            {prev && <p className="field-help">{plan && prevPlan && plan.tier > prevPlan.tier ? 'Upgrade' : 'Change'} from {prevPlan?.name ?? prev.plan_code}{['pending', 'awaiting_approval'].includes(item.status) ? '; the old plan is cancelled when this one activates.' : item.status === 'cancelled' ? ' — change was cancelled; the old plan stays.' : '.'}</p>}
             {plan?.eligibility_note && item.status === 'awaiting_approval' && <p className="field-help">Eligibility: {plan.eligibility_note}</p>}
 
             {item.status === 'awaiting_approval' && <form action={decideSubscription} className="review-form">
