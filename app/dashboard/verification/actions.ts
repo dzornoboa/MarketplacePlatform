@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { requireUserProfile } from '@/lib/auth/guards'
+import { isSelectableParticipantType } from '@/lib/auth/access'
 
 export async function submitVerification(formData: FormData) {
   const { supabase, profile } = await requireUserProfile()
@@ -14,4 +15,17 @@ export async function submitVerification(formData: FormData) {
   if (error) redirect(`/dashboard/verification?error=${encodeURIComponent(error.message)}`)
   revalidatePath('/dashboard', 'layout')
   redirect('/dashboard/verification?message=Verification%20submitted%20for%20review.')
+}
+
+
+/* Onboarding step: the plan chosen here is stored on the profile and becomes
+   a subscription when WTC Accra approves verification (free tiers activate
+   at once; paid tiers wait for payment). */
+export async function choosePlan(formData: FormData) {
+  const { supabase, profile } = await requireUserProfile()
+  const planCode = String(formData.get('planCode') ?? '').trim() || null
+  const { error } = await supabase.from('profiles').update({ requested_plan_code: planCode }).eq('id', profile.id)
+  if (error) redirect(`/dashboard/verification?error=${encodeURIComponent(error.message)}`)
+  revalidatePath('/dashboard/verification')
+  redirect('/dashboard/verification?message=' + encodeURIComponent(planCode ? 'Plan saved.' : 'Plan cleared.'))
 }

@@ -41,6 +41,9 @@ export async function uploadDocument(formData: FormData) {
   const scope = String(formData.get('accessScope') ?? 'private')
   if (!SCOPES.has(scope)) redirect(back('error', 'Choose who may see this document.'))
   const opportunityId = String(formData.get('opportunityId') ?? '').trim() || null
+  const purpose = String(formData.get('purpose') ?? 'general')
+  const returnTo = String(formData.get('returnTo') ?? '/dashboard/documents')
+  if (!['general','business_certificate','identity','profile','financials','other'].includes(purpose)) redirect(back('error', 'Choose what this document is.'))
 
   const objectPath = `${userId}/${crypto.randomUUID()}-${safeName(file.name)}`
   const { error: uploadError } = await supabase.storage.from(BUCKET)
@@ -55,6 +58,7 @@ export async function uploadDocument(formData: FormData) {
     mime_type: file.type,
     size_bytes: file.size,
     access_scope: scope as 'private',
+    purpose,
   })
   if (recordError) {
     await supabase.storage.from(BUCKET).remove([objectPath])
@@ -62,7 +66,8 @@ export async function uploadDocument(formData: FormData) {
   }
 
   revalidatePath('/dashboard/documents')
-  redirect(back('message', 'Document uploaded.'))
+  revalidatePath('/dashboard/verification')
+  redirect(`${returnTo}${returnTo.includes('?') ? '&' : '?'}message=${encodeURIComponent('Document uploaded.')}`)
 }
 
 /* Signed URLs are short-lived and generated per request, so a link cannot be

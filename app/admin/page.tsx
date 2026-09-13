@@ -19,7 +19,7 @@ export default async function AdminPage() {
   const role = profile.system_role
   const admin = isAdminRole(role)
 
-  const [pendingVerification, submittedOpportunities, publishedOpportunities, pendingSubs, activeSubs, verifiedMembers, totalMembers, openSupport, pendingBids] = await Promise.all([
+  const [pendingVerification, submittedOpportunities, publishedOpportunities, pendingSubs, activeSubs, verifiedMembers, totalMembers, openSupport, pendingBids, pendingPayments] = await Promise.all([
     countOf(supabase, 'verification_requests', 'status', 'pending_review'),
     countOf(supabase, 'opportunities', 'status', 'submitted'),
     countOf(supabase, 'opportunities', 'status', 'published'),
@@ -29,6 +29,7 @@ export default async function AdminPage() {
     supabase.from('profiles').select('*', { count: 'exact', head: true }).then(r => r.count ?? 0),
     countOf(supabase, 'support_requests', 'status', 'open'),
     countOf(supabase, 'expressions_of_interest', 'status', 'submitted'),
+    supabase.from('payments').select('*', { count: 'exact', head: true }).eq('status', 'pending').then(r => r.count ?? 0),
   ])
 
   const { data: plans } = await supabase.from('subscription_plans').select('code,price_usd')
@@ -44,6 +45,7 @@ export default async function AdminPage() {
     { label: 'Verification requests', value: pendingVerification, href: '/admin/verification', show: hasCapability(role, 'verification'), hint: 'Members waiting on a decision.' },
     { label: 'Opportunities to review', value: submittedOpportunities, href: '/admin/opportunities', show: hasCapability(role, 'opportunities'), hint: 'Submitted listings not yet published.' },
     { label: 'Bids awaiting due diligence', value: pendingBids, href: '/admin/bids', show: hasCapability(role, 'opportunities'), hint: 'Member bids that must be cleared before the owner sees them.' },
+    { label: 'Payments to confirm', value: pendingPayments, href: '/admin/payments', show: hasCapability(role, 'finance'), hint: 'Bank and mobile-money payments awaiting confirmation.' },
     { label: 'Subscriptions to confirm', value: pendingSubs, href: '/admin/subscriptions', show: hasCapability(role, 'finance'), hint: 'Requested plans awaiting payment confirmation.' },
     { label: 'Open support requests', value: openSupport, href: '/admin', show: hasCapability(role, 'support'), hint: 'Member questions needing a reply.' },
   ].filter(q => q.show)

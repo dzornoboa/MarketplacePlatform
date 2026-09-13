@@ -5,6 +5,7 @@ import { BrandCircle } from '@/components/brand'
 import { createPublicClient } from '@/lib/supabase/public'
 import { humanize, labelForIntent, listingIntents, listingIntentLabels } from '@/lib/auth/access'
 import { relativeDays } from '@/lib/format'
+import { SessionCta } from '@/components/header-session'
 
 export const revalidate = 120
 
@@ -45,10 +46,7 @@ export default async function PublicListingsPage({ searchParams }: Props) {
         <p className="eyebrow">Private marketplace</p>
         <h2>Live <strong>listings</strong></h2>
         <p className="lede">Opportunities posted by verified WTC Accra members and reviewed by the trade desk. Sign in to see the full details, the figures and who is behind each one — and to bid.</p>
-        <div className="button-row">
-          <Link className="button button-primary" href="/register">Join the network</Link>
-          <Link className="button button-outline" href="/login?next=%2Fdashboard%2Ffeed">Member sign in</Link>
-        </div>
+        <SessionCta memberHref="/dashboard/feed" memberLabel="Open your feed" />
       </div>
 
       <form className="filter-row card" method="get">

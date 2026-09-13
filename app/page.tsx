@@ -3,6 +3,7 @@ import { PublicHeader } from '@/components/public-header'
 import { PublicFooter } from '@/components/public-footer'
 import { BrandArc, BrandCircle } from '@/components/brand'
 import { getHomeContent, getSiteChrome, HOME_FALLBACK, type ContentSection } from '@/lib/content/site-content'
+import { MemberAware } from '@/components/header-session'
 
 /* Content is edited in Supabase (site_content_blocks / site_content_items) by
    staff holding the 'content' capability. Headline and value-proposition copy
@@ -20,10 +21,12 @@ function SectionHead({ section }: { section: ContentSection }) {
 
 function Cta({ section, primaryClass, secondaryClass }: { section: ContentSection; primaryClass: string; secondaryClass: string }) {
   if (!section.cta_label && !section.secondary_cta_label) return null
-  return <div className="button-row">
-    {section.cta_label && <Link className={primaryClass} href={section.cta_href ?? '/register'}>{section.cta_label}</Link>}
-    {section.secondary_cta_label && <Link className={secondaryClass} href={section.secondary_cta_href ?? '/login'}>{section.secondary_cta_label}</Link>}
-  </div>
+  return <MemberAware memberClass={primaryClass}>
+    <div className="button-row">
+      {section.cta_label && <Link className={primaryClass} href={section.cta_href ?? '/register'}>{section.cta_label}</Link>}
+      {section.secondary_cta_label && <Link className={secondaryClass} href={section.secondary_cta_href ?? '/login'}>{section.secondary_cta_label}</Link>}
+    </div>
+  </MemberAware>
 }
 
 export default async function HomePage() {

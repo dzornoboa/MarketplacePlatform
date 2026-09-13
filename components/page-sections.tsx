@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { MemberAware } from '@/components/header-session'
 import { BrandArc, BrandCircle } from '@/components/brand'
 import { money } from '@/lib/format'
 import { labelForParticipantType } from '@/lib/auth/access'
@@ -19,10 +20,12 @@ function SectionHead({ section, centred }: { section: ContentSection; centred?: 
 
 function Cta({ section, primaryClass, secondaryClass }: { section: ContentSection; primaryClass: string; secondaryClass: string }) {
   if (!section.cta_label && !section.secondary_cta_label) return null
-  return <div className="button-row">
-    {section.cta_label && <Link className={primaryClass} href={section.cta_href ?? '/register'}>{section.cta_label}</Link>}
-    {section.secondary_cta_label && <Link className={secondaryClass} href={section.secondary_cta_href ?? '/login'}>{section.secondary_cta_label}</Link>}
-  </div>
+  return <MemberAware memberClass={primaryClass}>
+    <div className="button-row">
+      {section.cta_label && <Link className={primaryClass} href={section.cta_href ?? '/register'}>{section.cta_label}</Link>}
+      {section.secondary_cta_label && <Link className={secondaryClass} href={section.secondary_cta_href ?? '/login'}>{section.secondary_cta_label}</Link>}
+    </div>
+  </MemberAware>
 }
 
 /* Full-bleed banner, built in layers so the copy always stays readable:
@@ -150,7 +153,7 @@ function Plans({ section, plans }: { section: ContentSection; plans: PlanSummary
           <strong className="plan-price">{money(plan.price_usd)}<small>/{plan.billing_interval}</small></strong>
           {plan.description && <p className="muted">{plan.description}</p>}
           <p className="field-help">For: {plan.target_participant_types.map(t => labelForParticipantType(t)).join(', ') || 'All participants'}</p>
-          <Link className="button button-outline" href="/register">Get started</Link>
+          <MemberAware memberHref="/dashboard/billing" memberLabel="Manage my plan" memberClass="button button-outline"><Link className="button button-outline" href="/register">Get started</Link></MemberAware>
         </article>)}</div>}
   </section>
 }

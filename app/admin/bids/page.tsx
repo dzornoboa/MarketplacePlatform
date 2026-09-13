@@ -23,11 +23,14 @@ export default async function AdminBidsPage({ searchParams }: Props) {
   const message = typeof params.message === 'string' ? params.message : null
   const status = typeof params.status === 'string' && QUEUES.some(q => q.key === params.status) ? params.status : 'submitted'
 
-  const { data: bids } = await supabase.from('expressions_of_interest').select('*')
-    .eq('status', status as 'submitted').order('created_at', { ascending: true }).limit(100)
+  const q = typeof params.q === 'string' ? params.q.trim() : ''
+  const sort = typeof params.sort === 'string' && ['newest', 'oldest'].includes(params.sort) ? params.sort : 'oldest'
 
-  const oppIds = [...new Set((bids ?? []).map(b => b.opportunity_id))]
-  const userIds = [...new Set((bids ?? []).map(b => b.applicant_id))]
+  let query = supabase.from('expressions_of_interest').select('*').eq('status', status as 'submitted').limit(200)
+  const { data: allBids } = await query.order('created_at', { ascending: sort === 'oldest' })
+
+  const oppIds = [...new Set((allBids ?? []).map(b => b.opportunity_id))]
+  const userIds = [...new Set((allBids ?? []).map(b => b.applicant_id))]
   const [{ data: opportunities }, { data: applicants }] = await Promise.all([
     oppIds.length ? supabase.from('opportunities').select('id,title,sector,country,owner_user_id,capital_required,currency').in('id', oppIds) : Promise.resolve({ data: [] }),
     userIds.length ? supabase.from('profiles').select('id,full_name,participant_type,country,verification_status').in('id', userIds) : Promise.resolve({ data: [] }),
@@ -38,6 +41,11 @@ export default async function AdminBidsPage({ searchParams }: Props) {
   const oppById = new Map((opportunities ?? []).map(o => [o.id, o]))
   const applicantById = new Map((applicants ?? []).map(a => [a.id, a]))
   const ownerById = new Map((owners ?? []).map(o => [o.id, o]))
+  // Search matches the listing title or the bidder's name, so it runs after the lookups.
+  const needle = q.toLowerCase()
+  const bids = (allBids ?? []).filter(b => !needle
+    || (oppById.get(b.opportunity_id)?.title ?? '').toLowerCase().includes(needle)
+    || (applicantById.get(b.applicant_id)?.full_name ?? '').toLowerCase().includes(needle))
 
   const counts = await Promise.all(QUEUES.map(async q => {
     const { count } = await supabase.from('expressions_of_interest').select('*', { count: 'exact', head: true }).eq('status', q.key)
@@ -57,9 +65,16 @@ export default async function AdminBidsPage({ searchParams }: Props) {
       {counts.map(q => <a key={q.key} className={q.key === status ? 'queue-tab queue-tab-active' : 'queue-tab'} href={`/admin/bids?status=${q.key}`}>{q.label}<span>{q.count}</span></a>)}
     </nav>
 
-    {(bids ?? []).length === 0
-      ? <section className="card empty-state"><BrandCircle /><h2>Queue is clear</h2><p>No bids with status “{humanize(status)}”.</p></section>
-      : <div className="review-list">{(bids ?? []).map(bid => {
+    <form className="filter-row card" method="get">
+      <input type="hidden" name="status" value={status} />
+      <label>Search<input name="q" defaultValue={q} placeholder="Listing title or bidder" /></label>
+      <label>Sort<select name="sort" defaultValue={sort}><option value="oldest">Oldest first</option><option value="newest">Newest first</option></select></label>
+      <button className="button button-outline" type="submit">Apply</button>
+    </form>
+
+    {bids.length === 0
+      ? <section className="card empty-state"><BrandCircle /><h2>{q ? 'No matches' : 'Queue is clear'}</h2><p>No bids with status “{humanize(status)}”.</p></section>
+      : <div className="review-list">{bids.map(bid => {
           const opp = oppById.get(bid.opportunity_id)
           const applicant = applicantById.get(bid.applicant_id)
           const owner = opp ? ownerById.get(opp.owner_user_id) : undefined

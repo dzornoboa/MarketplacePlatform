@@ -212,7 +212,7 @@ p{margin:0}
 /* White-first per the brand's background guidance; navy is used for the
    active state and the logo lockup rather than as a full dark chrome. */
 .dashboard-shell{min-height:100vh;background:var(--wtc-mist);display:grid;grid-template-columns:266px 1fr}
-.dashboard-sidebar{background:#fff;border-right:1px solid var(--line);padding:26px 20px 24px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.dashboard-sidebar{background:#fff;border-right:1px solid var(--line);padding:26px 20px 24px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
 .sidebar-top{display:block}
 .sidebar-toggle{display:none;align-items:center;gap:9px;background:#fff;border:1px solid var(--line-strong);
   border-radius:var(--radius);padding:10px 14px;font-size:13px;font-weight:700;color:var(--wtc-navy);cursor:pointer}
@@ -783,3 +783,45 @@ a.contact-card:hover strong{color:var(--wtc-orange)}
 .listing-detail .article-title{margin:6px 0 2px}
 .bid-card{border-left:3px solid var(--wtc-orange)}
 .bid-card .status-dot{vertical-align:middle;margin:0 4px}
+
+/* --- Active navigation state ------------------------------------------- */
+.public-header nav a.nav-current{color:var(--wtc-navy);border-bottom-color:var(--wtc-orange);font-weight:700}
+.mobile-menu-panel nav a.nav-current{color:var(--wtc-orange);font-weight:700}
+.admin-header nav a.nav-current{color:var(--wtc-navy);border-bottom-color:var(--wtc-orange);font-weight:700}
+.console-user{font-size:13px;font-weight:700;color:var(--muted);white-space:nowrap}
+.console-signout{margin-left:14px}
+.console-signout .link-button{font-size:13px}
+.header-actions form{display:inline}
+.header-actions .link-button{font-size:14px}
+.dashboard-sidebar nav .sidebar-bottom{margin-top:18px;border-top:1px solid var(--line);padding-top:18px;display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+@media(max-width:900px){
+  .console-signout{display:none}
+  .dashboard-sidebar{overflow:visible;height:auto}
+}
+
+/* --- Plan selection during onboarding ------------------------------------ */
+.plan-option{cursor:pointer;position:relative;padding-left:52px}
+.plan-option input[type=radio]{position:absolute;left:20px;top:26px;width:18px;height:18px;accent-color:var(--wtc-orange)}
+.plan-option:hover{border-top-color:var(--wtc-orange)}
+.plan-option.plan-current{outline:2px solid var(--wtc-teal);outline-offset:-2px}
+
+/* --- Payment step -------------------------------------------------------- */
+.pay-card{border-left:4px solid var(--wtc-orange)}
+.pay-card .plan-price{font-size:24px}
+.pay-methods{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.pay-method{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line-strong);border-radius:var(--radius);padding:14px;cursor:pointer;text-transform:none;letter-spacing:normal;font-weight:400}
+.pay-method:hover{border-color:var(--wtc-navy)}
+.pay-method input{width:auto;margin-top:3px;accent-color:var(--wtc-orange)}
+.pay-method span{display:flex;flex-direction:column;gap:2px}
+.pay-method strong{color:var(--wtc-navy)}
+.pay-method small{color:var(--muted);font-size:12px}
+.pay-instructions{display:flex;flex-direction:column;gap:14px;margin-top:14px;padding-top:18px;border-top:1px solid var(--line)}
+.pay-instructions h3{font-size:14px;text-transform:uppercase;letter-spacing:.12em;color:var(--wtc-orange);margin-bottom:8px}
+.pay-reference{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:26px;font-weight:800;color:var(--wtc-navy);letter-spacing:.06em;background:var(--wtc-mist);padding:12px 16px;border-radius:var(--radius);display:inline-block}
+.status-pay-paid{background:var(--success-soft);color:var(--success)}
+.status-pay-pending{background:var(--navy-soft);color:var(--wtc-navy)}
+.status-pay-failed,.status-pay-cancelled,.status-pay-refunded{background:var(--danger-soft);color:var(--danger)}
+
+/* A member's own published listing shown among everyone else's */
+.opportunity-own { border-color: var(--wtc-gold, #c9a227); }
+.own-badge { display: inline-block; margin-left: .5rem; padding: .1rem .5rem; border-radius: 999px; background: var(--wtc-gold, #c9a227); color: #1b1b1b; font-size: .7rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; vertical-align: middle; }

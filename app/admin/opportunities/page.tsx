@@ -16,9 +16,17 @@ export default async function AdminOpportunitiesPage({ searchParams }: Props) {
   const error = typeof params.error === 'string' ? params.error : null
   const message = typeof params.message === 'string' ? params.message : null
   const status = typeof params.status === 'string' && QUEUES.includes(params.status as 'submitted') ? params.status : 'submitted'
+  const q = typeof params.q === 'string' ? params.q.trim() : ''
+  const intent = typeof params.intent === 'string' ? params.intent : ''
+  const sort = typeof params.sort === 'string' && ['newest', 'oldest', 'title', 'amount'].includes(params.sort) ? params.sort : 'oldest'
 
-  const { data: opportunities } = await supabase.from('opportunities').select('*')
-    .eq('status', status as 'submitted').order('submitted_at', { ascending: true }).limit(100)
+  let query = supabase.from('opportunities').select('*').eq('status', status as 'submitted').limit(200)
+  if (q) query = query.or(`title.ilike.%${q}%,sector.ilike.%${q}%,country.ilike.%${q}%`)
+  if (intent) query = query.eq('intent', intent as 'seeking_investment')
+  query = sort === 'title' ? query.order('title')
+    : sort === 'amount' ? query.order('capital_required', { ascending: false, nullsFirst: false })
+    : query.order('created_at', { ascending: sort === 'oldest' })
+  const { data: opportunities } = await query
 
   const ownerIds = [...new Set((opportunities ?? []).map(o => o.owner_user_id))]
   const { data: owners } = ownerIds.length
@@ -46,8 +54,25 @@ export default async function AdminOpportunitiesPage({ searchParams }: Props) {
       </a>)}
     </nav>
 
+    <form className="filter-row card" method="get">
+      <input type="hidden" name="status" value={status} />
+      <label>Search<input name="q" defaultValue={q} placeholder="Title, sector or country" /></label>
+      <label>Intent
+        <select name="intent" defaultValue={intent}>
+          <option value="">All</option>
+          {['seeking_investment', 'offering_investment', 'offering_supply', 'seeking_supply', 'partnership'].map(i => <option key={i} value={i}>{labelForIntent(i)}</option>)}
+        </select>
+      </label>
+      <label>Sort
+        <select name="sort" defaultValue={sort}>
+          <option value="oldest">Oldest first</option><option value="newest">Newest first</option><option value="title">Title A–Z</option><option value="amount">Largest capital</option>
+        </select>
+      </label>
+      <button className="button button-outline" type="submit">Apply</button>
+    </form>
+
     {(opportunities ?? []).length === 0
-      ? <section className="card empty-state"><BrandCircle /><h2>Queue is clear</h2><p>No opportunities with status “{humanize(status)}”.</p></section>
+      ? <section className="card empty-state"><BrandCircle /><h2>{q || intent ? 'No matches' : 'Queue is clear'}</h2><p>No opportunities with status “{humanize(status)}”.</p></section>
       : <div className="review-list">{(opportunities ?? []).map(item => {
           const owner = ownerById.get(item.owner_user_id)
           return <article className="card review-card" key={item.id}>

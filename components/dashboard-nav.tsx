@@ -90,12 +90,12 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, a
 
       {(admin || editor) && <div className="nav-group">
         <p className="nav-group-label">Console</p>
-        {admin && !adminMfaReady
-          ? <Link className="nav-console nav-console-locked" href="/dashboard/security?required=admin-mfa"><span>Administration</span><span className="nav-badge">{adminHasFactor ? 'Enter code' : 'Set up MFA'}</span></Link>
-          : <>
-              {editor && <Link className={isActive('/editor') ? 'nav-active nav-console' : 'nav-console'} href="/editor">Editor console</Link>}
-              {admin && <Link className={isActive('/admin') ? 'nav-active nav-console' : 'nav-console'} href="/admin">Administration</Link>}
-            </>}
+        {editor && <Link className={isActive('/editor') ? 'nav-active nav-console' : 'nav-console'} href={adminMfaReady ? '/editor' : '/dashboard/security?required=admin-mfa&next=%2Feditor'}>
+          <span>Editor console</span>{!adminMfaReady && <span className="nav-badge">{adminHasFactor ? 'Enter code' : 'Set up MFA'}</span>}
+        </Link>}
+        {admin && <Link className={isActive('/admin') ? 'nav-active nav-console' : 'nav-console'} href={adminMfaReady ? '/admin' : '/dashboard/security?required=admin-mfa&next=%2Fadmin'}>
+          <span>Administration</span>{!adminMfaReady && <span className="nav-badge">{adminHasFactor ? 'Enter code' : 'Set up MFA'}</span>}
+        </Link>}
       </div>}
     </nav>
     <div className="sidebar-bottom">

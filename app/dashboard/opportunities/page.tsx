@@ -17,18 +17,25 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
   const message = typeof params.message === 'string' ? params.message : null
   const sector = typeof params.sector === 'string' ? params.sector : ''
   const kind = typeof params.kind === 'string' ? params.kind : ''
+  const q = typeof params.q === 'string' ? params.q.trim() : ''
+  const sort = typeof params.sort === 'string' && ['newest', 'oldest', 'amount', 'deadline'].includes(params.sort) ? params.sort : 'newest'
+  const mineSort = typeof params.mine === 'string' && ['updated', 'status', 'title'].includes(params.mine) ? params.mine : 'updated'
 
   const state = await readAccessState(supabase)
   const browseLock = state ? marketplaceLockFor(state, profile.system_role) : { locked: true as const, reason: 'Access state unavailable.', action: null }
   const postLock = state ? postingLockFor(state, profile.system_role) : { locked: true as const, reason: 'Access state unavailable.', action: null }
 
   // RLS returns only what this member may see; the filters are UX, not security.
-  let query = supabase.from('opportunities').select('*').eq('status', 'published').order('published_at', { ascending: false }).limit(60)
+  let query = supabase.from('opportunities').select('*').eq('status', 'published').limit(100)
   if (sector) query = query.eq('sector', sector)
   if (kind) query = query.eq('kind', kind as 'investment')
+  if (q) query = query.or(`title.ilike.%${q}%,summary.ilike.%${q}%,country.ilike.%${q}%`)
+  query = sort === 'amount' ? query.order('capital_required', { ascending: false, nullsFirst: false })
+    : sort === 'deadline' ? query.order('deadline', { ascending: true, nullsFirst: false })
+    : query.order('published_at', { ascending: sort === 'oldest' })
   const [{ data: published }, { data: mine }, { data: sentInterests }, { data: savedRows }] = await Promise.all([
     browseLock.locked ? Promise.resolve({ data: [] }) : query,
-    supabase.from('opportunities').select('*').eq('owner_user_id', profile.id).order('updated_at', { ascending: false }),
+    supabase.from('opportunities').select('*').eq('owner_user_id', profile.id).order(mineSort === 'title' ? 'title' : mineSort === 'status' ? 'status' : 'updated_at', { ascending: mineSort !== 'updated' }),
     supabase.from('expressions_of_interest').select('opportunity_id').eq('applicant_id', profile.id),
     supabase.from('saved_opportunities').select('opportunity_id'),
   ])
@@ -60,6 +67,12 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
         : <Link className="button button-primary" href="/dashboard/opportunities/new">Post an opportunity</Link>}
     </section>
 
+    {(mine ?? []).length > 1 && <form className="filter-row" method="get">
+      {sector && <input type="hidden" name="sector" value={sector} />}{kind && <input type="hidden" name="kind" value={kind} />}{q && <input type="hidden" name="q" value={q} />}{sort !== 'newest' && <input type="hidden" name="sort" value={sort} />}
+      <label>Sort your listings<select name="mine" defaultValue={mineSort}><option value="updated">Recently updated</option><option value="status">By status</option><option value="title">Title A–Z</option></select></label>
+      <button className="button button-outline" type="submit">Apply</button>
+    </form>}
+
     {(mine ?? []).length > 0 && <div className="opportunity-list">
       {(mine ?? []).map(item => <article className="card opportunity-card" key={item.id}>
         <div className="opportunity-head">
@@ -85,7 +98,9 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
 
     {!browseLock.locked && <section>
       <h2>Published opportunities</h2>
-      {sectors.length > 1 && <form className="filter-row" method="get">
+      <form className="filter-row" method="get">
+        {mineSort !== 'updated' && <input type="hidden" name="mine" value={mineSort} />}
+        <label>Search<input name="q" defaultValue={q} placeholder="Title, summary or country" /></label>
         <label>Sector
           <select name="sector" defaultValue={sector}>
             <option value="">All sectors</option>
@@ -101,16 +116,21 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
             <option value="partnership">Partnership</option>
           </select>
         </label>
+        <label>Sort
+          <select name="sort" defaultValue={sort}>
+            <option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="amount">Largest capital</option><option value="deadline">Closing soonest</option>
+          </select>
+        </label>
         <button className="button button-outline" type="submit">Filter</button>
-      </form>}
+      </form>
 
-      {(published ?? []).filter(o => o.owner_user_id !== profile.id).length === 0
-        ? <section className="card empty-state"><BrandCircle /><h2>No published opportunities yet</h2><p>New listings appear here as WTC Accra approves them.</p></section>
-        : <div className="opportunity-list">{(published ?? []).filter(o => o.owner_user_id !== profile.id).map(item =>
-            <article className="card opportunity-card" key={item.id}>
+      {(published ?? []).length === 0
+        ? <section className="card empty-state"><BrandCircle /><h2>{q || sector || kind ? 'No listings match' : 'No published opportunities yet'}</h2><p>{q || sector || kind ? 'Try a different search or filter.' : 'New listings appear here as WTC Accra approves them.'}</p></section>
+        : <div className="opportunity-list">{(published ?? []).map(item => { const own = item.owner_user_id === profile.id; return (
+            <article className={own ? 'card opportunity-card opportunity-own' : 'card opportunity-card'} key={item.id}>
               <div className="opportunity-head">
                 <div>
-                  <span className="eyebrow">{labelForIntent(item.intent)} · {humanize(item.kind)}</span>
+                  <span className="eyebrow">{labelForIntent(item.intent)} · {humanize(item.kind)}{own && <span className="own-badge">Yours</span>}</span>
                   <h3><Link href={`/dashboard/opportunities/${item.id}`}>{item.title}</Link></h3>
                   <p className="muted">{item.sector} · {item.city ? `${item.city}, ` : ''}{item.country}{item.deadline ? ` · ${relativeDays(item.deadline)}` : ''}</p>
                 </div>
@@ -121,21 +141,21 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
               </div>
               <p>{item.summary}</p>
               {item.tags.length > 0 && <div className="trust-row">{item.tags.map(tag => <span key={tag}>{tag}</span>)}</div>}
-              <form action={toggleSaved} className="save-row">
+              {!own && <form action={toggleSaved} className="save-row">
                 <input type="hidden" name="opportunityId" value={item.id} />
                 <input type="hidden" name="saved" value={savedIds.has(item.id) ? '1' : '0'} />
                 <button className={savedIds.has(item.id) ? 'save-toggle save-toggle-on' : 'save-toggle'} type="submit">{savedIds.has(item.id) ? '★ Saved to shortlist' : '☆ Save to shortlist'}</button>
-              </form>
-              <details className="eoi-block">
+              </form>}
+              {!own && <details className="eoi-block">
                 <summary>{alreadyApplied.has(item.id) ? 'Interest already sent — send another note' : 'Express interest'}</summary>
                 <form action={expressInterest} className="form-stack">
                   <input type="hidden" name="opportunityId" value={item.id} />
                   <label>Message to the owner<textarea name="message" rows={4} minLength={20} maxLength={3000} required placeholder="Introduce yourself and explain the fit." /></label>
                   <SubmitButton>Send expression of interest</SubmitButton>
                 </form>
-              </details>
-              <p className="field-help">Published {date(item.published_at)}</p>
-            </article>)}</div>}
+              </details>}
+              <p className="field-help">Published {date(item.published_at)}{own ? ' · this is how members see your listing' : ''}</p>
+            </article>) })}</div>}
     </section>}
   </div>
 }
