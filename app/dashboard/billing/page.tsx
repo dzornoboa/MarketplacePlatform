@@ -69,26 +69,59 @@ export default async function BillingPage({ searchParams }: Props) {
     if (!activePlan) return expired ? 'Renew on this plan' : 'Choose this plan'
     return p.tier > activePlan.tier ? 'Upgrade to this plan' : p.tier < activePlan.tier ? 'Downgrade to this plan' : 'Switch to this plan'
   }
-  const planCard = (plan: Plan) => {
+  /* The plan description is one sentence of comma-separated inclusions;
+     split it into the short feature list a pricing card shows. */
+  const features = (p: Plan): string[] => (p.description ?? '')
+    .replace(/\.$/, '').split(/,\s*|\s+and\s+/).map(f => f.trim()).filter(Boolean)
+    .map(f => f.charAt(0).toUpperCase() + f.slice(1))
+  /* With no current plan, recommend the best plan the member can take today. */
+  const recommended = activePlan ? null : [...matched].filter(p => !blocker(p)).sort((a, b) => b.tier - a.tier)[0] ?? null
+  const planAction = (plan: Plan, current: boolean, why: string | null) => current
+    ? <span className="status-dot status-verified">Current plan{active?.ends_at ? ` · to ${date(active.ends_at)}` : ''}</span>
+    : why
+      ? <span className="status-dot">{why}</span>
+      : changeInProgress
+        ? <span className="status-dot">Change in progress</span>
+        : <form action={requestSubscription}>
+            <input type="hidden" name="planCode" value={plan.code} />
+            <SubmitButton pendingLabel="Requesting…" className={activePlan && plan.tier < activePlan.tier ? 'button button-outline' : 'button button-primary'}>{changeLabel(plan)}</SubmitButton>
+          </form>
+  const priceOf = (plan: Plan) => Number(plan.price_usd) === 0 ? 'Free' : money(plan.price_usd)
+  /* Pricing-card tier for the plans matched to the member's participant type. */
+  const pricingCard = (plan: Plan) => {
     const current = active?.plan_code === plan.code
     const why = blocker(plan)
-    return <article className={`card plan-card${current ? ' plan-current' : ''}${why ? ' plan-locked' : ''}`} key={plan.code}>
-      <span className="eyebrow">{plan.name}</span>
-      <strong className="plan-price">{Number(plan.price_usd) === 0 ? 'Free' : money(plan.price_usd)}<small>/{plan.billing_interval}</small></strong>
-      <p className="muted">{plan.description ?? 'WTC Accra marketplace subscription.'}</p>
-      <p className="field-help">For: {plan.target_participant_types.map(t => labelForParticipantType(t)).join(', ') || 'All participants'}{plan.requires_approval ? ' · WTC Accra approval required' : ''}</p>
-      {plan.eligibility_note && <p className="field-help">{plan.eligibility_note}</p>}
-      {current
-        ? <span className="status-dot status-verified">Current plan{active?.ends_at ? ` · to ${date(active.ends_at)}` : ''}</span>
-        : why
-          ? <span className="status-dot">{why}</span>
-          : changeInProgress
-            ? <span className="status-dot">Change in progress</span>
-            : <form action={requestSubscription}>
-                <input type="hidden" name="planCode" value={plan.code} />
-                <SubmitButton pendingLabel="Requesting…" className={activePlan && plan.tier < activePlan.tier ? 'button button-outline' : 'button button-primary'}>{changeLabel(plan)}</SubmitButton>
-              </form>}
+    const highlight = current || recommended?.code === plan.code
+    return <article className={`pricing-card${highlight ? ' pricing-highlight' : ''}${why ? ' plan-locked' : ''}`} key={plan.code}>
+      {current ? <span className="pricing-badge">Current plan</span> : recommended?.code === plan.code ? <span className="pricing-badge">Recommended</span> : null}
+      <h3>{plan.name}</h3>
+      <strong className="plan-price">{priceOf(plan)}<small>/{plan.billing_interval}</small></strong>
+      <ul className="pricing-features">{features(plan).map(f => <li key={f}>{f}</li>)}</ul>
+      {(plan.requires_approval || plan.eligibility_note) && <p className="field-help">{[plan.requires_approval ? 'WTC Accra approval required' : null, plan.eligibility_note].filter(Boolean).join(' · ')}</p>}
+      <div className="pricing-action">{planAction(plan, current, why)}</div>
     </article>
+  }
+  /* Everything else stays out of the way: one compact row per plan, grouped by audience. */
+  const AUDIENCES: { label: string; types: string[] }[] = [
+    { label: 'WTC members', types: ['wtc_accra_member', 'wtc_association_member'] },
+    { label: 'Institutions, government and DFIs', types: ['institutional_partner'] },
+    { label: 'Investors', types: ['investor'] },
+    { label: 'Businesses and buyers', types: ['business', 'buyer'] },
+    { label: 'Project sponsors', types: ['project_sponsor'] },
+  ]
+  const grouped = AUDIENCES.map(a => ({ ...a, plans: others.filter(p => p.target_participant_types.some(t => a.types.includes(t))) }))
+    .filter(a => a.plans.length > 0)
+  const seen = new Set<string>()
+  const planRow = (plan: Plan) => {
+    const current = active?.plan_code === plan.code
+    const why = blocker(plan)
+    return <div className={`pricing-row${why ? ' plan-locked' : ''}`} key={plan.code}>
+      <div>
+        <strong>{plan.name}</strong><span className="pricing-row-price">{priceOf(plan)}<small>/{plan.billing_interval}</small></span>
+        <p className="muted">{plan.description ?? 'WTC Accra marketplace subscription.'}{plan.requires_approval ? ' WTC Accra approval required.' : ''}</p>
+      </div>
+      <div className="pricing-action">{planAction(plan, current, why)}</div>
+    </div>
   }
 
   return <div className="page-stack">
@@ -167,16 +200,19 @@ export default async function BillingPage({ searchParams }: Props) {
       </article>
     </section>
 
-    <section>
-      <h2>Plans</h2>
-      <p className="muted">Prices are annual. Choose a plan, then pay by card, mobile money or bank transfer; the marketplace opens as soon as the payment is confirmed.</p>
-      {matched.length > 0 && <>
-        <h3 className="plan-group-title">Plans for {labelForParticipantType(profile.participant_type)} participants</h3>
-        <div className="plan-grid">{matched.map(planCard)}</div>
-      </>}
+    <section className="pricing-section">
+      <div className="pricing-head">
+        <h2>{matched.length > 0 ? `Plans for ${labelForParticipantType(profile.participant_type)} participants` : 'Plans'}</h2>
+        <p className="muted">Billed annually. Pay by card, mobile money or bank transfer; the marketplace opens as soon as the payment is confirmed.</p>
+      </div>
+      {matched.length > 0 && <div className="pricing-cards" data-count={matched.length}>{matched.map(pricingCard)}</div>}
       {others.length > 0 && <details className="plan-others">
-        <summary>{matched.length > 0 ? `Other plans (${others.length}) — WTC members, institutions, government and DFIs` : 'All plans'}</summary>
-        <div className="plan-grid">{others.map(planCard)}</div>
+        <summary>{matched.length > 0 ? `Plans for other participant types (${others.length})` : `All plans (${others.length})`}</summary>
+        {grouped.map(g => {
+          const rows = g.plans.filter(p => !seen.has(p.code))
+          rows.forEach(p => seen.add(p.code))
+          return rows.length ? <div className="pricing-group" key={g.label}><h3 className="plan-group-title">{g.label}</h3>{rows.map(planRow)}</div> : null
+        })}
       </details>}
     </section>
 

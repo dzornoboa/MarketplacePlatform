@@ -1083,3 +1083,29 @@ a.contact-card:hover strong{color:var(--wtc-orange)}
 .error-page{max-width:560px;width:100%;gap:12px}
 .error-page .logo{height:28px;margin-bottom:8px}
 .error-page h1{font-size:clamp(22px,3vw,30px);margin:0}
+
+/* --- Billing: pricing cards for the member's own plans ------------------- */
+.pricing-head{margin-bottom:12px}
+.pricing-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;align-items:stretch}
+.pricing-cards[data-count="1"]{max-width:360px}
+.pricing-cards[data-count="2"]{max-width:740px}
+.pricing-card{position:relative;display:flex;flex-direction:column;gap:8px;background:#fff;border:1px solid var(--line-strong);border-radius:6px;padding:20px 18px 16px}
+.pricing-highlight{border-color:var(--wtc-orange);box-shadow:0 8px 24px rgba(21,64,116,.08)}
+.pricing-badge{position:absolute;top:-10px;left:16px;background:var(--wtc-orange);color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:999px}
+.pricing-card h3{font-size:15px}
+.pricing-card .plan-price,.dashboard-shell .pricing-card .plan-price{font-size:26px}
+.pricing-features{list-style:none;margin:2px 0 0;padding:0;display:grid;gap:5px;font-size:13px}
+.pricing-features li{padding-left:18px;position:relative}
+.pricing-features li::before{content:"";position:absolute;left:0;top:6px;width:9px;height:5px;border-left:2px solid var(--wtc-teal);border-bottom:2px solid var(--wtc-teal);transform:rotate(-45deg)}
+.pricing-action{margin-top:auto;padding-top:8px}
+.pricing-action form,.pricing-action .button{width:100%}
+.pricing-action .button{display:block;text-align:center}
+.pricing-group{margin-top:6px}
+.pricing-group .plan-group-title{margin:10px 0 4px}
+.pricing-row{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--line)}
+.pricing-row strong{font-size:14px;color:var(--wtc-navy)}
+.pricing-row-price{margin-left:10px;font-weight:700;color:var(--wtc-navy)}
+.pricing-row-price small{font-weight:500;color:var(--muted);font-size:12px}
+.pricing-row .muted{font-size:12.5px;margin:2px 0 0;max-width:60ch}
+.pricing-row .pricing-action{margin:0;padding:0;flex:0 0 auto}
+.pricing-row .pricing-action form,.pricing-row .pricing-action .button{width:auto}
