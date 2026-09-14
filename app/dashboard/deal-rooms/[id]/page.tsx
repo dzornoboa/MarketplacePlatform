@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { ParticipantBadge } from '@/components/participant-badge'
 import { Avatar } from '@/components/avatar'
 import { notFound } from 'next/navigation'
 import { requireUserProfile } from '@/lib/auth/guards'
@@ -82,7 +83,7 @@ export default async function DealRoomPage({ params, searchParams }: Props) {
         <section className="card">
           <h2>In this room</h2>
           <div className="history-list compact">{(members ?? []).map(m => { const p = personById.get(m.user_id); return <div key={m.user_id}>
-            <strong className="avatar-stack"><Avatar src={p?.avatar_url} name={p?.full_name} size={28} />{p?.full_name ?? 'Participant'}{m.user_id === profile.id ? ' (you)' : ''}</strong><span>{humanize(m.role)}</span>
+            <strong className="avatar-stack"><Avatar src={p?.avatar_url} name={p?.full_name} size={28} />{p?.full_name ?? 'Participant'}{m.user_id === profile.id ? ' (you)' : ''}</strong><span>{humanize(m.role)} <ParticipantBadge type={p?.participant_type} /></span>
             <p className="muted">{p?.system_role && p.system_role !== 'user' ? 'WTC Accra staff' : labelForParticipantType(p?.participant_type)}{p?.job_title ? ` · ${p.job_title}` : ''}</p>
           </div> })}</div>
           <p className="field-help">WTC Accra staff can see this room and step in if needed.</p>

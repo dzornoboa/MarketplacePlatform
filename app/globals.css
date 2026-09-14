@@ -1109,3 +1109,20 @@ a.contact-card:hover strong{color:var(--wtc-orange)}
 .pricing-row .muted{font-size:12.5px;margin:2px 0 0;max-width:60ch}
 .pricing-row .pricing-action{margin:0;padding:0;flex:0 0 auto}
 .pricing-row .pricing-action form,.pricing-row .pricing-action .button{width:auto}
+
+/* --- Participant-type tag --------------------------------------------- */
+.ptype{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 9px;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;line-height:1.3;white-space:nowrap;vertical-align:middle;background:#eef1f5;color:#4a5568}
+.ptype::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.8}
+.ptype-md{font-size:11px;padding:5px 12px}
+.ptype-investor{background:#e7f6f3;color:#1c7a6c}
+.ptype-buyer{background:#e8eef8;color:#154074}
+.ptype-business{background:#fdeee4;color:#b4430a}
+.ptype-project_sponsor{background:#f5efe0;color:#8a6a10}
+.ptype-wtc_association_member,.ptype-wtc_accra_member{background:var(--wtc-navy);color:#fff}
+.ptype-wtc_accra_member::before{background:var(--wtc-teal)}
+.ptype-wtc_association_member::before{background:var(--wtc-orange)}
+.ptype-institutional_partner{background:#efe9f5;color:#5b3e7a}
+.ptype-staff{background:#1c1f26;color:#fff}
+.ptype-pending{opacity:.7;outline:1px dashed currentColor;outline-offset:-1px}
+.sidebar-user .ptype{margin-top:3px}
+.verify-code{font-size:26px;letter-spacing:.5em;text-align:center;font-weight:700}

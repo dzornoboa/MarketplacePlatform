@@ -43,7 +43,8 @@ export async function signup(formData: FormData) {
   const COMPANY_TYPES = new Set(['business', 'project_sponsor', 'institutional_partner', 'wtc_association_member', 'wtc_accra_member'])
   const organisationName = String(formData.get('organisationName') ?? '').trim()
   if (COMPANY_TYPES.has(participantType) && organisationName.length < 2) redirect(withMessage('/register', 'error', 'Enter your organisation name.'))
-  if (participantType === 'wtc_accra_member' && !email.toLowerCase().endsWith('@wtcaccra.com')) redirect(withMessage('/register', 'error', 'WTC Accra member accounts must register with an @wtcaccra.com email address.'))
+  const WTC_TYPES = new Set(['wtc_accra_member', 'wtc_association_member'])
+  if (WTC_TYPES.has(participantType) && !email.toLowerCase().endsWith('@wtcaccra.com')) redirect(withMessage('/register', 'error', 'WTC Accra and WTC Association member accounts must register with an @wtcaccra.com email address.'))
   const extra = {
     organisation_name: organisationName || null,
     wtca_membership_number: String(formData.get('wtcaMembershipNumber') ?? '').trim() || null,
@@ -54,7 +55,34 @@ export async function signup(formData: FormData) {
   const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, participant_type: participantType, ...extra }, emailRedirectTo: `${getSiteUrl()}/auth/confirm` } })
   if (error) redirect(withMessage('/register', 'error', error.message))
   if (data.session) { revalidatePath('/', 'layout'); redirect('/dashboard') }
-  redirect(withMessage('/login', 'message', 'Check your email to confirm your account before signing in.'))
+  /* Email confirmation is on: the account cannot sign in until the code
+     (or link) from the confirmation email is used. */
+  redirect(`/verify-email?email=${encodeURIComponent(email)}`)
+}
+
+/* Six-digit code from the confirmation email. Verifying it confirms the
+   address and signs the member in; the link in the same email also works. */
+export async function verifyEmailCode(formData: FormData) {
+  const email = String(formData.get('email') ?? '').trim()
+  const token = String(formData.get('code') ?? '').replace(/\D/g, '')
+  const back = `/verify-email?email=${encodeURIComponent(email)}`
+  if (validateEmail(email)) redirect(withMessage('/register', 'error', 'Start again with a valid email address.'))
+  if (token.length < 6) redirect(withMessage(back, 'error', 'Enter the 6-digit code from the email.'))
+  const supabase = await createClient()
+  const { data, error } = await supabase.auth.verifyOtp({ email, token, type: 'signup' })
+  if (error || !data.session) redirect(withMessage(back, 'error', 'That code is not valid or has expired. Request a new one below.'))
+  revalidatePath('/', 'layout')
+  redirect('/dashboard')
+}
+
+export async function resendVerificationCode(formData: FormData) {
+  const email = String(formData.get('email') ?? '').trim()
+  const back = `/verify-email?email=${encodeURIComponent(email)}`
+  if (validateEmail(email)) redirect('/register')
+  const supabase = await createClient()
+  const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: `${getSiteUrl()}/auth/confirm` } })
+  if (error) redirect(withMessage(back, 'error', /rate|seconds/i.test(error.message) ? 'Please wait a minute before requesting another code.' : 'Could not send a new code. Try again shortly.'))
+  redirect(withMessage(back, 'message', 'A new code has been sent.'))
 }
 
 export async function requestPasswordReset(formData: FormData) {

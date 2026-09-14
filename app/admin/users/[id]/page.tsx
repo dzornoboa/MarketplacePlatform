@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { ParticipantBadge } from '@/components/participant-badge'
 import { Avatar } from '@/components/avatar'
 import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { notFound } from 'next/navigation'
@@ -52,7 +53,7 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
       <div>
         <p className="eyebrow">Member</p>
         <h1 className="avatar-stack"><Avatar src={person.avatar_url} name={person.full_name} size={44} />{person.full_name || 'Unnamed member'}</h1>
-        <p className="muted">{labelForParticipantType(person.participant_type ?? person.requested_participant_type)}{person.participant_type ? '' : ' (requested)'} · {person.country || 'Country not set'} · joined {date(person.created_at)}</p>
+        <p className="muted"><ParticipantBadge type={person.participant_type} requested={person.requested_participant_type} size="md" /> · {person.country || 'Country not set'} · joined {date(person.created_at)}</p>
       </div>
       <div className="pill-row">
         <span className={`status-dot status-${person.verification_status}`}>{humanize(person.verification_status)}</span>

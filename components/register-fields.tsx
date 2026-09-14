@@ -11,7 +11,7 @@ const HINT: Record<string, string> = {
   business: 'Raise capital, find buyers and partners. Upload your business registration certificate for verification.',
   project_sponsor: 'Present projects to investors. Upload your registration certificate and project documents.',
   wtc_accra_member: 'For WTC Accra members. Registration must use your @wtcaccra.com email address; WTC Accra confirms membership.',
-  wtc_association_member: 'For WTCA network members. Use your WTC-network email and your membership number.',
+  wtc_association_member: 'For WTCA network members. Registration must use your @wtcaccra.com email address; WTC Accra confirms membership.',
   institutional_partner: 'Institutions, chambers, embassies, government agencies and DFIs. A verified organisation is required.',
 }
 
@@ -23,12 +23,13 @@ export function RegisterFields({ email }: { email?: string }) {
   const [mail, setMail] = useState(email ?? '')
   const company = COMPANY_TYPES.has(type), wtc = WTC_TYPES.has(type)
   const domain = mail.split('@')[1]?.toLowerCase() ?? ''
-  const wtcWarn = type === 'wtc_accra_member' && mail.includes('@') && domain !== 'wtcaccra.com'
+  const wtcWarn = wtc && mail.includes('@') && domain !== 'wtcaccra.com'
 
   return <>
     <label>Full name<input name="fullName" autoComplete="name" required /></label>
-    <label>Email<input name="email" type="email" autoComplete="email" required value={mail} onChange={e => setMail(e.target.value)} /></label>
-    {wtcWarn && <p className="alert alert-error">WTC Accra member accounts must use an @wtcaccra.com address — the WTC member plan will not be available to {domain}.</p>}
+    <label>Email<input name="email" type="email" autoComplete="email" required value={mail} onChange={e => setMail(e.target.value)} pattern={wtc ? '.+@wtcaccra\\.com' : undefined} title={wtc ? 'WTC member accounts must use an @wtcaccra.com email address' : undefined} /></label>
+    {wtcWarn && <p className="alert alert-error">{participantTypeLabels[type as keyof typeof participantTypeLabels]} accounts must register with an @wtcaccra.com address. {domain} will not be accepted.</p>}
+    {wtc && !wtcWarn && <p className="field-help">A verification code will be sent to this address; the account is only created once you enter it.</p>}
     <label>Account type
       <select name="participantType" required value={type} onChange={e => setType(e.target.value)}>
         <option value="" disabled>Select account type</option>

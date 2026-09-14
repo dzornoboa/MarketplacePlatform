@@ -52,8 +52,9 @@ export default async function BillingPage({ searchParams }: Props) {
   const openPayment = (payments ?? []).find(p => p.status === 'pending' && (payRef ? p.reference === payRef : true))
   const st = chrome.settings as Record<string, string | undefined>
   type Plan = NonNullable<typeof plans>[number]
+  const myType = profile.participant_type ?? profile.requested_participant_type
   const forType = (p: Plan) => p.target_participant_types.length === 0 ||
-    (profile.participant_type ? p.target_participant_types.includes(profile.participant_type) : false)
+    (myType ? p.target_participant_types.includes(myType) : false)
   const activePlan = active ? (plans ?? []).find(p => p.code === active.plan_code) : null
   /* Why a plan is not available to this member right now — mirrors plan_eligibility() in the database. */
   const blocker = (p: Plan): string | null => {
@@ -195,14 +196,14 @@ export default async function BillingPage({ searchParams }: Props) {
       </article>
       <article className="metric-card">
         <span>Participant type</span>
-        <strong>{labelForParticipantType(profile.participant_type)}</strong>
-        <p>Plans are matched to your approved participant type.</p>
+        <strong>{labelForParticipantType(myType)}</strong>
+        <p>{profile.participant_type ? 'Plans are matched to your approved participant type.' : 'Requested type — plans are matched to it while WTC Accra reviews your verification.'}</p>
       </article>
     </section>
 
     <section className="pricing-section">
       <div className="pricing-head">
-        <h2>{matched.length > 0 ? `Plans for ${labelForParticipantType(profile.participant_type)} participants` : 'Plans'}</h2>
+        <h2>{matched.length > 0 ? `Plans for ${labelForParticipantType(myType)} participants` : 'Plans'}</h2>
         <p className="muted">Billed annually. Pay by card, mobile money or bank transfer; the marketplace opens as soon as the payment is confirmed.</p>
       </div>
       {matched.length > 0 && <div className="pricing-cards" data-count={matched.length}>{matched.map(pricingCard)}</div>}

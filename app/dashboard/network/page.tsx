@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { ParticipantBadge } from '@/components/participant-badge'
 import { Avatar } from '@/components/avatar'
 import { SubmitButton } from '@/components/submit-button'
 import { requireUserProfile } from '@/lib/auth/guards'
@@ -146,7 +147,7 @@ export default async function NetworkPage({ searchParams }: Props) {
               <Avatar src={person.avatar_url} name={person.full_name} size={44} />
               <div>
                 <strong>{person.full_name}</strong>{person.is_staff && <span className="status-dot status-verified">WTC Accra staff</span>}
-                <span className="member-role">{labelForParticipantType(person.participant_type)}</span>
+                <ParticipantBadge type={person.participant_type} />
               </div>
             </div>
             <p className="muted">{[person.job_title, person.organisation].filter(Boolean).join(' · ') || 'WTC Accra member'}</p>

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { ParticipantBadge } from '@/components/participant-badge'
 import { money } from '@/lib/format'
 import { BarChart } from '@/components/charts'
 import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
@@ -143,7 +144,7 @@ export default async function DashboardPage() {
       <div className="card">
         <h2>Account summary</h2>
         <dl className="detail-grid detail-grid-two">
-          <div><dt>Participant type</dt><dd>{labelForParticipantType(profile.participant_type)}</dd></div>
+          <div><dt>Participant type</dt><dd><ParticipantBadge type={profile.participant_type} requested={profile.requested_participant_type} size="md" /></dd></div>
           <div><dt>Requested type</dt><dd>{labelForParticipantType(profile.requested_participant_type)}</dd></div>
           <div><dt>Account status</dt><dd>{humanize(profile.account_status)}</dd></div>
           <div><dt>Browsing</dt><dd>{profile.can_view_opportunities ? 'Allowed' : 'Paused by WTC Accra'}</dd></div>

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { ParticipantBadge } from '@/components/participant-badge'
 import { Avatar } from '@/components/avatar'
 import { SubmitButton } from '@/components/submit-button'
 import { notFound, redirect } from 'next/navigation'
@@ -108,7 +109,7 @@ export default async function ListingDetailPage({ params, searchParams }: Props)
               <Avatar src={ownerCard?.avatar_url} name={ownerCard?.full_name} size={48} />
               <div>
                 <strong>{ownerCard?.full_name ?? 'Verified member'}</strong>{ownerCard?.organisation && <span className="member-role">{ownerCard.organisation}</span>}
-                <span className="member-role">{labelForParticipantType(ownerCard?.participant_type)}</span>
+                <ParticipantBadge type={ownerCard?.participant_type} />
               </div>
             </div>
             <p className="field-help">{ownerCard?.country ?? ''}{isOwner ? ' · This is your listing.' : ''}</p>
