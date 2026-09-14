@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { VerifiedCheck } from '@/components/verified-check'
 import { Avatar } from '@/components/avatar'
 import { SubmitButton } from '@/components/submit-button'
 import { requireUserProfile } from '@/lib/auth/guards'
@@ -52,7 +53,7 @@ export default async function InterestsPage({ searchParams }: Props) {
                 <div>
                   <span className={`status-dot status-eoi-${item.status}`}>{humanize(item.status)}</span>
                   <h3>{opportunity?.title ?? 'Opportunity'}</h3>
-                  {applicantById.get(item.applicant_id) && <p className="muted avatar-stack"><Avatar src={applicantById.get(item.applicant_id)?.avatar_url} name={applicantById.get(item.applicant_id)?.full_name} size={24} />{applicantById.get(item.applicant_id)?.full_name}{applicantById.get(item.applicant_id)?.organisation ? ` · ${applicantById.get(item.applicant_id)?.organisation}` : ''}</p>}
+                  {applicantById.get(item.applicant_id) && <p className="muted avatar-stack"><Avatar src={applicantById.get(item.applicant_id)?.avatar_url} name={applicantById.get(item.applicant_id)?.full_name} size={24} />{applicantById.get(item.applicant_id)?.full_name}<VerifiedCheck verified={applicantById.get(item.applicant_id)?.is_verified} size={14} />{applicantById.get(item.applicant_id)?.organisation ? ` · ${applicantById.get(item.applicant_id)?.organisation}` : ''}</p>}
                   <p className="muted">Received {dateTime(item.created_at)}</p>
                 </div>
               </div>

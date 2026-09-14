@@ -1126,3 +1126,10 @@ a.contact-card:hover strong{color:var(--wtc-orange)}
 .ptype-pending{opacity:.7;outline:1px dashed currentColor;outline-offset:-1px}
 .sidebar-user .ptype{margin-top:3px}
 .verify-code{font-size:26px;letter-spacing:.5em;text-align:center;font-weight:700}
+
+/* --- Verified check ------------------------------------------------------ */
+.vcheck{display:inline-flex;align-items:center;justify-content:center;color:#111;vertical-align:middle;margin-left:5px;flex:0 0 auto}
+.vcheck svg{display:block}
+.vcheck-row{display:inline-flex;align-items:center;gap:2px}
+.check-card{border-left:4px solid #111}
+.check-card .button-row{margin-top:8px}

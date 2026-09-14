@@ -9,11 +9,12 @@ import type { Profile } from '@/lib/database.types'
 import { LogoLink } from '@/components/brand'
 import { Avatar } from '@/components/avatar'
 import { ParticipantBadge } from '@/components/participant-badge'
+import { VerifiedCheck } from '@/components/verified-check'
 import { hasCapability, isAdminRole, isStaffRole } from '@/lib/auth/access'
 
 type NavLink = { href: string; label: string; verifiedOnly?: boolean; badge?: number }
 
-export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, adminHasFactor = false }: { profile: Profile; unreadCount?: number; adminMfaReady?: boolean; adminHasFactor?: boolean }) {
+export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, adminHasFactor = false, hasAccess = false }: { profile: Profile; unreadCount?: number; adminMfaReady?: boolean; adminHasFactor?: boolean; hasAccess?: boolean }) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
 
@@ -29,7 +30,6 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, a
     document.addEventListener('mousedown', onDown); document.addEventListener('touchstart', onDown); document.addEventListener('keydown', onKey)
     return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('touchstart', onDown); document.removeEventListener('keydown', onKey) }
   }, [open])
-  const verified = profile.verification_status === 'verified'
   const admin = isAdminRole(profile.system_role)
   const editor = hasCapability(profile.system_role, 'content')
   const staff = isStaffRole(profile.system_role)
@@ -84,12 +84,12 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, a
         {!open && unreadCount > 0 && <span className="nav-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>}
       </button></div>
     </div>
-    <Link className="sidebar-user" href="/dashboard/profile"><Avatar src={profile.avatar_url} name={profile.full_name} size={36} /><span><strong>{profile.full_name || 'Your profile'}</strong><small>{staff ? 'Staff workspace' : 'Member workspace'}</small>{!staff && <ParticipantBadge type={profile.participant_type} requested={profile.requested_participant_type} />}</span></Link>
+    <Link className="sidebar-user" href="/dashboard/profile"><Avatar src={profile.avatar_url} name={profile.full_name} size={36} /><span><strong>{profile.full_name || 'Your profile'}<VerifiedCheck verified={profile.verification_status === 'verified'} size={14} /></strong><small>{staff ? 'Staff workspace' : 'Member workspace'}</small>{!staff && <ParticipantBadge type={profile.participant_type} requested={profile.requested_participant_type} />}</span></Link>
     <nav id="dashboard-nav">
       {groups.map(group => <div className="nav-group" key={group.label}>
         <p className="nav-group-label">{group.label}</p>
         {group.links.map(link => {
-          const locked = link.verifiedOnly && !verified
+          const locked = link.verifiedOnly && !hasAccess && !isStaffRole(profile.system_role)
           return <Link
             key={link.href}
             className={[isActive(link.href) ? 'nav-active' : '', locked ? 'nav-locked' : ''].filter(Boolean).join(' ')}
@@ -113,7 +113,7 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, a
       </div>}
     </nav>
     <div className="sidebar-bottom">
-      <span className={`status-dot status-${profile.verification_status}`}>{profile.verification_status.replaceAll('_', ' ')}</span>
+      <span className={`status-dot status-${profile.verification_status}`}>{profile.verification_status === 'verified' ? 'Verified check' : profile.verification_status.replaceAll('_', ' ')}</span>
       <SignOutButton />
     </div>
   </aside></>

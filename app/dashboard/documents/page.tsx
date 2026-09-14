@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 
 const SCOPE_HELP: Record<string, string> = {
   private: 'Only you and WTC Accra staff.',
-  verified: 'Any verified member viewing the linked published opportunity.',
+  verified: 'Any subscribed member viewing the linked published opportunity.',
   granted: 'Only people you have been granted access to individually.',
 }
 
@@ -33,7 +33,7 @@ export default async function DocumentsPage({ searchParams }: Props) {
     supabase.from('opportunities').select('id,title').eq('owner_user_id', profile.id).order('updated_at', { ascending: false }),
   ])
   const oppById = new Map((myOpportunities ?? []).map(o => [o.id, o.title]))
-  const verified = profile.verification_status === 'verified'
+  const canUpload = profile.account_status === 'active'
 
   return <div className="page-stack narrow-content">
     <div>
@@ -44,10 +44,10 @@ export default async function DocumentsPage({ searchParams }: Props) {
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
 
-    {!verified
+    {!canUpload
       ? <section className="restriction-banner">
-          <div><strong>Verification required</strong><p>Document upload opens once WTC Accra has verified your account.</p></div>
-          <a className="button button-light" href="/dashboard/verification">Continue verification</a>
+          <div><strong>Account not active</strong><p>Document upload is paused while your account is not active.</p></div>
+          <a className="button button-light" href="/dashboard/support">Contact support</a>
         </section>
       : <form action={uploadDocument} className="card form-stack">
           <h2>Upload a document</h2>

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { VerifiedCheck } from '@/components/verified-check'
 import { Avatar } from '@/components/avatar'
 import { SubmitButton } from '@/components/submit-button'
 import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
@@ -168,7 +169,7 @@ export default async function FeedPage({ searchParams }: Props) {
                   <h3><Link href={`/dashboard/opportunities/${item.id}`}>{item.title}</Link></h3>
                   <p className="muted avatar-stack">
                     {owner && <Avatar src={owner.avatar_url} name={owner.full_name} size={22} />}
-                    {owner ? `${owner.organisation ?? owner.full_name} · ${labelForParticipantType(owner.participant_type)} · ` : ''}
+                    {owner ? <>{owner.organisation ?? owner.full_name}<VerifiedCheck verified={owner.is_verified} size={14} /> · {labelForParticipantType(owner.participant_type)} · </> : ''}
                     {item.sector} · {item.city ? `${item.city}, ` : ''}{item.country}
                     {item.region ? ` · ${item.region}` : ''}
                     {item.deadline ? ` · ${relativeDays(item.deadline)}` : ''}

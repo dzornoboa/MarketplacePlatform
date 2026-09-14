@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { VerifiedCheck } from '@/components/verified-check'
 import { ParticipantBadge } from '@/components/participant-badge'
 import { Avatar } from '@/components/avatar'
 import { requireAdminProfile } from '@/lib/auth/guards'
@@ -63,7 +64,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
           return <article className="card review-card" key={person.id}>
             <div className="review-head">
               <div>
-                <h2 className="avatar-stack"><Avatar src={person.avatar_url} name={person.full_name} size={32} /><Link href={`/admin/users/${person.id}`}>{person.full_name || 'Unnamed member'}</Link></h2>
+                <h2 className="avatar-stack"><Avatar src={person.avatar_url} name={person.full_name} size={32} /><Link href={`/admin/users/${person.id}`}>{person.full_name || 'Unnamed member'}</Link><VerifiedCheck verified={person.verification_status === 'verified'} /></h2>
                 <p><ParticipantBadge type={person.participant_type} requested={person.requested_participant_type} /> · {person.country || 'Country not set'} · joined {date(person.created_at)}</p>
               </div>
               <div className="pill-row">

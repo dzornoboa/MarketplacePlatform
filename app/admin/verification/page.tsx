@@ -122,7 +122,7 @@ export default async function AdminVerificationPage({ searchParams }: Props) {
               <input type="hidden" name="requestId" value={request.id} />
               <label>Reviewer note<textarea name="note" rows={3} placeholder="Shown to the applicant for changes and rejections." /></label>
               <div className="button-row">
-                <button className="button button-primary" name="decision" value="approve">Approve and activate</button>
+                <button className="button button-primary" name="decision" value="approve">Approve — grant verified check</button>
                 <button className="button button-secondary" name="decision" value="changes">Request changes</button>
                 <button className="button button-danger" name="decision" value="reject">Reject</button>
               </div>

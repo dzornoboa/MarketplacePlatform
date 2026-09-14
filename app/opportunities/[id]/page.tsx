@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { VerifiedCheck } from '@/components/verified-check'
 import { ParticipantBadge } from '@/components/participant-badge'
 import { Avatar } from '@/components/avatar'
 import { SubmitButton } from '@/components/submit-button'
@@ -108,7 +109,7 @@ export default async function ListingDetailPage({ params, searchParams }: Props)
             <div className="member-identity">
               <Avatar src={ownerCard?.avatar_url} name={ownerCard?.full_name} size={48} />
               <div>
-                <strong>{ownerCard?.full_name ?? 'Verified member'}</strong>{ownerCard?.organisation && <span className="member-role">{ownerCard.organisation}</span>}
+                <strong>{ownerCard?.full_name ?? 'Member'}<VerifiedCheck verified={ownerCard?.is_verified} /></strong>{ownerCard?.organisation && <span className="member-role">{ownerCard.organisation}</span>}
                 <ParticipantBadge type={ownerCard?.participant_type} />
               </div>
             </div>

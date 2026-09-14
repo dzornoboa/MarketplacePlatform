@@ -136,15 +136,22 @@ export function humanize(value: string | null | undefined, fallback = '—'): st
   return value ? value.replaceAll('_', ' ') : fallback
 }
 
+/* Verification is the WTC Accra check mark, not an access gate: a paid
+   subscription opens the platform; the check tells other members the
+   account was reviewed by an administrator. */
 export function dashboardRestrictionReason(status: VerificationStatus): string | null {
   switch (status) {
     case 'verified': return null
-    case 'pending_profile': return 'Complete your profile and submit it for verification to unlock opportunities.'
-    case 'pending_review': return 'Your verification is under review by WTC Accra. Opportunities remain locked until approval.'
+    case 'pending_profile': return 'Complete your profile and submit your documents to earn the WTC Accra verified check.'
+    case 'pending_review': return 'Your verification is under review by WTC Accra. The verified check appears on your profile once approved.'
     case 'changes_requested': return 'WTC Accra requested changes to your verification. Update your profile and resubmit.'
-    case 'rejected': return 'Your verification was rejected. Contact WTC Accra support if you believe this needs review.'
+    case 'rejected': return 'Your verification was not approved. Contact WTC Accra support if you believe this needs review.'
     case 'suspended': return 'Your account is suspended. Contact WTC Accra support for assistance.'
   }
+}
+
+export function hasVerifiedCheck(status: string | null | undefined): boolean {
+  return status === 'verified'
 }
 
 /* Why the marketplace is locked, in the order the member must resolve it.
@@ -176,9 +183,6 @@ export function marketplaceLock(state: AccessState): MarketplaceLock {
   if (state.account_status === 'suspended' || state.account_status === 'disabled') {
     return { locked: true, reason: 'Your account is not active. Contact WTC Accra support.', action: { label: 'Contact support', href: '/dashboard/support' } }
   }
-  if (state.verification_status !== 'verified') {
-    return { locked: true, reason: dashboardRestrictionReason(state.verification_status) ?? 'Verification required.', action: { label: 'Continue verification', href: '/dashboard/verification' } }
-  }
   if (!state.can_view_opportunities) {
     return { locked: true, reason: 'WTC Accra has paused marketplace browsing on your account.', action: { label: 'Contact support', href: '/dashboard/support' } }
   }
@@ -194,9 +198,6 @@ export function marketplaceLock(state: AccessState): MarketplaceLock {
 export function postingLock(state: AccessState): MarketplaceLock {
   if (state.account_status !== 'active') {
     return { locked: true, reason: 'Your account is not active.', action: { label: 'Contact support', href: '/dashboard/support' } }
-  }
-  if (state.verification_status !== 'verified') {
-    return { locked: true, reason: 'Verification is required before posting.', action: { label: 'Continue verification', href: '/dashboard/verification' } }
   }
   if (!state.can_post_opportunities) {
     return { locked: true, reason: 'WTC Accra has paused opportunity posting on your account.', action: { label: 'Contact support', href: '/dashboard/support' } }

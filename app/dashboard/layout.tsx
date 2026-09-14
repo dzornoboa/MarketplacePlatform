@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
 import { subscriptionDaysLeft } from '@/lib/auth/access'
+import { marketplaceLock } from '@/lib/auth/access'
 import { date } from '@/lib/format'
 import { DashboardNav } from '@/components/dashboard-nav'
 import { isAdminRole } from '@/lib/auth/access'
@@ -29,7 +30,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       : null
 
   return <div className="dashboard-shell">
-    <DashboardNav profile={profile} unreadCount={count ?? 0} adminMfaReady={adminMfaReady} adminHasFactor={adminHasFactor} />
+    <DashboardNav profile={profile} unreadCount={count ?? 0} adminMfaReady={adminMfaReady} adminHasFactor={adminHasFactor} hasAccess={!!state && !marketplaceLock(state).locked} />
     <main className="dashboard-main">
       {expiryNotice && <div className={`expiry-bar expiry-bar-${expiryNotice.tone}`}><span>{expiryNotice.text}</span><Link className="button button-light" href="/dashboard/billing">{expiryNotice.cta}</Link></div>}
       {children}

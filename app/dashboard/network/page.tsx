@@ -1,8 +1,10 @@
 import Link from 'next/link'
+import { VerifiedCheck } from '@/components/verified-check'
 import { ParticipantBadge } from '@/components/participant-badge'
 import { Avatar } from '@/components/avatar'
 import { SubmitButton } from '@/components/submit-button'
-import { requireUserProfile } from '@/lib/auth/guards'
+import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
+import { marketplaceLock } from '@/lib/auth/access'
 import { humanize, labelForParticipantType, selectableParticipantTypes, participantTypeLabels } from '@/lib/auth/access'
 import { dateTime } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
@@ -18,17 +20,18 @@ export default async function NetworkPage({ searchParams }: Props) {
   const str = (k: string) => (typeof params[k] === 'string' ? (params[k] as string) : '')
   const error = str('error') || null
   const message = str('message') || null
-  const verified = profile.verification_status === 'verified'
+  const state = await readAccessState(supabase)
+  const lock = state ? marketplaceLock(state) : null
 
-  if (!verified) {
+  if (!lock || lock.locked) {
     return <div className="page-stack narrow-content">
       <div><p className="eyebrow">Your network</p><h1>Network</h1></div>
       <section className="restriction-banner">
         <div>
-          <strong>Verification required</strong>
-          <p>Until WTC Accra verifies your account you cannot browse members, connect, or follow. This is what keeps the network credible on both sides.</p>
+          <strong>Subscription required</strong>
+          <p>{lock?.locked ? lock.reason : 'An active subscription is needed to browse members, connect and follow.'}</p>
         </div>
-        <Link className="button button-light" href="/dashboard/verification">Continue verification</Link>
+        {lock?.locked && lock.action && <Link className="button button-light" href={lock.action.href}>{lock.action.label}</Link>}
       </section>
     </div>
   }
@@ -146,7 +149,7 @@ export default async function NetworkPage({ searchParams }: Props) {
             <div className="member-identity">
               <Avatar src={person.avatar_url} name={person.full_name} size={44} />
               <div>
-                <strong>{person.full_name}</strong>{person.is_staff && <span className="status-dot status-verified">WTC Accra staff</span>}
+                <strong>{person.full_name}<VerifiedCheck verified={person.is_verified} /></strong>{person.is_staff && <span className="status-dot status-verified">WTC Accra staff</span>}
                 <ParticipantBadge type={person.participant_type} />
               </div>
             </div>

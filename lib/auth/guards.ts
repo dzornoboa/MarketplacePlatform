@@ -34,13 +34,7 @@ export async function requireUserProfile() {
   return context
 }
 
-export async function requireVerifiedProfile() {
-  const context = await requireUserProfile()
-  if (context.profile.verification_status !== 'verified') redirect('/dashboard?locked=verification')
-  return context
-}
-
-/* Verified + active + not view-blocked + holding a paid subscription. Mirrors
+/* Active + not view-blocked + holding a paid subscription. Mirrors
    private.has_marketplace_access(); the database is still the enforcement
    point, this just avoids rendering a page the RLS would empty out. */
 export async function requireMarketplaceAccess() {

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { VerifiedCheck } from '@/components/verified-check'
 import { ParticipantBadge } from '@/components/participant-badge'
 import { money } from '@/lib/format'
 import { BarChart } from '@/components/charts'
@@ -41,8 +42,8 @@ export default async function DashboardPage() {
   const post = state ? postingLock(state) : null
   const steps = [
     { done: profile.profile_completed, label: 'Complete your profile', href: '/dashboard/profile' },
-    { done: profile.verification_status === 'verified', label: 'Pass WTC Accra verification', href: '/dashboard/verification' },
-    { done: !!state?.has_active_subscription, label: 'Activate a subscription', href: '/dashboard/billing' },
+    { done: !!state?.has_active_subscription, label: 'Activate a subscription — opens the marketplace', href: '/dashboard/billing' },
+    { done: profile.verification_status === 'verified', label: 'Earn the WTC Accra verified check', href: '/dashboard/verification' },
   ]
 
   return <div className="page-stack">
@@ -83,9 +84,9 @@ export default async function DashboardPage() {
 
     <section className="dashboard-grid">
       <article className="metric-card">
-        <span>Verification</span>
-        <strong>{humanize(profile.verification_status)}</strong>
-        <p>{profile.verification_status === 'verified' ? 'Your participant privileges are active.' : 'Required before any marketplace activity.'}</p>
+        <span>Verified check</span>
+        <strong>{profile.verification_status === 'verified' ? <span className="vcheck-row"><VerifiedCheck verified size={18} /> Verified</span> : humanize(profile.verification_status)}</strong>
+        <p>{profile.verification_status === 'verified' ? 'Other members see the WTC Accra check beside your name.' : 'Optional: shows other members that WTC Accra has reviewed your documents.'}</p>
         <Link href="/dashboard/verification">Open verification →</Link>
       </article>
       <article className="metric-card">
@@ -119,7 +120,7 @@ export default async function DashboardPage() {
 
     <section className="card">
       <h2>Getting to full access</h2>
-      <p className="muted">Three gates stand between a new account and the private marketplace.</p>
+      <p className="muted">A subscription opens the marketplace. The verified check is awarded by WTC Accra after reviewing your documents and tells other members you are a verified source.</p>
       <ol className="checklist">
         {steps.map(step => <li key={step.label} className={step.done ? 'checklist-done' : ''}>
           <span aria-hidden="true">{step.done ? '✓' : '○'}</span>
@@ -146,6 +147,7 @@ export default async function DashboardPage() {
         <dl className="detail-grid detail-grid-two">
           <div><dt>Participant type</dt><dd><ParticipantBadge type={profile.participant_type} requested={profile.requested_participant_type} size="md" /></dd></div>
           <div><dt>Requested type</dt><dd>{labelForParticipantType(profile.requested_participant_type)}</dd></div>
+          <div><dt>Verified check</dt><dd>{profile.verification_status === 'verified' ? <span className="vcheck-row"><VerifiedCheck verified /> Verified by WTC Accra</span> : humanize(profile.verification_status)}</dd></div>
           <div><dt>Account status</dt><dd>{humanize(profile.account_status)}</dd></div>
           <div><dt>Browsing</dt><dd>{profile.can_view_opportunities ? 'Allowed' : 'Paused by WTC Accra'}</dd></div>
           <div><dt>Posting</dt><dd>{profile.can_post_opportunities ? 'Allowed' : 'Paused by WTC Accra'}</dd></div>

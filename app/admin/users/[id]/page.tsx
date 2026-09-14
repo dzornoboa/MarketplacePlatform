@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { VerifiedCheck } from '@/components/verified-check'
 import { ParticipantBadge } from '@/components/participant-badge'
 import { Avatar } from '@/components/avatar'
 import { RealtimeRefresh } from '@/components/realtime-refresh'
@@ -52,7 +53,7 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
     <div className="review-head">
       <div>
         <p className="eyebrow">Member</p>
-        <h1 className="avatar-stack"><Avatar src={person.avatar_url} name={person.full_name} size={44} />{person.full_name || 'Unnamed member'}</h1>
+        <h1 className="avatar-stack"><Avatar src={person.avatar_url} name={person.full_name} size={44} />{person.full_name || 'Unnamed member'}<VerifiedCheck verified={person.verification_status === 'verified'} size={22} /></h1>
         <p className="muted"><ParticipantBadge type={person.participant_type} requested={person.requested_participant_type} size="md" /> · {person.country || 'Country not set'} · joined {date(person.created_at)}</p>
       </div>
       <div className="pill-row">
@@ -103,18 +104,21 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
     </div>
 
     {self ? <p className="field-help">This is your own account. Use another administrator to change it.</p> : <div className="admin-action-grid">
-      <form action={setVerificationStatus} className="card review-form">
-        <h3>Verification</h3>
+      <form action={setVerificationStatus} className="card review-form check-card">
+        <h3><VerifiedCheck verified size={18} /> Verified check</h3>
+        <p className="muted">{person.verification_status === 'verified'
+          ? 'This member carries the WTC Accra verified check on their profile and listings.'
+          : 'Not verified: the member can use the platform on their subscription but shows no check mark. Grant it once their registration documents check out.'}</p>
         <input type="hidden" name="userId" value={person.id} />
         <select name="verificationStatus" defaultValue={person.verification_status === 'verified' ? 'changes_requested' : 'verified'}>
-          <option value="verified">Verified (approve)</option>
-          <option value="changes_requested">Request changes (un-verify)</option>
-          <option value="pending_review">Back to pending review</option>
-          <option value="rejected">Rejected</option>
+          <option value="verified">Grant verified check</option>
+          <option value="changes_requested">Remove check — request changes</option>
+          <option value="pending_review">Remove check — back to pending review</option>
+          <option value="rejected">Remove check — rejected</option>
           <option value="suspended">Suspended</option>
         </select>
         <textarea name="note" rows={2} placeholder="Note shown to the member, e.g. what to fix." />
-        <SubmitButton pendingLabel="Saving…">Update verification</SubmitButton>
+        <SubmitButton pendingLabel="Saving…">{person.verification_status === 'verified' ? 'Update check' : 'Apply'}</SubmitButton>
       </form>
 
       <form action={messageMember} className="card review-form">

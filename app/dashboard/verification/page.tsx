@@ -56,7 +56,7 @@ export default async function VerificationPage({ searchParams }: Props) {
     <div>
       <p className="eyebrow">Verification</p>
       <h1>WTC Accra account verification</h1>
-      <p className="muted">Verification protects the marketplace: every participant is checked by WTC Accra before they can see other members&rsquo; deals or bid on them.</p>
+      <p className="muted">Your subscription opens the marketplace. Verification earns the <strong>WTC Accra verified check</strong> — the black check mark beside your name on your profile and listings that tells other members an administrator has reviewed your documents.</p>
     </div>
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
@@ -128,7 +128,7 @@ export default async function VerificationPage({ searchParams }: Props) {
       {/* ---- Plan ------------------------------------------------------ */}
       <section className="card" id="plan">
         <h2>Choose your plan</h2>
-        <p className="muted">Plans are matched to your participant type. Free plans activate as soon as you are verified; paid plans unlock the marketplace once payment is received. You can change this later.</p>
+        <p className="muted">Plans are matched to your participant type. Free plans activate at once; paid plans unlock the marketplace once payment is received. You can change this later.</p>
         <form action={choosePlan} className="form-stack">
           <div className="plan-grid">
             {eligiblePlans.map(plan => <label className={`card plan-card plan-option${chosenPlan?.code === plan.code ? ' plan-current' : ''}`} key={plan.code}>
