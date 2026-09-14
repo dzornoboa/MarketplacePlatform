@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import type { SiteContentBlock, SiteContentItem } from '@/lib/database.types'
 
@@ -133,6 +133,6 @@ export async function saveSetting(key: string, value: string): Promise<Result> {
   const { supabase, userId } = await who()
   const { error } = await supabase.from('site_settings').update({ value, updated_by: userId }).eq('key', key)
   if (error) return { ok: false, error: error.message }
-  revalidatePath('/', 'layout')
+  revalidateTag('site-chrome', 'max'); revalidatePath('/', 'layout')
   return { ok: true }
 }

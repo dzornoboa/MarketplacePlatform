@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache'
 import { createPublicClient } from '@/lib/supabase/public'
 import type { Database, SiteContentBlock, SiteContentItem } from '@/lib/database.types'
 
@@ -193,7 +194,11 @@ export const CHROME_FALLBACK: SiteChrome = {
   },
 }
 
-export async function getSiteChrome(): Promise<SiteChrome> {
+/* Header/footer links and settings are read on every page; cache them for
+   two minutes and let the editor bust the cache with the 'site-chrome' tag. */
+export const getSiteChrome = unstable_cache(loadSiteChrome, ['site-chrome'], { revalidate: 120, tags: ['site-chrome'] })
+
+async function loadSiteChrome(): Promise<SiteChrome> {
   try {
     const supabase = createPublicClient()
     const [{ data: links, error: linkError }, { data: settings }] = await Promise.all([

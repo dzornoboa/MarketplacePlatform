@@ -259,6 +259,7 @@ export type Database = {
       respond_to_connection: { Args: { connection_id: string; decision: string; response_note?: string | null }; Returns: undefined }
       toggle_follow: { Args: { target_user: string }; Returns: boolean }
       member_directory: { Args: { search?: string | null; participant?: string | null; member_country?: string | null; only_ids?: string[] | null; max_rows?: number }; Returns: { id: string; full_name: string; job_title: string | null; participant_type: string | null; country: string | null; city: string | null; organisation: string | null; is_following: boolean; connection_status: string | null; is_staff: boolean; avatar_url: string | null; is_verified: boolean }[] }
+      session_bootstrap: { Args: Record<string, never>; Returns: Json }
       listing_owner_cards: { Args: { owner_ids: string[] }; Returns: { id: string; full_name: string; participant_type: string | null; country: string | null; organisation: string | null; avatar_url: string | null; job_title: string | null; is_verified: boolean }[] }
       request_introduction: { Args: { opportunity_id: string; request_note?: string | null }; Returns: string }
       review_introduction: { Args: { introduction_id: string; decision: string; staff_note?: string | null; meeting_at?: string | null; meeting_url?: string | null }; Returns: undefined }

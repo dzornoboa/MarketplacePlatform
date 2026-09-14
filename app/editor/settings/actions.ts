@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
@@ -25,7 +25,7 @@ export async function updateSettings(formData: FormData) {
       .update({ value: entry.value, updated_by: updatedBy }).eq('key', entry.key)
     if (error) redirect(back('error', `${entry.key}: ${error.message}`))
   }
-  revalidatePath('/'); revalidatePath('/news'); revalidatePath('/editor/settings')
+  revalidateTag('site-chrome', 'max'); revalidatePath('/', 'layout')
   redirect(back('message', 'Website settings updated.'))
 }
 
@@ -44,7 +44,7 @@ export async function updateNavLink(formData: FormData) {
   const { error } = await supabase.from('site_nav_links')
     .update({ label, href, sort_order: sortOrder, is_published: isPublished }).eq('id', id)
   if (error) redirect(back('error', error.message))
-  revalidatePath('/'); revalidatePath('/news'); revalidatePath('/editor/settings')
+  revalidateTag('site-chrome', 'max'); revalidatePath('/', 'layout')
   redirect(back('message', 'Navigation updated.'))
 }
 

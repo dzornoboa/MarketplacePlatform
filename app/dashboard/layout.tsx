@@ -11,16 +11,14 @@ import { RealtimeAccess } from '@/components/realtime-access'
 export const dynamic = 'force-dynamic'
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  const { supabase, profile, claims } = await requireUserProfile()
+  const { supabase, profile, claims, unread } = await requireUserProfile()
   const adminRole = isAdminRole(profile.system_role)
   const adminMfaReady = !adminRole || claims.aal === 'aal2'
   const { data: factors } = adminRole && !adminMfaReady ? await supabase.auth.mfa.listFactors() : { data: null }
   const adminHasFactor = (factors?.totp ?? []).some(f => f.status === 'verified')
-  // Lapsed subscriptions are expired lazily on each dashboard visit (no cron on this project).
-  const [{ count }, state] = await Promise.all([
-    supabase.from('notifications').select('*', { count: 'exact', head: true }).eq('user_id', profile.id).is('read_at', null),
-    supabase.rpc('expire_subscriptions').then(() => readAccessState(supabase)),
-  ])
+  // Profile, access state and unread count all come from the one bootstrap call; a daily cron expires lapsed subscriptions.
+  const state = await readAccessState(supabase)
+  const count = unread
   const daysLeft = state ? subscriptionDaysLeft(state) : null
   const memberOnly = profile.system_role === 'user'
   const expiryNotice = memberOnly && state?.subscription_status === 'expired'

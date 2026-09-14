@@ -1,27 +1,35 @@
 import { cache } from 'react'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import type { Database } from '@/lib/database.types'
 import { hasAdminMfaAccess, hasCapability, isAdminRole, isStaffRole, marketplaceLock, type AccessState, type StaffCapability } from '@/lib/auth/access'
 
 /* Authenticated session + profile, with no access gates applied. Use this only
    for the pages that must stay reachable while an account is blocked or is
    still waiting for its first password. */
+type Profile = Database['public']['Tables']['profiles']['Row']
+type Bootstrap = { profile: Profile; access: AccessState | null; unread: number }
+
+/* One round trip: session_bootstrap() returns the profile, the access state
+   and the unread-notification count together, so layouts and pages never
+   repeat those queries. */
 const loadSession = cache(async () => {
   const supabase = await createClient()
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims()
   const claims = claimsData?.claims
-  if (claimsError || !claims?.sub) return { supabase, claims: null, profile: null }
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', claims.sub).single()
-  return { supabase, claims, profile: profile ?? null }
+  if (claimsError || !claims?.sub) return { supabase, claims: null, profile: null, access: null, unread: 0 }
+  const { data } = await supabase.rpc('session_bootstrap')
+  const boot = (data ?? null) as Bootstrap | null
+  return { supabase, claims, profile: boot?.profile ?? null, access: boot?.access ?? null, unread: boot?.unread ?? 0 }
 })
 
 /* Memoised per request (React cache), so the layout and the page share one
    claims check and one profile fetch instead of repeating both. */
 export async function requireSession() {
-  const { supabase, claims, profile } = await loadSession()
+  const { supabase, claims, profile, unread } = await loadSession()
   if (!claims?.sub) redirect('/login')
   if (!profile) redirect('/login?error=profile-unavailable')
-  return { supabase, claims, profile }
+  return { supabase, claims, profile, unread }
 }
 
 /* The standard dashboard guard. A suspended or disabled account keeps its
@@ -68,6 +76,9 @@ export async function requireCapability(capability: StaffCapability) {
 type SupabaseLike = Awaited<ReturnType<typeof createClient>>
 
 const loadAccessState = cache(async (supabase: SupabaseLike) => {
+  // Already fetched by the session bootstrap for the current request.
+  const session = await loadSession()
+  if (session.access) return session.access
   const { data, error } = await supabase.rpc('my_access_state')
   if (error || !data) return null
   return data as unknown as AccessState
