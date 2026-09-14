@@ -20,6 +20,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const state = await readAccessState(supabase)
   const count = unread
   const daysLeft = state ? subscriptionDaysLeft(state) : null
+  const planLabel = state?.subscription_plan
+    ? `${state.subscription_plan.replaceAll('_', ' ')} · active`
+    : state?.subscription_status === 'pending' ? 'Plan chosen · payment due'
+    : state?.subscription_status === 'awaiting_approval' ? 'Plan paid · awaiting approval'
+    : state?.subscription_status === 'expired' ? 'Plan expired' : null
   const memberOnly = profile.system_role === 'user'
   const expiryNotice = memberOnly && state?.subscription_status === 'expired'
     ? { tone: 'error', text: 'Your subscription has expired. Marketplace access is paused until you renew.', cta: 'Renew now' }
@@ -28,7 +33,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       : null
 
   return <div className="dashboard-shell">
-    <DashboardNav profile={profile} unreadCount={count ?? 0} adminMfaReady={adminMfaReady} adminHasFactor={adminHasFactor} hasAccess={!!state && !marketplaceLock(state).locked} />
+    <DashboardNav profile={profile} unreadCount={count ?? 0} adminMfaReady={adminMfaReady} adminHasFactor={adminHasFactor} hasAccess={!!state && !marketplaceLock(state).locked} planLabel={planLabel} />
     <main className="dashboard-main">
       {expiryNotice && <div className={`expiry-bar expiry-bar-${expiryNotice.tone}`}><span>{expiryNotice.text}</span><Link className="button button-light" href="/dashboard/billing">{expiryNotice.cta}</Link></div>}
       {children}

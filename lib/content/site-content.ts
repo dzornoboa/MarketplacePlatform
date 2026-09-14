@@ -189,7 +189,7 @@ export const CHROME_FALLBACK: SiteChrome = {
     footer_access: 'Private opportunities are available only to authenticated and WTC Accra-verified users. The public site explains the network; it never lists deals.',
     footer_copyright: '© 2026 World Trade Centre Accra. All rights reserved.',
     contact_email: 'membership@wtcaccra.com',
-    contact_phone: '',
+    contact_phone: '+233 302 631 437',
     contact_address: 'World Trade Centre Accra, Ghana',
   },
 }

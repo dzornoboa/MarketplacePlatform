@@ -51,6 +51,7 @@ export async function signup(formData: FormData) {
     wtca_chapter: String(formData.get('wtcaChapter') ?? '').trim() || null,
     phone: String(formData.get('phone') ?? '').trim() || null,
     country: String(formData.get('country') ?? '').trim() || null,
+    plan_code: String(formData.get('planCode') ?? '').trim() || null,
   }
   const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, participant_type: participantType, ...extra }, emailRedirectTo: `${getSiteUrl()}/auth/confirm` } })
   if (error) redirect(withMessage('/register', 'error', error.message))

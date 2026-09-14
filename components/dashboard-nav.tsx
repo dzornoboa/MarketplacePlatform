@@ -14,7 +14,7 @@ import { hasCapability, isAdminRole, isStaffRole } from '@/lib/auth/access'
 
 type NavLink = { href: string; label: string; verifiedOnly?: boolean; badge?: number }
 
-export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, adminHasFactor = false, hasAccess = false }: { profile: Profile; unreadCount?: number; adminMfaReady?: boolean; adminHasFactor?: boolean; hasAccess?: boolean }) {
+export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, adminHasFactor = false, hasAccess = false, planLabel = null }: { profile: Profile; unreadCount?: number; adminMfaReady?: boolean; adminHasFactor?: boolean; hasAccess?: boolean; planLabel?: string | null }) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
 
@@ -49,6 +49,7 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, a
         { href: '/dashboard/introductions', label: 'Introductions', verifiedOnly: true },
         { href: '/dashboard/deal-rooms', label: 'Deal rooms', verifiedOnly: true },
         { href: '/dashboard/notifications', label: 'Notifications', badge: unreadCount },
+        { href: '/dashboard/reports', label: 'Reports' },
       ],
     },
     {
@@ -84,7 +85,7 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, a
         {!open && unreadCount > 0 && <span className="nav-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>}
       </button></div>
     </div>
-    <Link className="sidebar-user" href="/dashboard/profile"><Avatar src={profile.avatar_url} name={profile.full_name} size={36} /><span><strong>{profile.full_name || 'Your profile'}<VerifiedCheck verified={profile.verification_status === 'verified'} size={14} /></strong><small>{staff ? 'Staff workspace' : 'Member workspace'}</small>{!staff && <ParticipantBadge type={profile.participant_type} requested={profile.requested_participant_type} />}</span></Link>
+    <Link className="sidebar-user" href="/dashboard/profile"><Avatar src={profile.avatar_url} name={profile.full_name} size={36} /><span><strong>{profile.full_name || 'Your profile'}<VerifiedCheck verified={profile.verification_status === 'verified'} size={14} /></strong><small>{staff ? 'Staff workspace' : 'Member workspace'}</small>{!staff && <ParticipantBadge type={profile.participant_type} requested={profile.requested_participant_type} />}{!staff && planLabel && <span className="plan-tag">{planLabel}</span>}</span></Link>
     <nav id="dashboard-nav">
       {groups.map(group => <div className="nav-group" key={group.label}>
         <p className="nav-group-label">{group.label}</p>

@@ -18,9 +18,15 @@ const HINT: Record<string, string> = {
 /* The account-type choice drives the rest of the form: companies and
    institutions give an organisation name, WTC members their membership
    details, and each type sees what verification will ask for. */
-export function RegisterFields({ email }: { email?: string }) {
-  const [type, setType] = useState('')
+type PlanOption = { code: string; name: string; price_usd: number; billing_interval: string; target_participant_types: string[]; description: string | null }
+
+export function RegisterFields({ email, plans = [], initialPlan = '', initialType = '' }: { email?: string; plans?: PlanOption[]; initialPlan?: string; initialType?: string }) {
+  const [type, setType] = useState(initialType)
+  const [plan, setPlan] = useState(initialPlan)
   const [mail, setMail] = useState(email ?? '')
+  const eligible = plans.filter(pl => pl.target_participant_types.length === 0 || (type && pl.target_participant_types.includes(type)))
+  const chosen = eligible.find(pl => pl.code === plan) ?? null
+  const pickType = (t: string) => { setType(t); if (!plans.find(pl => pl.code === plan && (pl.target_participant_types.length === 0 || pl.target_participant_types.includes(t)))) setPlan('') }
   const company = COMPANY_TYPES.has(type), wtc = WTC_TYPES.has(type)
   const domain = mail.split('@')[1]?.toLowerCase() ?? ''
   const wtcWarn = wtc && mail.includes('@') && domain !== 'wtcaccra.com'
@@ -31,7 +37,7 @@ export function RegisterFields({ email }: { email?: string }) {
     {wtcWarn && <p className="alert alert-error">{participantTypeLabels[type as keyof typeof participantTypeLabels]} accounts must register with an @wtcaccra.com address. {domain} will not be accepted.</p>}
     {wtc && !wtcWarn && <p className="field-help">A verification code will be sent to this address; the account is only created once you enter it.</p>}
     <label>Account type
-      <select name="participantType" required value={type} onChange={e => setType(e.target.value)}>
+      <select name="participantType" required value={type} onChange={e => pickType(e.target.value)}>
         <option value="" disabled>Select account type</option>
         {selectableParticipantTypes.map(t => <option key={t} value={t}>{participantTypeLabels[t]}</option>)}
       </select>
@@ -46,6 +52,15 @@ export function RegisterFields({ email }: { email?: string }) {
       <label>Phone<input name="phone" autoComplete="tel" placeholder="+233 …" /></label>
       <label>Country<input name="country" autoComplete="country-name" defaultValue="Ghana" /></label>
     </div>
+    {type && eligible.length > 0 && <div className="form-stack plan-pick">
+      <label>Plan
+        <select name="planCode" value={plan} onChange={e => setPlan(e.target.value)} required>
+          <option value="" disabled>Choose your plan</option>
+          {eligible.map(pl => <option key={pl.code} value={pl.code}>{pl.name} — {Number(pl.price_usd) === 0 ? 'Free' : `US${Number(pl.price_usd).toLocaleString()}/${pl.billing_interval}`}</option>)}
+        </select>
+      </label>
+      {chosen && <p className="field-help">{chosen.description ? chosen.description + ' ' : ''}{Number(chosen.price_usd) === 0 ? 'Free plan: browse the marketplace at once; upgrade to a paid plan to post listings.' : 'You pay after confirming your email; your account activates once payment is received.'}</p>}
+    </div>}
     <label>Password<input name="password" type="password" autoComplete="new-password" minLength={8} required /></label>
     <p className="field-help">Use at least 8 characters with upper and lowercase letters and a number.</p>
   </>

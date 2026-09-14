@@ -15,6 +15,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const links = [
     { href: '/admin', label: 'Overview', show: true },
     { href: '/admin/insights', label: 'Insights', show: true },
+    { href: '/admin/reports', label: 'Reports', show: hasCapability(role, 'reports') },
     { href: '/admin/assistant', label: 'AI agent', show: role === 'super_admin' },
     { href: '/admin/super', label: 'Super admin', show: role === 'super_admin' },
     { href: '/admin/verification', label: 'Verification queue', show: hasCapability(role, 'verification') },

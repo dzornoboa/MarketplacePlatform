@@ -163,6 +163,7 @@ export type AccessState = {
   can_view_opportunities: boolean
   can_post_opportunities: boolean
   has_active_subscription: boolean
+  has_paid_plan?: boolean
   subscription_ends_at: string | null
   subscription_plan?: string | null
   subscription_status?: string | null
@@ -201,6 +202,12 @@ export function postingLock(state: AccessState): MarketplaceLock {
   }
   if (!state.can_post_opportunities) {
     return { locked: true, reason: 'WTC Accra has paused opportunity posting on your account.', action: { label: 'Contact support', href: '/dashboard/support' } }
+  }
+  if (!state.has_active_subscription) {
+    return { locked: true, reason: state.subscription_status === 'pending' ? 'Pay for your plan to activate your account before posting.' : 'An active plan is needed before posting.', action: { label: 'Go to billing', href: '/dashboard/billing#pay' } }
+  }
+  if (state.has_paid_plan === false) {
+    return { locked: true, reason: 'Your free plan lets you browse. Upgrade to a paid plan to post listings.', action: { label: 'Upgrade plan', href: '/dashboard/billing' } }
   }
   return { locked: false }
 }

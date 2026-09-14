@@ -48,7 +48,10 @@ export async function requireUserProfile() {
 export async function requireMarketplaceAccess() {
   const context = await requireUserProfile()
   const state = await readAccessState(context.supabase)
-  if (!state || marketplaceLock(state).locked) redirect('/dashboard/opportunities?locked=1')
+  if (!state) redirect('/dashboard/opportunities?locked=1')
+  const lock = marketplaceLock(state)
+  // An unpaid plan sends the member straight to the payment step.
+  if (lock.locked) redirect(state.subscription_status === 'pending' ? '/dashboard/billing?message=' + encodeURIComponent('Pay for your plan to activate your account and open the marketplace.') + '#pay' : '/dashboard/opportunities?locked=1')
   return { ...context, accessState: state }
 }
 
