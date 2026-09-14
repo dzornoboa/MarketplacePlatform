@@ -11,10 +11,12 @@ export function BarChart({ data, height = 160, money = false, title }: { data: A
   const H = height / 2
   return <figure className="chart">
     {title && <figcaption>{title}</figcaption>}
-    <svg viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" role="img" aria-label={title ?? 'Bar chart'}>
+    {/* Fixed pixel height: the viewBox is stretched to fill the width but never grows taller. Bars are capped so a chart with two values does not become two slabs. */}
+    <svg viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" style={{ height }} role="img" aria-label={title ?? 'Bar chart'}>
       {data.map((d, i) => {
         const h = (d.value / max) * (H - 6)
-        return <rect key={d.label} x={i * w + w * 0.15} y={H - 2 - h} width={w * 0.7} height={h} rx="0.6" fill={d.color ?? PALETTE[i % PALETTE.length]} aria-label={`${d.label}: ${fmtValue(d.value, money)}`} />
+        const bw = Math.min(w * 0.7, 14)
+        return <rect key={d.label} x={i * w + (w - bw) / 2} y={H - 2 - h} width={bw} height={h} rx="0.6" fill={d.color ?? PALETTE[i % PALETTE.length]} aria-label={`${d.label}: ${fmtValue(d.value, money)}`} />
       })}
     </svg>
     <div className="chart-labels">{data.map(d => <span key={d.label}><strong>{fmtValue(d.value, money)}</strong>{d.label}</span>)}</div>
@@ -29,7 +31,7 @@ export function LineChart({ series, labels, height = 150, money = false, title }
   const y = (v: number) => 4 + (1 - v / max) * (H - 8)
   return <figure className="chart">
     {title && <figcaption>{title}</figcaption>}
-    <svg viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" role="img" aria-label={title ?? 'Line chart'}>
+    <svg viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" style={{ height }} role="img" aria-label={title ?? 'Line chart'}>
       {[0.25, 0.5, 0.75, 1].map(f => <line key={f} x1="4" x2="96" y1={y(max * f)} y2={y(max * f)} stroke="#e6e9ef" strokeWidth="0.3" />)}
       {series.map((s, si) => {
         const color = s.color ?? PALETTE[si % PALETTE.length]

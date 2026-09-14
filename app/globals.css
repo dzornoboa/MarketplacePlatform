@@ -982,7 +982,7 @@ a.contact-card:hover strong{color:var(--wtc-orange)}
 /* ---------- Charts ---------- */
 .chart{margin:0;display:flex;flex-direction:column;gap:6px}
 .chart figcaption{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}
-.chart svg{width:100%;height:auto;display:block}
+.chart svg{width:100%;display:block;max-height:180px}
 .chart-donut svg{width:auto}
 .chart-labels{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;font-size:10.5px;color:var(--muted);text-align:center}
 .chart-labels span{display:flex;flex-direction:column;gap:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
