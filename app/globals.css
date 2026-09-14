@@ -1144,7 +1144,8 @@ a.contact-card:hover strong{color:var(--wtc-orange)}
 @media(prefers-reduced-motion:reduce){.sk{animation:none}}
 
 .plan-tag{display:inline-block;margin-top:4px;font-size:10.5px;font-weight:700;color:var(--wtc-navy);background:#eef3fa;border:1px solid #d5e0ef;border-radius:999px;padding:2px 8px;text-transform:capitalize;white-space:nowrap}
-.plan-tag-md{font-size:12px;padding:4px 10px;margin:0 6px}
+.plan-tag-md{font-size:12px;padding:4px 10px;margin:0 6px;text-transform:none}
+.plan-tag-md::first-letter{text-transform:uppercase}
 .plan-pick{border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;background:#fafbfc}
 
 /* --- Reports -------------------------------------------------------------- */
