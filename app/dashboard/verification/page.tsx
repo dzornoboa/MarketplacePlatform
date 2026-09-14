@@ -42,7 +42,7 @@ export default async function VerificationPage({ searchParams }: Props) {
   const eligiblePlans = (plans ?? []).filter(p => !type || p.target_participant_types.length === 0 || p.target_participant_types.includes(type))
   const chosenPlan = (plans ?? []).find(p => p.code === profile.requested_plan_code)
 
-  const kyc = kycChecklist({ type, purposes: (documents ?? []).map(d => d.purpose), hasBillingAddress: !!billingAddress, hasOrganisation: hasOrg })
+  const kyc = kycChecklist({ type, purposes: (documents ?? []).map(d => d.purpose), hasBillingAddress: !!billingAddress, hasOrganisation: hasOrg, verified: profile.verification_status === 'verified' })
   const steps = [
     { key: 'profile', label: 'Complete your profile and choose a participant type', done: profileDone, href: '/dashboard/profile', required: true },
     ...kyc.steps.map(s => ({ ...s, href: s.key.startsWith('proof') || s.key === 'identity' || s.key.endsWith('certificate') || s.key.endsWith('document') ? '#documents' : s.href, required: true })),

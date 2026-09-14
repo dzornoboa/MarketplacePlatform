@@ -44,7 +44,7 @@ export default async function BillingPage({ searchParams }: Props) {
     supabase.from('document_records').select('purpose').eq('owner_user_id', profile.id),
     supabase.from('organization_members').select('*', { count: 'exact', head: true }).eq('user_id', profile.id),
   ])
-  const kyc = kycChecklist({ type: profile.participant_type ?? profile.requested_participant_type, purposes: (myDocs ?? []).map(d => d.purpose), hasBillingAddress: !!billingAddress, hasOrganisation: (orgCount ?? 0) > 0 })
+  const kyc = kycChecklist({ type: profile.participant_type ?? profile.requested_participant_type, purposes: (myDocs ?? []).map(d => d.purpose), hasBillingAddress: !!billingAddress, hasOrganisation: (orgCount ?? 0) > 0, verified: profile.verification_status === 'verified' })
   const active = (subscriptions ?? []).find(s => s.status === 'active')
   const pending = (subscriptions ?? []).find(s => s.status === 'pending')
   const awaiting = (subscriptions ?? []).find(s => s.status === 'awaiting_approval')

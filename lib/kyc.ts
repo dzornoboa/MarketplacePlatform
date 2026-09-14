@@ -38,14 +38,19 @@ export const requirementNote = (type: string | null | undefined, hasOrganisation
 export type KycStep = { key: string; label: string; done: boolean; href: string }
 
 /* Checklist rendered on billing, verification and the dashboard. */
-export function kycChecklist(opts: { type: string | null | undefined; purposes: string[]; hasBillingAddress: boolean; hasOrganisation: boolean }): { steps: KycStep[]; ready: boolean } {
+export function kycChecklist(opts: { type: string | null | undefined; purposes: string[]; hasBillingAddress: boolean; hasOrganisation: boolean; verified?: boolean }): { steps: KycStep[]; ready: boolean } {
   const company = isCompanyType(opts.type, opts.hasOrganisation)
   const has = new Set(opts.purposes)
   const steps: KycStep[] = []
   if (company) steps.push({ key: 'organisation', label: 'Add your organisation (name, registration number, address)', done: opts.hasOrganisation, href: '/dashboard/organisation' })
   steps.push({ key: 'billing_address', label: 'Enter your billing address', done: opts.hasBillingAddress, href: '/dashboard/billing#payment-details' })
-  for (const p of requiredDocuments(opts.type, opts.hasOrganisation)) {
-    steps.push({ key: p, label: `Upload: ${purposeLabel(p)}${p === 'identity' && company ? ' — contact person' : ''}`, done: has.has(p), href: `/dashboard/documents?purpose=${p}` })
+  if (opts.verified) {
+    // WTC Accra has reviewed this member's documents already.
+    steps.push({ key: 'documents', label: 'Documents reviewed by WTC Accra', done: true, href: '/dashboard/documents' })
+  } else {
+    for (const p of requiredDocuments(opts.type, opts.hasOrganisation)) {
+      steps.push({ key: p, label: `Upload: ${purposeLabel(p)}${p === 'identity' && company ? ' — contact person' : ''}`, done: has.has(p), href: `/dashboard/documents?purpose=${p}` })
+    }
   }
   return { steps, ready: steps.every(s => s.done) }
 }

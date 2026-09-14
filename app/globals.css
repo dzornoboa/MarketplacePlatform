@@ -1167,3 +1167,12 @@ a.contact-card:hover strong{color:var(--wtc-orange)}
 @keyframes flash-in{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
 .pay-address-box{align-items:flex-start}
 .pay-address-box .muted{margin:2px 0 0;font-size:13px}
+
+/* --- Notification bulk actions -------------------------------------------- */
+.bulk-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px;padding:10px 14px}
+.bulk-bar .switch{margin:0}
+.bulk-bar .button[disabled]{opacity:.45;cursor:not-allowed}
+.notification{position:relative;padding-left:44px}
+.notification-pick{position:absolute;left:14px;top:16px}
+.notification-pick input{width:16px;height:16px;accent-color:var(--wtc-navy)}
+.notification-picked{outline:2px solid var(--wtc-teal);outline-offset:-2px}
