@@ -1,6 +1,7 @@
 import { requireUserProfile } from '@/lib/auth/guards'
 import { SubmitButton } from '@/components/submit-button'
 import { humanize } from '@/lib/auth/access'
+import { DOCUMENT_PURPOSES, purposeLabel, requiredDocuments, requirementNote, purposeLabels } from '@/lib/kyc'
 import { dateTime } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
 import { uploadDocument, deleteDocument, setDocumentPurpose } from './actions'
@@ -27,6 +28,10 @@ export default async function DocumentsPage({ searchParams }: Props) {
   const params = await searchParams
   const error = typeof params.error === 'string' ? params.error : null
   const message = typeof params.message === 'string' ? params.message : null
+  const wanted = typeof params.purpose === 'string' && (DOCUMENT_PURPOSES as readonly string[]).includes(params.purpose) ? params.purpose : null
+  const myType = profile.participant_type ?? profile.requested_participant_type
+  const { count: orgCount } = await supabase.from('organization_members').select('*', { count: 'exact', head: true }).eq('user_id', profile.id)
+  const hasOrg = (orgCount ?? 0) > 0
 
   const [{ data: documents }, { data: myOpportunities }] = await Promise.all([
     supabase.from('document_records').select('*').order('created_at', { ascending: false }).limit(100),
@@ -51,17 +56,13 @@ export default async function DocumentsPage({ searchParams }: Props) {
         </section>
       : <form action={uploadDocument} className="card form-stack">
           <h2>Upload a document</h2>
+          {profile.system_role === 'user' && <p className="field-help">{requirementNote(myType, hasOrg)} Still needed: {requiredDocuments(myType, hasOrg).filter(r => !(documents ?? []).some(d => d.purpose === r)).map(purposeLabel).join(', ') || 'nothing — all required documents are uploaded'}.</p>}
           <label>File<input name="file" type="file" required accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx" /></label>
           <p className="field-help">PDF, PNG, JPEG, DOCX or XLSX. Maximum 25MB.</p>
           <div className="form-grid">
             <label>What is this document
-              <select name="purpose" defaultValue="general">
-                <option value="identity">Identity document (passport, ID card)</option>
-                <option value="business_certificate">Business registration certificate</option>
-                <option value="profile">Company profile</option>
-                <option value="financials">Financials</option>
-                <option value="general">General</option>
-                <option value="other">Other</option>
+              <select name="purpose" defaultValue={wanted ?? 'general'}>
+                {DOCUMENT_PURPOSES.map(v => <option key={v} value={v}>{purposeLabels[v]}</option>)}
               </select>
             </label>
             <label>Who may see it
@@ -91,10 +92,10 @@ export default async function DocumentsPage({ searchParams }: Props) {
               <td><strong>{doc.file_name}</strong></td>
               <td>{doc.owner_user_id === profile.id
                 ? <form action={setDocumentPurpose} className="inline-select"><input type="hidden" name="documentId" value={doc.id} />
-                    <select name="purpose" defaultValue={doc.purpose}>{['identity', 'business_certificate', 'profile', 'financials', 'general', 'other'].map(v => <option key={v} value={v}>{humanize(v)}</option>)}</select>
+                    <select name="purpose" defaultValue={doc.purpose}>{DOCUMENT_PURPOSES.map(v => <option key={v} value={v}>{purposeLabel(v)}</option>)}</select>
                     <button className="link-button" type="submit">Save</button>
                   </form>
-                : humanize(doc.purpose)}</td>
+                : purposeLabel(doc.purpose)}</td>
               <td><span className={`status-dot status-doc-${doc.access_scope}`}>{humanize(doc.access_scope)}</span><br /><span className="field-help">{SCOPE_HELP[doc.access_scope]}</span></td>
               <td>{doc.opportunity_id ? oppById.get(doc.opportunity_id) ?? 'An opportunity' : '—'}</td>
               <td>{fileSize(doc.size_bytes)}</td>

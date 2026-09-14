@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
-const COMPANY_TYPES = new Set(['business', 'project_sponsor', 'institutional_partner', 'wtc_association_member', 'wtc_accra_member'])
+import { COMPANY_TYPES, kycChecklist, requirementNote, requiredDocuments, purposeLabel, DOCUMENT_PURPOSES } from '@/lib/kyc'
 
 /* Onboarding, per the scoping document:
    register → complete profile → submit documents → WTC review → verify →
@@ -25,30 +25,29 @@ export default async function VerificationPage({ searchParams }: Props) {
 
   const type = profile.requested_participant_type ?? profile.participant_type
   const isCompany = !!type && COMPANY_TYPES.has(type)
+  void isCompany
 
-  const [{ data: requests }, { data: documents }, { count: orgCount }, { data: plans }, { data: subscription }] = await Promise.all([
+  const [{ data: requests }, { data: documents }, { count: orgCount }, { data: plans }, { data: subscription }, { data: billingAddress }] = await Promise.all([
     supabase.from('verification_requests').select('*').eq('user_id', profile.id).order('submitted_at', { ascending: false }).limit(5),
-    supabase.from('document_records').select('id,file_name,purpose,created_at').eq('owner_user_id', profile.id).in('purpose', ['identity', 'business_certificate', 'profile']),
+    supabase.from('document_records').select('id,file_name,purpose,created_at').eq('owner_user_id', profile.id).is('opportunity_id', null).is('deal_room_id', null),
     supabase.from('organization_members').select('*', { count: 'exact', head: true }).eq('user_id', profile.id),
     supabase.from('subscription_plans').select('*').eq('active', true).order('price_usd'),
     supabase.from('subscriptions').select('plan_code,status,ends_at').in('status', ['pending', 'active']).limit(1).maybeSingle(),
+    supabase.from('billing_addresses').select('id').eq('user_id', profile.id).maybeSingle(),
   ])
 
   const current = requests?.[0]
-  const hasIdentity = (documents ?? []).some(d => d.purpose === 'identity')
-  const hasCertificate = (documents ?? []).some(d => d.purpose === 'business_certificate')
   const hasOrg = (orgCount ?? 0) > 0
   const profileDone = profile.profile_completed && !!type && profile.full_name.trim().length >= 2
   const eligiblePlans = (plans ?? []).filter(p => !type || p.target_participant_types.length === 0 || p.target_participant_types.includes(type))
   const chosenPlan = (plans ?? []).find(p => p.code === profile.requested_plan_code)
 
+  const kyc = kycChecklist({ type, purposes: (documents ?? []).map(d => d.purpose), hasBillingAddress: !!billingAddress, hasOrganisation: hasOrg })
   const steps = [
     { key: 'profile', label: 'Complete your profile and choose a participant type', done: profileDone, href: '/dashboard/profile', required: true },
-    { key: 'org', label: 'Add your organisation', done: hasOrg, href: '/dashboard/organisation', required: isCompany },
-    { key: 'identity', label: 'Upload an identity document', done: hasIdentity, href: '#documents', required: true },
-    { key: 'certificate', label: 'Upload your business registration certificate', done: hasCertificate, href: '#documents', required: isCompany },
+    ...kyc.steps.map(s => ({ ...s, href: s.key.startsWith('proof') || s.key === 'identity' || s.key.endsWith('certificate') || s.key.endsWith('document') ? '#documents' : s.href, required: true })),
     { key: 'plan', label: 'Choose a plan', done: !!chosenPlan, href: '#plan', required: false },
-  ].filter(s => s.required || s.key === 'plan')
+  ]
   const ready = steps.filter(s => s.required).every(s => s.done)
   const canSubmit = ['pending_profile', 'changes_requested', 'rejected'].includes(profile.verification_status)
 
@@ -100,22 +99,18 @@ export default async function VerificationPage({ searchParams }: Props) {
       {/* ---- Documents ------------------------------------------------ */}
       <section className="card" id="documents">
         <h2>Verification documents</h2>
-        <p className="muted">{isCompany
-          ? 'Companies and institutions must provide a business registration certificate and an identity document for the authorised representative.'
-          : 'Individual participants provide an identity document — passport, national ID or driver’s licence.'}</p>
+        <p className="muted">{requirementNote(type, hasOrg)} Still needed: {requiredDocuments(type, hasOrg).filter(r => !(documents ?? []).some(d => d.purpose === r)).map(purposeLabel).join(', ') || 'nothing'}.</p>
         {(documents ?? []).length > 0 && <div className="history-list">{(documents ?? []).map(doc => <div key={doc.id}>
           <strong>{doc.file_name}</strong><span>{date(doc.created_at)}</span>
-          <p className="muted">{humanize(doc.purpose)}</p>
+          <p className="muted">{purposeLabel(doc.purpose)}</p>
         </div>)}</div>}
         <form action={uploadDocument} className="form-stack">
           <input type="hidden" name="returnTo" value="/dashboard/verification" />
           <input type="hidden" name="accessScope" value="private" />
           <div className="form-grid">
             <label>Document type
-              <select name="purpose" defaultValue={!hasIdentity ? 'identity' : isCompany && !hasCertificate ? 'business_certificate' : 'profile'} required>
-                <option value="identity">Identity document (passport, national ID, licence)</option>
-                {isCompany && <option value="business_certificate">Business registration certificate</option>}
-                <option value="profile">Company profile or supporting document</option>
+              <select name="purpose" defaultValue={requiredDocuments(type, hasOrg).find(r => !(documents ?? []).some(d => d.purpose === r)) ?? 'supporting'} required>
+                {DOCUMENT_PURPOSES.filter(v => !['general', 'other'].includes(v)).map(v => <option key={v} value={v}>{purposeLabel(v)}{requiredDocuments(type, hasOrg).includes(v) ? ' — required' : ''}</option>)}
               </select>
             </label>
             <label>File<input name="file" type="file" required accept=".pdf,.png,.jpg,.jpeg,.docx" /></label>

@@ -22,6 +22,8 @@ export default async function CheckoutPage({ searchParams }: Props) {
 
   const { data: payment } = await supabase.from('payments').select('*').eq('reference', ref).maybeSingle()
   if (!payment) redirect('/dashboard/billing?error=' + encodeURIComponent('Payment not found.'))
+  const { data: readiness } = await supabase.rpc('payment_readiness')
+  if ((readiness as { ready?: boolean } | null)?.ready !== true) redirect('/dashboard/billing?error=' + encodeURIComponent('Add your billing address and upload the required documents before paying.') + '#kyc')
   if (payment.status !== 'pending') redirect('/dashboard/billing?message=' + encodeURIComponent(`This payment is already ${humanize(payment.status)}.`))
 
   const [{ data: plan }, { data: saved }, { data: billing }] = await Promise.all([

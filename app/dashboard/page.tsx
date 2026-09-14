@@ -40,8 +40,11 @@ export default async function DashboardPage() {
   const hasFactor = (factors?.totp ?? []).some(f => f.status === 'verified')
   const browse = state ? marketplaceLock(state) : null
   const post = state ? postingLock(state) : null
+  const { data: readiness } = await supabase.rpc('payment_readiness')
+  const kycReady = (readiness as { ready?: boolean } | null)?.ready === true
   const steps = [
     { done: profile.profile_completed, label: 'Complete your profile', href: '/dashboard/profile' },
+    { done: kycReady, label: 'Billing address and required documents on file', href: '/dashboard/billing#kyc' },
     { done: !!state?.has_active_subscription, label: 'Activate a subscription — opens the marketplace', href: '/dashboard/billing' },
     { done: profile.verification_status === 'verified', label: 'Earn the WTC Accra verified check', href: '/dashboard/verification' },
   ]

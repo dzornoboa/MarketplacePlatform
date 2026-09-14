@@ -10,6 +10,8 @@ import { paystackConfigured } from '@/lib/payments/paystack'
 import { getSiteChrome } from '@/lib/content/site-content'
 import { PaymentDetails } from '@/components/payment-details'
 import { methodTitle } from '@/lib/payments/method-title'
+import { kycChecklist, requirementNote } from '@/lib/kyc'
+import { KycChecklist } from '@/components/kyc-checklist'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,6 +38,11 @@ export default async function BillingPage({ searchParams }: Props) {
     supabase.from('payment_methods').select('*').eq('user_id', profile.id).order('is_primary', { ascending: false }).order('created_at'),
   ])
   const primaryMethod = (methods ?? []).find(m => m.is_primary) ?? null
+  const [{ data: myDocs }, { count: orgCount }] = await Promise.all([
+    supabase.from('document_records').select('purpose').eq('owner_user_id', profile.id),
+    supabase.from('organization_members').select('*', { count: 'exact', head: true }).eq('user_id', profile.id),
+  ])
+  const kyc = kycChecklist({ type: profile.participant_type ?? profile.requested_participant_type, purposes: (myDocs ?? []).map(d => d.purpose), hasBillingAddress: !!billingAddress, hasOrganisation: (orgCount ?? 0) > 0 })
   const active = (subscriptions ?? []).find(s => s.status === 'active')
   const pending = (subscriptions ?? []).find(s => s.status === 'pending')
   const awaiting = (subscriptions ?? []).find(s => s.status === 'awaiting_approval')
@@ -139,7 +146,10 @@ export default async function BillingPage({ searchParams }: Props) {
     {awaiting && <div className="alert alert-success">Your {awaiting.plan_code.replaceAll('_', ' ')} plan is paid and awaiting WTC Accra approval. You will be notified as soon as it is confirmed.</div>}
     {pending && <form action={cancelPlanChange} className="field-help">Changed your mind? <button className="link-button" type="submit">Cancel this plan change</button></form>}
 
-    {pending && pendingPlan && Number(pendingPlan.price_usd) > 0 && <section className="card pay-card" id="pay">
+    {pending && pendingPlan && Number(pendingPlan.price_usd) > 0 && !kyc.ready && <div id="pay">
+      <KycChecklist steps={kyc.steps} title={`Before you pay for ${pendingPlan.name}`} intro={`WTC Accra needs your billing address and documents on file before a payment is taken. ${requirementNote(profile.participant_type ?? profile.requested_participant_type, (orgCount ?? 0) > 0)}`} />
+    </div>}
+    {pending && pendingPlan && Number(pendingPlan.price_usd) > 0 && kyc.ready && <section className="card pay-card" id="pay">
       <h2>Pay for your {pendingPlan.name} plan</h2>
       <p className="muted">Amount due: <strong className="plan-price">{money(pendingPlan.price_usd)}</strong> for one year. Marketplace access opens the moment payment is confirmed.</p>
 

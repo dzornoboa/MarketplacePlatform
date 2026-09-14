@@ -5,6 +5,7 @@ import { Avatar } from '@/components/avatar'
 import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { notFound } from 'next/navigation'
 import { requireAdminProfile } from '@/lib/auth/guards'
+import { requiredDocuments, purposeLabel } from '@/lib/kyc'
 import { humanize, labelForParticipantType, systemRoleLabels, systemRoles, accountStatuses, selectableParticipantTypes, participantTypeLabels } from '@/lib/auth/access'
 import { date, dateTime, money } from '@/lib/format'
 import { SubmitButton } from '@/components/submit-button'
@@ -30,7 +31,7 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
   const bypassActive = !!person.support_bypass_until && new Date(person.support_bypass_until) > new Date()
   const self = person.id === me.id
 
-  const [{ data: requests }, { data: docs }, { data: subs }, { data: payments }, { data: orgLinks }, { data: plans }, { data: notes }, { data: listings }, { data: bids }, { data: memberships }] = await Promise.all([
+  const [{ data: requests }, { data: docs }, { data: subs }, { data: payments }, { data: orgLinks }, { data: plans }, { data: notes }, { data: listings }, { data: bids }, { data: memberships }, { data: billingRow }] = await Promise.all([
     supabase.from('verification_requests').select('*').eq('user_id', id).order('submitted_at', { ascending: false }),
     supabase.from('document_records').select('id,file_name,purpose,created_at,opportunity_id').eq('owner_user_id', id).order('created_at', { ascending: false }),
     supabase.from('subscriptions').select('*').eq('user_id', id).order('created_at', { ascending: false }),
@@ -41,7 +42,9 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
     supabase.from('opportunities').select('id,title,status,created_at').eq('owner_user_id', id).order('created_at', { ascending: false }),
     supabase.from('expressions_of_interest').select('id,opportunity_id,status,created_at').eq('applicant_id', id).order('created_at', { ascending: false }),
     supabase.from('memberships').select('*').eq('user_id', id).order('created_at', { ascending: false }),
+    supabase.from('billing_addresses').select('user_id').eq('user_id', id).maybeSingle(),
   ])
+  const billingOnFile = !!billingRow
   const orgIds = (orgLinks ?? []).map(o => o.organization_id)
   const { data: orgs } = orgIds.length ? await supabase.from('organizations').select('*').in('id', orgIds) : { data: [] }
   const current = (subs ?? []).find(s => s.status === 'active') ?? (subs ?? []).find(s => s.status === 'pending')
@@ -97,9 +100,9 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
           ? <p className="muted">Nothing uploaded.</p>
           : <div className="history-list compact">{(docs ?? []).map(d => <div key={d.id}>
               <strong>{d.file_name}</strong><span>{date(d.created_at)}</span>
-              <p className="muted">{humanize(d.purpose)}{d.opportunity_id ? ' · listing attachment' : ''} · <a className="arrow-link" href={`/api/documents/${d.id}`} target="_blank" rel="noopener">Open →</a></p>
+              <p className="muted">{purposeLabel(d.purpose)}{d.opportunity_id ? ' · listing attachment' : ''} · <a className="arrow-link" href={`/api/documents/${d.id}`} target="_blank" rel="noopener">Open →</a></p>
             </div>)}</div>}
-        <p className="field-help">Identity: {(docs ?? []).some(d => d.purpose === 'identity') ? '✓' : '✗'}{company ? ` · Business certificate: ${(docs ?? []).some(d => d.purpose === 'business_certificate') ? '✓' : '✗'}` : ''}</p>
+        <p className="field-help">Required for {company || (orgLinks ?? []).length > 0 ? 'a company' : 'an individual'}: {requiredDocuments(person.participant_type ?? person.requested_participant_type, (orgLinks ?? []).length > 0).map(r => `${purposeLabel(r).split(' (')[0]} ${(docs ?? []).some(d => d.purpose === r) ? '✓' : '✗'}`).join(' · ')} · Billing address {billingOnFile ? '✓' : '✗'}</p>
       </section>
     </div>
 

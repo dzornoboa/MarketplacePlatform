@@ -1,5 +1,6 @@
 import { requireCapability } from '@/lib/auth/guards'
 import { RealtimeRefresh } from '@/components/realtime-refresh'
+import { requiredDocuments, purposeLabel } from '@/lib/kyc'
 import { humanize, labelForParticipantType } from '@/lib/auth/access'
 import { dateTime, money } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
@@ -26,7 +27,7 @@ export default async function AdminVerificationPage({ searchParams }: Props) {
 
   const [{ data: profiles }, { data: documents }, { data: orgMembers }, { data: plans }] = await Promise.all([
     userIds.length ? supabase.from('profiles').select('*').in('id', userIds) : Promise.resolve({ data: [] }),
-    userIds.length ? supabase.from('document_records').select('id,owner_user_id,file_name,purpose,created_at').in('owner_user_id', userIds).in('purpose', ['identity', 'business_certificate', 'profile']) : Promise.resolve({ data: [] }),
+    userIds.length ? supabase.from('document_records').select('id,owner_user_id,file_name,purpose,created_at').in('owner_user_id', userIds).is('opportunity_id', null).in('purpose', ['identity', 'business_certificate', 'tax_document', 'proof_of_address', 'proof_of_funds', 'profile']) : Promise.resolve({ data: [] }),
     userIds.length ? supabase.from('organization_members').select('user_id,organization_id').in('user_id', userIds) : Promise.resolve({ data: [] }),
     supabase.from('subscription_plans').select('code,name,price_usd'),
   ])
@@ -77,8 +78,8 @@ export default async function AdminVerificationPage({ searchParams }: Props) {
           const org = orgByUser.get(request.user_id)
           const docs = (documents ?? []).filter(d => d.owner_user_id === request.user_id)
           const plan = profile.requested_plan_code ? planByCode.get(profile.requested_plan_code) : null
-          const hasIdentity = docs.some(d => d.purpose === 'identity')
-          const hasCert = docs.some(d => d.purpose === 'business_certificate')
+          const needed = requiredDocuments(profile.requested_participant_type, !!org)
+          const missingDocs = needed.filter(r => !docs.some(d => d.purpose === r))
           return <article className="card review-card" key={request.id}>
             <div className="review-head">
               <div>
@@ -108,10 +109,10 @@ export default async function AdminVerificationPage({ searchParams }: Props) {
                 ? <p className="field-help">No verification documents uploaded.</p>
                 : <div className="history-list">{docs.map(d => <div key={d.id}>
                     <strong>{d.file_name}</strong><span>{dateTime(d.created_at)}</span>
-                    <p className="muted">{humanize(d.purpose)} · <a className="arrow-link" href={`/api/documents/${d.id}`} target="_blank" rel="noopener">Open →</a></p>
+                    <p className="muted">{purposeLabel(d.purpose)} · <a className="arrow-link" href={`/api/documents/${d.id}`} target="_blank" rel="noopener">Open →</a></p>
                   </div>)}</div>}
               <p className="field-help">
-                Identity: {hasIdentity ? '✓ provided' : '✗ missing'}{['business', 'project_sponsor', 'institutional_partner', 'wtc_association_member', 'wtc_accra_member'].includes(profile.requested_participant_type ?? '') ? ` · Business certificate: ${hasCert ? '✓ provided' : '✗ missing'}` : ''}
+                {needed.map(r => `${purposeLabel(r).split(' (')[0]}: ${missingDocs.includes(r) ? '✗ missing' : '✓ provided'}`).join(' · ')}
               </p>
             </div>
 

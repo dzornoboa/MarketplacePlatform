@@ -1156,3 +1156,5 @@ a.contact-card:hover strong{color:var(--wtc-orange)}
 .report-table th a{color:var(--muted);text-decoration:none}
 .report-table th a.sort-active{color:var(--wtc-navy)}
 .report-table td{font-size:13px;padding:9px 12px 9px 0}
+
+.kyc-card{border-left:4px solid var(--wtc-navy)}

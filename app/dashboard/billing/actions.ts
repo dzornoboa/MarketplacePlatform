@@ -48,6 +48,10 @@ export async function startPayment(formData: FormData) {
   const email = typeof claimsData?.claims?.email === 'string' ? claimsData.claims.email : null
   if (!userId) redirect('/login')
 
+  // The database refuses the payment row as well; this gives a friendlier message first.
+  const { data: readiness } = await supabase.rpc('payment_readiness')
+  const ready = (readiness as { ready?: boolean } | null)?.ready === true
+  if (!ready) redirect(back('error', 'Add your billing address and upload the required documents before paying.') + '#kyc')
   const { data: subscription } = await supabase.from('subscriptions')
     .select('id,plan_code,status').eq('user_id', userId).eq('status', 'pending')
     .order('created_at', { ascending: false }).limit(1).maybeSingle()

@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { DOCUMENT_PURPOSES } from '@/lib/kyc'
 
 const BUCKET = 'platform-documents'
 const MAX_BYTES = 25 * 1024 * 1024
@@ -44,7 +45,7 @@ export async function uploadDocument(formData: FormData) {
   const dealRoomId = String(formData.get('dealRoomId') ?? '').trim() || null
   const purpose = String(formData.get('purpose') ?? 'general')
   const returnTo = String(formData.get('returnTo') ?? '/dashboard/documents')
-  if (!['general','business_certificate','identity','profile','financials','other'].includes(purpose)) redirect(back('error', 'Choose what this document is.'))
+  if (!(DOCUMENT_PURPOSES as readonly string[]).includes(purpose)) redirect(back('error', 'Choose what this document is.'))
 
   const objectPath = `${userId}/${crypto.randomUUID()}-${safeName(file.name)}`
   const { error: uploadError } = await supabase.storage.from(BUCKET)
@@ -110,7 +111,7 @@ export async function deleteDocument(formData: FormData) {
 export async function setDocumentPurpose(formData: FormData) {
   const id = String(formData.get('documentId') ?? '')
   const purpose = String(formData.get('purpose') ?? '')
-  if (!id || !['general','business_certificate','identity','profile','financials','other'].includes(purpose)) redirect(back('error', 'Choose what this document is.'))
+  if (!id || !(DOCUMENT_PURPOSES as readonly string[]).includes(purpose)) redirect(back('error', 'Choose what this document is.'))
   const supabase = await createClient()
   const { error } = await supabase.from('document_records').update({ purpose }).eq('id', id)
   if (error) redirect(back('error', error.message))
