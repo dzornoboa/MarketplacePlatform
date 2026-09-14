@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
-const back = (key: 'error' | 'message', msg: string) => `/dashboard/billing?${key}=${encodeURIComponent(msg)}#payment-details`
+const back = (key: 'error' | 'message', msg: string) => `/dashboard/billing?${key}=${encodeURIComponent(msg)}&section=payment-details#payment-details`
 const s = (fd: FormData, k: string) => String(fd.get(k) ?? '').trim()
 
 async function me() {

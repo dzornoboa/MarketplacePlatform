@@ -5,6 +5,7 @@ import type { Database } from '@/lib/database.types'
 import { SubmitButton } from '@/components/submit-button'
 import { methodTitle } from '@/lib/payments/method-title'
 import { saveBillingAddress, savePaymentMethod, setPrimaryPaymentMethod, removePaymentMethod } from '@/app/dashboard/billing/methods'
+import { CardNumberInput, PhoneInput } from '@/components/formatted-inputs'
 
 type Address = Database['public']['Tables']['billing_addresses']['Row']
 type Method = Database['public']['Tables']['payment_methods']['Row']
@@ -16,9 +17,10 @@ const YEARS = Array.from({ length: 12 }, (_, i) => new Date().getFullYear() + i)
 /* Billing address + saved payment methods. Members add cards (stored as
    brand/last4/expiry only), mobile-money numbers or a bank, edit them, pick
    a primary, and remove them. The checkout uses the primary method. */
-export function PaymentDetails({ address, methods }: { address: Address | null; methods: Method[] }) {
+export function PaymentDetails({ address, methods, notice }: { address: Address | null; methods: Method[]; notice?: { tone: 'success' | 'error'; text: string } | null }) {
   const [editing, setEditing] = useState<Method | null>(null)
   const [adding, setAdding] = useState(methods.length === 0)
+  const [editingAddress, setEditingAddress] = useState(!address)
   const [kind, setKind] = useState<Kind>('card')
   const openAdd = (k: Kind) => { setEditing(null); setKind(k); setAdding(true) }
   const openEdit = (m: Method) => { setEditing(m); setKind(m.kind as Kind); setAdding(true) }
@@ -27,9 +29,22 @@ export function PaymentDetails({ address, methods }: { address: Address | null; 
   return <section className="card" id="payment-details">
     <h2>Payment details</h2>
     <p className="muted">Your billing address appears on receipts. Saved payment methods make checkout quicker; the primary one is used by default.</p>
+    {notice && <div className={`alert alert-${notice.tone}`}>{notice.text}</div>}
 
     <div className="split-grid pay-details-grid">
-      <form action={saveBillingAddress} className="form-stack">
+      {address && !editingAddress
+        ? <div className="form-stack">
+            <h3>Billing address</h3>
+            <div className="pay-method-row pay-address-box">
+              <div>
+                <strong>{address.billing_name}</strong>{address.company && <span className="muted"> · {address.company}</span>}
+                <p className="muted">{[address.line1, address.line2, address.city, address.region, address.postal_code, address.country].filter(Boolean).join(', ')}</p>
+                {(address.email || address.phone || address.tax_id) && <p className="muted">{[address.email, address.phone, address.tax_id ? `TIN ${address.tax_id}` : null].filter(Boolean).join(' · ')}</p>}
+              </div>
+              <div className="button-row"><button type="button" className="button button-outline" onClick={() => setEditingAddress(true)}>Edit</button></div>
+            </div>
+          </div>
+        : <form action={saveBillingAddress} className="form-stack">
         <h3>Billing address</h3>
         <div className="form-grid">
           <label>Name on invoice<input name="billingName" defaultValue={address?.billing_name ?? ''} required /></label>
@@ -37,7 +52,7 @@ export function PaymentDetails({ address, methods }: { address: Address | null; 
         </div>
         <div className="form-grid">
           <label>Billing email<input name="email" type="email" defaultValue={address?.email ?? ''} /></label>
-          <label>Phone<input name="phone" defaultValue={address?.phone ?? ''} /></label>
+          <label>Phone<PhoneInput name="phone" defaultValue={address?.phone ?? ''} /></label>
         </div>
         <label>Address line 1<input name="line1" defaultValue={address?.line1 ?? ''} required /></label>
         <label>Address line 2<input name="line2" defaultValue={address?.line2 ?? ''} /></label>
@@ -50,8 +65,8 @@ export function PaymentDetails({ address, methods }: { address: Address | null; 
           <label>Country<input name="country" defaultValue={address?.country ?? 'Ghana'} required /></label>
         </div>
         <label>Tax ID / TIN (optional)<input name="taxId" defaultValue={address?.tax_id ?? ''} /></label>
-        <div><SubmitButton pendingLabel="Saving…">{address ? 'Update address' : 'Save address'}</SubmitButton></div>
-      </form>
+        <div className="button-row"><SubmitButton pendingLabel="Saving…">{address ? 'Update address' : 'Save address'}</SubmitButton>{address && <button type="button" className="button button-outline" onClick={() => setEditingAddress(false)}>Cancel</button>}</div>
+      </form>}
 
       <div className="form-stack">
         <h3>Payment methods</h3>
@@ -84,7 +99,7 @@ export function PaymentDetails({ address, methods }: { address: Address | null; 
           <label>Label (optional)<input name="label" placeholder="e.g. Company card" defaultValue={editing?.label ?? ''} /></label>
           {kind === 'card' && <>
             <label>Name on card<input name="holderName" defaultValue={editing?.holder_name ?? ''} required /></label>
-            <label>Card number{editing && <small> — leave blank to keep •••• {editing.last4}</small>}<input name="cardNumber" inputMode="numeric" autoComplete="cc-number" placeholder="1234 5678 9012 3456" required={!editing} /></label>
+            <label>Card number{editing && <small> — leave blank to keep •••• {editing.last4}</small>}<CardNumberInput name="cardNumber" required={!editing} /></label>
             <div className="form-grid">
               <label>Expiry month<select name="expMonth" defaultValue={editing?.exp_month ?? ''} required><option value="" disabled>MM</option>{Array.from({ length: 12 }, (_, i) => i + 1).map(m => <option key={m} value={m}>{String(m).padStart(2, '0')}</option>)}</select></label>
               <label>Expiry year<select name="expYear" defaultValue={editing?.exp_year ?? ''} required><option value="" disabled>YYYY</option>{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select></label>
@@ -93,7 +108,7 @@ export function PaymentDetails({ address, methods }: { address: Address | null; 
           </>}
           {kind === 'mobile_money' && <>
             <label>Network<select name="momoNetwork" defaultValue={editing?.momo_network ?? 'MTN'}><option>MTN</option><option>Telecel</option><option>AirtelTigo</option></select></label>
-            <label>Mobile-money number<input name="momoNumber" inputMode="tel" defaultValue={editing?.momo_number ?? ''} required placeholder="024 000 0000" /></label>
+            <label>Mobile-money number<PhoneInput name="momoNumber" defaultValue={editing?.momo_number ?? ''} required /></label>
             <label>Account name<input name="holderName" defaultValue={editing?.holder_name ?? ''} /></label>
           </>}
           {kind === 'bank_transfer' && <>

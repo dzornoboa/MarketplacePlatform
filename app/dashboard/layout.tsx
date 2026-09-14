@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react'
+import { Suspense } from 'react'
+import { FlashNotice } from '@/components/flash-notice'
 import Link from 'next/link'
 import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
 import { subscriptionDaysLeft } from '@/lib/auth/access'
@@ -39,5 +41,6 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       {children}
     </main>
     <RealtimeAccess userId={profile.id} />
+    <Suspense fallback={null}><FlashNotice /></Suspense>
   </div>
 }

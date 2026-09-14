@@ -5,6 +5,7 @@ import { SubmitButton } from '@/components/submit-button'
 import { humanize } from '@/lib/auth/access'
 import { money } from '@/lib/format'
 import { completeTestPayment } from '../actions'
+import { CardNumberInput, ExpiryInput, CvcInput, PhoneInput } from '@/components/formatted-inputs'
 
 export const dynamic = 'force-dynamic'
 
@@ -54,17 +55,17 @@ export default async function CheckoutPage({ searchParams }: Props) {
         {momo
           ? <>
               <label>Network<select name="network" defaultValue={saved?.momo_network === 'Telecel' ? 'vodafone' : saved?.momo_network === 'AirtelTigo' ? 'airteltigo' : 'mtn'}><option value="mtn">MTN Mobile Money</option><option value="vodafone">Telecel Cash</option><option value="airteltigo">AirtelTigo Money</option></select></label>
-              <label>Mobile money number<input name="phone" inputMode="tel" placeholder="024 000 0000" defaultValue={saved?.momo_number ?? ''} /></label>
+              <label>Mobile money number<PhoneInput name="phone" defaultValue={saved?.momo_number ?? ''} /></label>
               {saved && <p className="field-help">Using your saved {saved.momo_network} number. <Link className="arrow-link" href="/dashboard/billing#payment-details">Change →</Link></p>}
               <p className="field-help">In live mode a prompt is sent to this number to approve the payment.</p>
             </>
           : <>
               {saved
                 ? <p className="pay-saved-card"><strong>{saved.brand} •••• {saved.last4}</strong> · expires {String(saved.exp_month).padStart(2, '0')}/{saved.exp_year} · {saved.holder_name}<br /><small className="muted">Saved card. <Link className="arrow-link" href="/dashboard/billing#payment-details">Use a different card →</Link></small></p>
-                : <label>Card number<input name="card" inputMode="numeric" placeholder="4242 4242 4242 4242" /></label>}
+                : <label>Card number<CardNumberInput name="card" placeholder="4242 4242 4242 4242" /></label>}
               <div className="split-grid">
-                {!saved && <label>Expiry<input name="expiry" placeholder="MM / YY" /></label>}
-                <label>CVC<input name="cvc" inputMode="numeric" placeholder="123" /></label>
+                {!saved && <label>Expiry<ExpiryInput name="expiry" /></label>}
+                <label>CVC<CvcInput name="cvc" /></label>
               </div>
               <p className="field-help">Test mode: any values are accepted and nothing is stored.</p>
             </>}

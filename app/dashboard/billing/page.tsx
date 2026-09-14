@@ -23,6 +23,8 @@ export default async function BillingPage({ searchParams }: Props) {
   const error = typeof params.error === 'string' ? params.error : null
   const message = typeof params.message === 'string' ? params.message : null
   const payRef = typeof params.pay === 'string' ? params.pay : null
+  const section = typeof params.section === 'string' ? params.section : null
+  const sectionNotice = section === 'payment-details' && (error || message) ? { tone: error ? 'error' as const : 'success' as const, text: (error ?? message)! } : null
 
   const [{ data: plans }, { data: subscriptions }, { data: memberships }, { data: membershipTypes }, state] = await Promise.all([
     supabase.from('subscription_plans').select('*').eq('active', true).order('price_usd'),
@@ -139,8 +141,8 @@ export default async function BillingPage({ searchParams }: Props) {
       <h1>Subscription and membership</h1>
       <p className="muted">Marketplace browsing requires an active subscription. Membership is a separate WTC Accra relationship.</p>
     </div>
-    {error && <div className="alert alert-error">{error}</div>}
-    {message && <div className="alert alert-success">{message}</div>}
+    {error && !sectionNotice && <div className="alert alert-error">{error}</div>}
+    {message && !sectionNotice && <div className="alert alert-success">{message}</div>}
     {expired && <div className="alert alert-error">Your {expired.plan_code.replaceAll('_', ' ')} subscription expired on {date(expired.ends_at)}. Marketplace access is paused until you renew below.</div>}
     {active && daysLeft !== null && daysLeft <= 30 && daysLeft >= 0 && <div className="alert alert-error">Your subscription ends in {daysLeft} day{daysLeft === 1 ? '' : 's'} ({date(active.ends_at)}). Renew or change plan below to keep marketplace access.</div>}
     {awaiting && <div className="alert alert-success">Your {awaiting.plan_code.replaceAll('_', ' ')} plan is paid and awaiting WTC Accra approval. You will be notified as soon as it is confirmed.</div>}
@@ -235,7 +237,7 @@ export default async function BillingPage({ searchParams }: Props) {
       </div>)}</div>
     </section>}
 
-    <PaymentDetails address={billingAddress ?? null} methods={methods ?? []} />
+    <PaymentDetails address={billingAddress ?? null} methods={methods ?? []} notice={sectionNotice} />
 
     <section className="card">
       <h2>Subscription history</h2>

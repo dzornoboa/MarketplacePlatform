@@ -1,4 +1,6 @@
 import { SignOutButton } from '@/components/sign-out-button'
+import { Suspense } from 'react'
+import { FlashNotice } from '@/components/flash-notice'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { requireCapability } from '@/lib/auth/guards'
@@ -38,5 +40,6 @@ export default async function EditorLayout({ children }: { children: ReactNode }
       <div className="console-signout"><SignOutButton /></div>
     </header>
     <main className="admin-main">{children}</main>
+    <Suspense fallback={null}><FlashNotice /></Suspense>
   </div>
 }
