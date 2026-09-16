@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
+import { allow } from '@/lib/security/throttle'
 import { AI_MODEL, aiAvailable, anthropic } from '@/lib/ai/client'
 import { ADMIN_TOOLS, WRITE_TOOLS, runAdminTool } from '@/lib/ai/admin-tools'
 import { PLATFORM_FACTS } from '@/lib/ai/platform-map'
@@ -23,6 +24,7 @@ export async function POST(req: Request) {
   const { data: profile } = await supabase.from('profiles').select('id,full_name,system_role,account_status').eq('id', String(claims.sub)).maybeSingle()
   if (!profile || profile.system_role !== 'super_admin' || profile.account_status !== 'active') return NextResponse.json({ ok: false, error: 'Super administrator only.' }, { status: 403 })
   if (claims.aal !== 'aal2') return NextResponse.json({ ok: false, error: 'Complete the MFA step first (Security → Enter code).' }, { status: 403 })
+  if (!(await allow('admin_agent', 30, 600))) return NextResponse.json({ ok: false, error: 'Too many agent requests. Please slow down.' }, { status: 429 })
   if (!aiAvailable()) return NextResponse.json({ ok: false, error: 'ANTHROPIC_API_KEY is not configured on the server.' }, { status: 503 })
 
   const body = await req.json().catch(() => ({})) as { message?: string; history?: Turn[]; allowWrites?: boolean }

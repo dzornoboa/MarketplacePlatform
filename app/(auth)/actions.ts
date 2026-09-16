@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { safeNextPath } from '@/lib/auth/redirects'
 import { validateEmail, validatePassword, validateSignupInput } from '@/lib/auth/validation'
 import { getSiteUrl } from '@/lib/supabase/config'
+import { allow } from '@/lib/security/throttle'
 
 function withMessage(path: string, key: 'error' | 'message', message: string) {
   const separator = path.includes('?') ? '&' : '?'
@@ -17,6 +18,8 @@ export async function login(formData: FormData) {
   const password = String(formData.get('password') ?? '')
   const next = safeNextPath(String(formData.get('next') ?? '/dashboard'))
   if (validateEmail(email) || !password) redirect(withMessage('/login', 'error', 'Enter a valid email address and password.'))
+  // 10 attempts per 15 minutes per address+IP, 60 per IP: slows credential stuffing without locking real users out.
+  if (!(await allow('login', 10, 900, email)) || !(await allow('login_ip', 60, 900))) redirect(withMessage('/login', 'error', 'Too many sign-in attempts. Wait 15 minutes and try again.'))
   const supabase = await createClient()
   const { error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) redirect(withMessage('/login', 'error', 'Invalid email or password.'))
@@ -39,6 +42,7 @@ export async function signup(formData: FormData) {
   const participantType = String(formData.get('participantType') ?? '')
   const validation = validateSignupInput({ fullName, email, password, participantType })
   if (!validation.ok) redirect(withMessage('/register', 'error', Object.values(validation.errors)[0] ?? 'Check your registration details.'))
+  if (!(await allow('signup', 5, 3600))) redirect(withMessage('/register', 'error', 'Too many registrations from this connection. Try again later.'))
   const supabase = await createClient()
   const COMPANY_TYPES = new Set(['business', 'project_sponsor', 'institutional_partner', 'wtc_association_member', 'wtc_accra_member'])
   const organisationName = String(formData.get('organisationName') ?? '').trim()
@@ -69,6 +73,7 @@ export async function verifyEmailCode(formData: FormData) {
   const back = `/verify-email?email=${encodeURIComponent(email)}`
   if (validateEmail(email)) redirect(withMessage('/register', 'error', 'Start again with a valid email address.'))
   if (token.length < 6) redirect(withMessage(back, 'error', 'Enter the 6-digit code from the email.'))
+  if (!(await allow('verify_code', 8, 900, email))) redirect(withMessage(back, 'error', 'Too many attempts. Request a new code in 15 minutes.'))
   const supabase = await createClient()
   const { data, error } = await supabase.auth.verifyOtp({ email, token, type: 'signup' })
   if (error || !data.session) redirect(withMessage(back, 'error', 'That code is not valid or has expired. Request a new one below.'))
@@ -80,6 +85,7 @@ export async function resendVerificationCode(formData: FormData) {
   const email = String(formData.get('email') ?? '').trim()
   const back = `/verify-email?email=${encodeURIComponent(email)}`
   if (validateEmail(email)) redirect('/register')
+  if (!(await allow('resend_code', 3, 600, email))) redirect(withMessage(back, 'error', 'Please wait before requesting another code.'))
   const supabase = await createClient()
   const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: `${getSiteUrl()}/auth/confirm` } })
   if (error) redirect(withMessage(back, 'error', /rate|seconds/i.test(error.message) ? 'Please wait a minute before requesting another code.' : 'Could not send a new code. Try again shortly.'))
@@ -89,6 +95,7 @@ export async function resendVerificationCode(formData: FormData) {
 export async function requestPasswordReset(formData: FormData) {
   const email = String(formData.get('email') ?? '').trim()
   if (validateEmail(email)) redirect(withMessage('/forgot-password', 'error', 'Enter a valid email address.'))
+  if (!(await allow('password_reset', 3, 900, email))) redirect(withMessage('/login', 'message', 'If the account exists, a password reset email has been sent.'))
   const supabase = await createClient()
   const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${getSiteUrl()}/auth/confirm?next=/reset-password` })
   if (error) redirect(withMessage('/forgot-password', 'error', 'Unable to send the reset email. Try again.'))

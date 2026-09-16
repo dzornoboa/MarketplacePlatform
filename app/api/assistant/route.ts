@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { allow } from '@/lib/security/throttle'
 import { readAccessState } from '@/lib/auth/guards'
 import { AI_MODEL, aiAvailable, anthropic } from '@/lib/ai/client'
 import { PLATFORM_FACTS, PLATFORM_PAGES, findPages } from '@/lib/ai/platform-map'
@@ -14,7 +15,9 @@ type Reply = { answer: string; links: Array<{ href: string; title: string }>; es
    links into the platform, personalised to the caller's access state. When
    it cannot help it offers to open a support request (see ?action=escalate). */
 export async function POST(req: Request) {
+  if (!(await allow('assistant', 40, 600))) return NextResponse.json({ ok: false, error: 'Too many requests. Please slow down.' }, { status: 429 })
   const body = await req.json().catch(() => ({})) as { question?: string; history?: Turn[]; action?: 'escalate'; subject?: string }
+  if (typeof body.question === 'string' && body.question.length > 2000) return NextResponse.json({ ok: false, error: 'Question too long.' }, { status: 400 })
   const supabase = await createClient()
   const { data: claimsData } = await supabase.auth.getClaims()
   const userId = claimsData?.claims?.sub ? String(claimsData.claims.sub) : null

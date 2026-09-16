@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { allow } from '@/lib/security/throttle'
 
 const BUCKET = 'platform-documents'
 
@@ -12,6 +13,8 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
   const supabase = await createClient()
   const { data: claimsData } = await supabase.auth.getClaims()
   if (!claimsData?.claims?.sub) return NextResponse.redirect(new URL('/login', _request.url))
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return new NextResponse('Not found', { status: 404 })
+  if (!(await allow('document_open', 120, 600))) return new NextResponse('Too many document requests. Try again shortly.', { status: 429 })
 
   const { data: record } = await supabase.from('document_records')
     .select('id,object_path,file_name').eq('id', id).maybeSingle()

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { allow } from '@/lib/security/throttle'
 import { hasCapability, isAdminRole, hasAdminMfaAccess } from '@/lib/auth/access'
 import { adminReport, memberReport, toCsv, ADMIN_REPORTS, MEMBER_REPORTS, type AdminReport, type MemberReport, type ReportParams } from '@/lib/reports'
 
@@ -11,6 +12,7 @@ export async function GET(request: NextRequest) {
   const { data: claimsData } = await supabase.auth.getClaims()
   const userId = claimsData?.claims?.sub ? String(claimsData.claims.sub) : null
   if (!userId) return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
+  if (!(await allow('report_csv', 30, 600))) return NextResponse.json({ error: 'Too many exports. Try again in a few minutes.' }, { status: 429 })
   const params: ReportParams = Object.fromEntries(request.nextUrl.searchParams.entries())
   const scope = params.scope === 'admin' ? 'admin' : 'member'
   let report

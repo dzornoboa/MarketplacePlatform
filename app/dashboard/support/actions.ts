@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { allow } from '@/lib/security/throttle'
 
 function back(key: 'error' | 'message', message: string) {
   return `/dashboard/support?${key}=${encodeURIComponent(message)}`
@@ -26,6 +27,7 @@ export async function openRequest(formData: FormData) {
   if (!CATEGORIES.has(category)) redirect(back('error', 'Choose a category.'))
   if (!PRIORITIES.has(priority)) redirect(back('error', 'Choose a priority.'))
 
+  if (!(await allow('support_ticket', 5, 3600))) redirect('/dashboard/support?error=' + encodeURIComponent('You have opened several requests recently. Please wait before opening another.'))
   const { data: request, error } = await supabase.from('support_requests')
     .insert({ user_id: String(userId), subject, category, priority })
     .select('id').single()
