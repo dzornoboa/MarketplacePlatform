@@ -85,7 +85,7 @@ export default async function BillingPage({ searchParams }: Props) {
     .replace(/\.$/, '').split(/,\s*|\s+and\s+/).map(f => f.trim()).filter(Boolean)
     .map(f => f.charAt(0).toUpperCase() + f.slice(1))
   /* With no current plan, recommend the best plan the member can take today. */
-  const recommended = activePlan ? null : [...matched].filter(p => !blocker(p)).sort((a, b) => b.tier - a.tier)[0] ?? null
+  const recommended = activePlan || changeInProgress ? null : [...matched].filter(p => !blocker(p)).sort((a, b) => b.tier - a.tier)[0] ?? null
   const planAction = (plan: Plan, current: boolean, why: string | null) => current
     ? <span className="status-dot status-verified">Current plan{active?.ends_at ? ` · to ${date(active.ends_at)}` : ''}</span>
     : why
