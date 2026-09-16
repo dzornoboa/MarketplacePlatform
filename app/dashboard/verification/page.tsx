@@ -33,7 +33,7 @@ export default async function VerificationPage({ searchParams }: Props) {
     supabase.from('organization_members').select('*', { count: 'exact', head: true }).eq('user_id', profile.id),
     supabase.from('subscription_plans').select('*').eq('active', true).order('price_usd'),
     supabase.from('subscriptions').select('plan_code,status,ends_at').in('status', ['pending', 'active']).limit(1).maybeSingle(),
-    supabase.from('billing_addresses').select('id').eq('user_id', profile.id).maybeSingle(),
+    supabase.from('billing_addresses').select('user_id').eq('user_id', profile.id).maybeSingle(),
   ])
 
   const current = requests?.[0]

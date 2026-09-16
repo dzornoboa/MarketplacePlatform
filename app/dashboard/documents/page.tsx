@@ -38,7 +38,7 @@ export default async function DocumentsPage({ searchParams }: Props) {
     supabase.from('opportunities').select('id,title').eq('owner_user_id', profile.id).order('updated_at', { ascending: false }),
   ])
   const oppById = new Map((myOpportunities ?? []).map(o => [o.id, o.title]))
-  const canUpload = profile.account_status === 'active'
+  const canUpload = profile.account_status === 'active' || profile.account_status === 'pending'
 
   return <div className="page-stack narrow-content">
     <div>
