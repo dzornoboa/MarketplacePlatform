@@ -1159,12 +1159,18 @@ a.contact-card:hover strong{color:var(--wtc-orange)}
 
 .kyc-card{border-left:4px solid var(--wtc-navy)}
 
-/* --- Save/error toast mirrored from the page banner ----------------------- */
-.flash-notice{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:70;display:flex;align-items:center;gap:14px;max-width:min(560px,calc(100vw - 32px));padding:12px 16px;border-radius:6px;font-size:14px;font-weight:600;box-shadow:0 14px 34px rgba(21,64,116,.25);animation:flash-in .25s ease-out}
-.flash-success{background:var(--wtc-navy);color:#fff;border-left:4px solid var(--wtc-teal)}
-.flash-error{background:#7a1f1f;color:#fff;border-left:4px solid var(--wtc-orange)}
-.flash-notice button{background:transparent;border:0;color:inherit;font-size:20px;line-height:1;cursor:pointer;padding:0 2px}
-@keyframes flash-in{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
+/* --- Result pop-up after a save / error ---------------------------------- */
+.flash-overlay{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(21,64,116,.28);backdrop-filter:blur(2px);animation:flash-fade .18s ease-out}
+.flash-dialog{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;align-items:center;width:min(440px,100%);background:#fff;border-radius:10px;padding:20px 22px;box-shadow:0 24px 60px rgba(21,64,116,.35);border-top:5px solid var(--wtc-teal);animation:flash-pop .22s cubic-bezier(.2,.9,.3,1.2)}
+.flash-dialog.flash-error{border-top-color:var(--wtc-orange)}
+.flash-dialog strong{display:block;font-size:15px;color:var(--wtc-navy)}
+.flash-dialog p{margin:2px 0 0;font-size:14px;color:var(--ink)}
+.flash-dialog .button{grid-column:2;justify-self:end;margin-top:8px;min-width:96px}
+.flash-icon{width:36px;height:36px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#fff;background:var(--wtc-teal)}
+.flash-error .flash-icon{background:var(--wtc-orange)}
+@keyframes flash-fade{from{opacity:0}to{opacity:1}}
+@keyframes flash-pop{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.flash-overlay,.flash-dialog{animation:none}}
 .pay-address-box{align-items:flex-start}
 .pay-address-box .muted{margin:2px 0 0;font-size:13px}
 
