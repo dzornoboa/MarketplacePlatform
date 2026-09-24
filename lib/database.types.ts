@@ -177,6 +177,18 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['outbound_emails']['Insert']>
         Relationships: []
       }
+      outbound_pushes: {
+        Row: { id:string; user_id:string; title:string; body:string|null; href:string|null; status:string; error:string|null; sent_at:string|null; created_at:string }
+        Insert: { id?:string; user_id:string; title:string; body?:string|null; href?:string|null; status?:string; error?:string|null; sent_at?:string|null; created_at?:string }
+        Update: Partial<Database['public']['Tables']['outbound_pushes']['Insert']>
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: { id:string; user_id:string; endpoint:string; p256dh:string; auth:string; user_agent:string|null; created_at:string }
+        Insert: { id?:string; user_id:string; endpoint:string; p256dh:string; auth:string; user_agent?:string|null; created_at?:string }
+        Update: Partial<Database['public']['Tables']['push_subscriptions']['Insert']>
+        Relationships: []
+      }
       document_access_events: {
         Row: { id:number; document_id:string; user_id:string|null; event_type:string; created_at:string }
         Insert: { document_id:string; user_id?:string|null; event_type:string; created_at?:string }

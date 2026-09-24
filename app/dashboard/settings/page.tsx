@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { requireUserProfile } from '@/lib/auth/guards'
 import { humanize, labelForParticipantType, systemRoleLabels } from '@/lib/auth/access'
 import { date } from '@/lib/format'
+import { PushNotificationToggle } from '@/components/push-notification-toggle'
 import { updatePreferences } from './actions'
 
 export const dynamic = 'force-dynamic'
@@ -68,6 +69,8 @@ export default async function SettingsPage({ searchParams }: Props) {
       <p className="field-help">Used for dates and times shown across the platform.</p>
       <button className="button button-primary" type="submit">Save preferences</button>
     </form>
+
+    <PushNotificationToggle />
 
     <section className="card">
       <h2>Security</h2>

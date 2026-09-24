@@ -1,0 +1,13 @@
+{
+  "name": "WTC Accra Hub",
+  "short_name": "WTC Accra",
+  "description": "Connecting Businesses, Globally. A verified business, buyer and investor network by World Trade Centre Accra.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#154074",
+  "icons": [
+    { "src": "/brand/website-tab.png", "sizes": "1086x1085", "type": "image/png", "purpose": "any" }
+  ]
+}

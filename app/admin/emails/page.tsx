@@ -3,6 +3,8 @@ import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { humanize } from '@/lib/auth/access'
 import { dateTime } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
+import { SubmitButton } from '@/components/submit-button'
+import { sendQueuedNow } from './actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,9 +13,9 @@ type Props = { searchParams: Promise<Record<string, string | string[] | undefine
 const TABS = ['queued', 'sent', 'failed'] as const
 
 /* Connection notices are written to outbound_emails by request_connection().
-   Until custom SMTP is configured nothing can actually send, so this page is
-   both the delivery backlog and the proof that the copy-to-WTC-Accra rule fired
-   for every request. */
+   A DB trigger wakes /api/internal/process-notifications right after each
+   insert (Resend for email, web-push for phone notifications); "Send now"
+   below drains the queue on demand for testing. */
 export default async function AdminEmailsPage({ searchParams }: Props) {
   const { supabase } = await requireAdminProfile()
   const params = await searchParams
@@ -21,6 +23,8 @@ export default async function AdminEmailsPage({ searchParams }: Props) {
   const q = typeof params.q === 'string' ? params.q.trim() : ''
   const kind = typeof params.kind === 'string' ? params.kind : ''
   const sort = typeof params.sort === 'string' && ['newest', 'oldest'].includes(params.sort) ? params.sort : 'newest'
+  const error = typeof params.error === 'string' ? params.error : null
+  const message = typeof params.message === 'string' ? params.message : null
 
   let query = supabase.from('outbound_emails').select('*').eq('status', status).limit(200)
   if (q) query = query.or(`to_email.ilike.%${q}%,subject.ilike.%${q}%`)
@@ -36,16 +40,24 @@ export default async function AdminEmailsPage({ searchParams }: Props) {
 
   return <div className="page-stack">
     <RealtimeRefresh tables={["outbound_emails"]} />
-    <div>
-      <p className="eyebrow">Delivery</p>
-      <h1>Outbound email queue</h1>
-      <p className="muted">Bid, connection, verification, plan and staff messages are queued here. Once custom SMTP is configured a worker sends them; until then this is the delivery backlog.</p>
+    <div className="review-head">
+      <div>
+        <p className="eyebrow">Delivery</p>
+        <h1>Outbound email queue</h1>
+        <p className="muted">Bid, connection, verification, plan and staff messages are queued here, then sent via Resend and delivered as phone push notifications automatically. Use Send now to drain the backlog immediately (useful right after adding RESEND_API_KEY / VAPID env vars).</p>
+      </div>
+      <form action={sendQueuedNow}>
+        <SubmitButton pendingLabel="Sending…">Send now</SubmitButton>
+      </form>
     </div>
+
+    {error && <div className="alert alert-error">{error}</div>}
+    {message && <div className="alert alert-success">{message}</div>}
 
     {queued > 0 && <section className="restriction-banner">
       <div>
         <strong>{queued} {queued === 1 ? 'message is' : 'messages are'} waiting to send</strong>
-        <p>This project is still on Supabase&rsquo;s default sender, which is capped at 2 emails per hour and cannot be raised. Configure custom SMTP and a worker can drain this backlog — nothing here is lost in the meantime.</p>
+        <p>Delivery needs RESEND_API_KEY (and SUPABASE_SERVICE_ROLE_KEY) configured on this deployment. Until then messages queue here safely — nothing is lost.</p>
       </div>
     </section>}
 

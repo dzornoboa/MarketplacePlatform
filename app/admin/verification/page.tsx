@@ -64,7 +64,7 @@ export default async function AdminVerificationPage({ searchParams }: Props) {
       <label>Participant type
         <select name="type" defaultValue={type}>
           <option value="">All types</option>
-          {['investor', 'buyer', 'business', 'project_sponsor', 'wtc_association_member', 'wtc_accra_member', 'institutional_partner'].map(t => <option key={t} value={t}>{labelForParticipantType(t)}</option>)}
+          {['investor', 'business', 'wtc_association_member', 'wtc_accra_member'].map(t => <option key={t} value={t}>{labelForParticipantType(t)}</option>)}
         </select>
       </label>
       <label>Sort<select name="sort" defaultValue={sort}><option value="oldest">Oldest first</option><option value="newest">Newest first</option></select></label>

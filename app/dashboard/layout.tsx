@@ -22,11 +22,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const state = await readAccessState(supabase)
   const count = unread
   const daysLeft = state ? subscriptionDaysLeft(state) : null
-  const planLabel = state?.subscription_plan
-    ? `${state.subscription_plan.replaceAll('_', ' ')} · active`
-    : state?.subscription_status === 'pending' ? 'Plan chosen · payment due'
-    : state?.subscription_status === 'awaiting_approval' ? 'Plan paid · awaiting approval'
-    : state?.subscription_status === 'expired' ? 'Plan expired' : null
+  const planName = state?.subscription_plan_name ?? null
+  const planLabel = state?.has_active_subscription && planName ? `${planName} · active`
+    : state?.subscription_status === 'pending' ? `${planName ?? 'Membership'} · payment due`
+    : state?.subscription_status === 'awaiting_approval' ? `${planName ?? 'Membership'} · awaiting approval`
+    : state?.subscription_status === 'expired' ? `${planName ?? 'Membership'} · expired` : null
   const memberOnly = profile.system_role === 'user'
   const expiryNotice = memberOnly && state?.subscription_status === 'expired'
     ? { tone: 'error', text: 'Your subscription has expired. Marketplace access is paused until you renew.', cta: 'Renew now' }

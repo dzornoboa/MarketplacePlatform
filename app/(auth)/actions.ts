@@ -7,6 +7,7 @@ import { safeNextPath } from '@/lib/auth/redirects'
 import { validateEmail, validatePassword, validateSignupInput } from '@/lib/auth/validation'
 import { getSiteUrl } from '@/lib/supabase/config'
 import { allow } from '@/lib/security/throttle'
+import { checkEmailAddress } from '@/lib/email/verify-address'
 
 function withMessage(path: string, key: 'error' | 'message', message: string) {
   const separator = path.includes('?') ? '&' : '?'
@@ -43,8 +44,11 @@ export async function signup(formData: FormData) {
   const validation = validateSignupInput({ fullName, email, password, participantType })
   if (!validation.ok) redirect(withMessage('/register', 'error', Object.values(validation.errors)[0] ?? 'Check your registration details.'))
   if (!(await allow('signup', 5, 3600))) redirect(withMessage('/register', 'error', 'Too many registrations from this connection. Try again later.'))
+  // The address must be deliverable before an account exists for it.
+  const address = await checkEmailAddress(email)
+  if (!address.ok) redirect(withMessage('/register', 'error', address.reason))
   const supabase = await createClient()
-  const COMPANY_TYPES = new Set(['business', 'project_sponsor', 'institutional_partner', 'wtc_association_member', 'wtc_accra_member'])
+  const COMPANY_TYPES = new Set(['business', 'wtc_association_member', 'wtc_accra_member'])
   const organisationName = String(formData.get('organisationName') ?? '').trim()
   if (COMPANY_TYPES.has(participantType) && organisationName.length < 2) redirect(withMessage('/register', 'error', 'Enter your organisation name.'))
   const WTC_TYPES = new Set(['wtc_accra_member', 'wtc_association_member'])

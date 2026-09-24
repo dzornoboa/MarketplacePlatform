@@ -22,8 +22,9 @@ export default async function MandatePage({ searchParams }: Props) {
   const mandate = mandates?.[0]
   const requirement = requirements?.[0]
   const type = profile.participant_type
-  const canInvest = type === 'investor' || type === 'institutional_partner'
-  const canBuy = type === 'buyer' || type === 'institutional_partner'
+  const WTC = type === 'wtc_association_member' || type === 'wtc_accra_member'
+  const canInvest = type === 'investor' || WTC
+  const canBuy = type === 'business' || WTC
 
   return <div className="page-stack narrow-content">
     <div>
@@ -37,7 +38,7 @@ export default async function MandatePage({ searchParams }: Props) {
     {!canInvest && !canBuy && <section className="restriction-banner">
       <div>
         <strong>Mandates are recorded by investors and buyers</strong>
-        <p>Your participant type is {labelForParticipantType(type)}. Investors record an investment mandate; buyers record a buying requirement. Both are used by the WTC Accra trade desk to match you — if your role should include one of these, ask WTC Accra to review your participant type.</p>
+        <p>Your membership group is {labelForParticipantType(type)}. Investors record an investment mandate; businesses record a buying requirement; WTC members may record both. Ask WTC Accra to review your group if that looks wrong.</p>
       </div>
       <Link className="button button-light" href="/dashboard/verification">Open verification</Link>
     </section>}

@@ -113,11 +113,10 @@ export default async function BillingPage({ searchParams }: Props) {
   }
   /* Everything else stays out of the way: one compact row per plan, grouped by audience. */
   const AUDIENCES: { label: string; types: string[] }[] = [
-    { label: 'WTC members', types: ['wtc_accra_member', 'wtc_association_member'] },
-    { label: 'Institutions, government and DFIs', types: ['institutional_partner'] },
     { label: 'Investors', types: ['investor'] },
-    { label: 'Businesses and buyers', types: ['business', 'buyer'] },
-    { label: 'Project sponsors', types: ['project_sponsor'] },
+    { label: 'WTC Accra members', types: ['wtc_accra_member'] },
+    { label: 'WTCA members', types: ['wtc_association_member'] },
+    { label: 'Businesses', types: ['business'] },
   ]
   const grouped = AUDIENCES.map(a => ({ ...a, plans: others.filter(p => p.target_participant_types.some(t => a.types.includes(t))) }))
     .filter(a => a.plans.length > 0)
@@ -139,7 +138,7 @@ export default async function BillingPage({ searchParams }: Props) {
     <div>
       <p className="eyebrow">Billing and membership</p>
       <h1>Subscription and membership</h1>
-      <p className="muted">Marketplace browsing requires an active subscription. Membership is a separate WTC Accra relationship.</p>
+      <p className="muted">Membership is billed annually and opens the marketplace for twelve months. Access pauses on the renewal date until the next year is paid.</p>
     </div>
     {error && !sectionNotice && <div className="alert alert-error">{error}</div>}
     {message && !sectionNotice && <div className="alert alert-success">{message}</div>}
@@ -216,7 +215,7 @@ export default async function BillingPage({ searchParams }: Props) {
     <section className="pricing-section">
       <div className="pricing-head">
         <h2>{matched.length > 0 ? `Plans for ${labelForParticipantType(myType)} participants` : 'Plans'}</h2>
-        <p className="muted">Billed annually. Pay by card, mobile money or bank transfer; the marketplace opens as soon as the payment is confirmed.</p>
+        <p className="muted">One annual membership fee per group, billed yearly. Pay by card, mobile money or bank transfer; the marketplace opens as soon as the payment is confirmed.</p>
       </div>
       {matched.length > 0 && <div className="pricing-cards" data-count={matched.length}>{matched.map(pricingCard)}</div>}
       {others.length > 0 && <details className="plan-others">

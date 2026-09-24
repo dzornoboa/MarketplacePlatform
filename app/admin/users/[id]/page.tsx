@@ -48,7 +48,7 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
   const orgIds = (orgLinks ?? []).map(o => o.organization_id)
   const { data: orgs } = orgIds.length ? await supabase.from('organizations').select('*').in('id', orgIds) : { data: [] }
   const current = (subs ?? []).find(s => s.status === 'active') ?? (subs ?? []).find(s => s.status === 'pending')
-  const company = ['business', 'project_sponsor', 'institutional_partner', 'wtc_association_member', 'wtc_accra_member'].includes(person.participant_type ?? person.requested_participant_type ?? '')
+  const company = ['business', 'wtc_association_member', 'wtc_accra_member'].includes(person.participant_type ?? person.requested_participant_type ?? '')
 
   return <div className="page-stack">
     <RealtimeRefresh tables={["profiles","subscriptions","payments","verification_requests"]} />

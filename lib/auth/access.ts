@@ -11,27 +11,38 @@ export const participantTypes = [
 
 export type ParticipantType = (typeof participantTypes)[number]
 
-/* Participant types a member may choose at registration. `staff` is assigned by
-   WTC Accra only; `institutional_partner` is granted after review. */
+/* The four membership groups a member may choose at registration. `staff` is
+   assigned by WTC Accra only; `buyer`, `project_sponsor` and
+   `institutional_partner` are retired groups kept for historic records — they
+   read as Business wherever they still appear. */
 export const selectableParticipantTypes = [
   'investor',
-  'buyer',
   'business',
-  'project_sponsor',
   'wtc_association_member',
   'wtc_accra_member',
 ] as const
 
 export const participantTypeLabels: Record<ParticipantType, string> = {
   investor: 'Investor',
-  buyer: 'Buyer',
   business: 'Business',
-  project_sponsor: 'Project sponsor',
-  wtc_association_member: 'WTC Association member',
-  wtc_accra_member: 'WTC Accra member',
+  wtc_association_member: 'WTCA Member',
+  wtc_accra_member: 'WTC Accra Member',
   staff: 'WTC Accra staff',
-  institutional_partner: 'Institutional partner',
+  // Retired groups, folded into Business.
+  buyer: 'Business',
+  project_sponsor: 'Business',
+  institutional_partner: 'Business',
 }
+
+/* Annual membership fee per group, for copy that names a price before the
+   plans are loaded. The subscription_plans table stays the source of truth. */
+export const membershipFees: Record<string, number> = {
+  investor: 1750,
+  wtc_accra_member: 3750,
+  wtc_association_member: 5750,
+  business: 8750,
+}
+export const feeFor = (type: string | null | undefined) => (type && membershipFees[type]) ?? null
 
 export const systemRoles = [
   'user',
@@ -164,6 +175,8 @@ export type AccessState = {
   can_post_opportunities: boolean
   has_active_subscription: boolean
   has_paid_plan?: boolean
+  subscription_plan_name?: string | null
+  subscription_fee?: number | null
   subscription_ends_at: string | null
   subscription_plan?: string | null
   subscription_status?: string | null

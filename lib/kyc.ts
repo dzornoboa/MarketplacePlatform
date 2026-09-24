@@ -2,7 +2,7 @@
    documents page and the console. Mirrors public.payment_readiness() in the
    database, which is the enforcement point (no payment row without them). */
 
-export const COMPANY_TYPES = new Set(['business', 'project_sponsor', 'institutional_partner', 'wtc_association_member', 'wtc_accra_member'])
+export const COMPANY_TYPES = new Set(['business', 'wtc_association_member', 'wtc_accra_member', 'project_sponsor', 'institutional_partner'])
 
 export const DOCUMENT_PURPOSES = ['identity', 'business_certificate', 'tax_document', 'proof_of_address', 'proof_of_funds', 'profile', 'financials', 'supporting', 'general', 'other'] as const
 export type DocumentPurpose = (typeof DOCUMENT_PURPOSES)[number]
@@ -24,6 +24,7 @@ export const purposeLabel = (p: string) => (purposeLabels as Record<string, stri
 /* Company rules also apply to buyers and investors who registered an organisation. */
 export function isCompanyType(type: string | null | undefined, hasOrganisation = false): boolean {
   return !!type && (COMPANY_TYPES.has(type) || (hasOrganisation && (type === 'buyer' || type === 'investor')))
+  // Investors registering as a firm follow the company rules; individuals do not.
 }
 
 /* Documents a participant type must upload before paying or verifying. */

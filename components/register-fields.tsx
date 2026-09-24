@@ -3,16 +3,13 @@
 import { useState } from 'react'
 import { selectableParticipantTypes, participantTypeLabels } from '@/lib/auth/access'
 
-const COMPANY_TYPES = new Set(['business', 'project_sponsor', 'institutional_partner', 'wtc_association_member', 'wtc_accra_member'])
+const COMPANY_TYPES = new Set(['business', 'wtc_association_member', 'wtc_accra_member'])
 const WTC_TYPES = new Set(['wtc_association_member', 'wtc_accra_member'])
 const HINT: Record<string, string> = {
-  investor: 'Browse and bid on vetted opportunities. A free Verified Investor Basic plan is available after verification.',
-  buyer: 'Source verified suppliers and post buying requirements. Plans start at US$350 a year.',
-  business: 'Raise capital, find buyers and partners. Upload your business registration certificate for verification.',
-  project_sponsor: 'Present projects to investors. Upload your registration certificate and project documents.',
-  wtc_accra_member: 'For WTC Accra members. Registration must use your @wtcaccra.com email address; WTC Accra confirms membership.',
-  wtc_association_member: 'For WTCA network members. Registration must use your @wtcaccra.com email address; WTC Accra confirms membership.',
-  institutional_partner: 'Institutions, chambers, embassies, government agencies and DFIs. A verified organisation is required.',
+  investor: 'Individuals, funds and institutions deploying capital. Investment mandate, curated deal flow and managed introductions. US$1,750 a year.',
+  business: 'Companies raising capital, sourcing suppliers or finding buyers and partners. Post opportunities, receive bids and open deal rooms. US$8,750 a year.',
+  wtc_association_member: 'Members of the World Trade Centers Association network. Registration must use your @wtcaccra.com email address; WTC Accra confirms membership. US$5,750 a year.',
+  wtc_accra_member: 'Members of World Trade Centre Accra. Registration must use your @wtcaccra.com email address; WTC Accra confirms membership. US$3,750 a year.',
 }
 
 /* The account-type choice drives the rest of the form: companies and
@@ -43,7 +40,7 @@ export function RegisterFields({ email, plans = [], initialPlan = '', initialTyp
       </select>
     </label>
     {type && <p className="field-help">{HINT[type]}</p>}
-    {company && <label>{type === 'institutional_partner' ? 'Institution / agency name' : 'Company name'}<input name="organisationName" required placeholder="Registered name" /></label>}
+    {company && <label>Organisation name<input name="organisationName" required placeholder="Registered name" /></label>}
     {wtc && <div className="form-grid">
       <label>WTCA membership number<input name="wtcaMembershipNumber" placeholder="If you have one" /></label>
       <label>WTC chapter<input name="wtcaChapter" placeholder="e.g. WTC Accra" /></label>
