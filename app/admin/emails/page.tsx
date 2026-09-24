@@ -59,6 +59,20 @@ export default async function AdminEmailsPage({ searchParams }: Props) {
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
 
+    <section className="card">
+      <h2>Mail setup</h2>
+      <p className="muted">Which delivery settings this deployment can see. Values are never shown — only whether they are present.</p>
+      <dl className="detail-grid detail-grid-two">
+        <div><dt>SMTP host</dt><dd>{process.env.SMTP_HOST ? `✓ ${process.env.SMTP_HOST}` : "✗ not set"}</dd></div>
+        <div><dt>SMTP port</dt><dd>{process.env.SMTP_PORT ?? "465 (default)"}</dd></div>
+        <div><dt>SMTP user</dt><dd>{process.env.SMTP_USER ? "✓ set" : "✗ not set"}</dd></div>
+        <div><dt>SMTP password</dt><dd>{process.env.SMTP_PASSWORD ? "✓ set" : "✗ not set"}</dd></div>
+        <div><dt>From address</dt><dd>{process.env.EMAIL_FROM ?? "WTC Accra Hub <membership@wtcaccra.com> (default)"}</dd></div>
+        <div><dt>Service role key</dt><dd>{process.env.SUPABASE_SERVICE_ROLE_KEY ? "✓ set" : "✗ not set — the queue cannot drain"}</dd></div>
+      </dl>
+      <p className="field-help">Set these in Vercel → your project → Settings → Environment Variables (Production), then redeploy and press “Send a test to me”.</p>
+    </section>
+
     {queued > 0 && <section className="restriction-banner">
       <div>
         <strong>{queued} {queued === 1 ? 'message is' : 'messages are'} waiting to send</strong>
