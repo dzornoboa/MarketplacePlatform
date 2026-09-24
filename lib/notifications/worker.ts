@@ -1,5 +1,5 @@
 import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js'
-import { Resend } from 'resend'
+import nodemailer from 'nodemailer'
 import webpush from 'web-push'
 import type { Database } from '@/lib/database.types'
 import { getSupabasePublicConfig } from '@/lib/supabase/config'
@@ -26,26 +26,45 @@ export function adminClient(): SupabaseClient<Database> | null {
   return createSupabaseClient<Database>(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } })
 }
 
-/* Drains the outbound_emails queue via Resend. Rows stay 'queued' (never
-   mislabeled 'failed') when RESEND_API_KEY simply isn't configured yet. */
+/* Drains the outbound_emails queue over SMTP — the same mailbox configured
+   as Supabase custom SMTP, so platform mail and Supabase auth mail leave from
+   one sender. Rows stay 'queued' (never mislabeled 'failed') when SMTP is
+   not configured yet. */
+export function smtpConfigured(): boolean {
+  return !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD)
+}
+
+function transport() {
+  const port = Number(process.env.SMTP_PORT ?? 465)
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port,
+    // 465 is implicit TLS; 587 and 25 upgrade with STARTTLS.
+    secure: port === 465,
+    auth: { user: process.env.SMTP_USER as string, pass: process.env.SMTP_PASSWORD as string },
+  })
+}
+
 export async function drainEmails(admin: SupabaseClient<Database>) {
-  const apiKey = process.env.RESEND_API_KEY
-  if (!apiKey) return { attempted: 0, sent: 0, note: 'RESEND_API_KEY not set — left queued' }
-  const resend = new Resend(apiKey)
-  const from = process.env.EMAIL_FROM || 'WTC Accra Hub <onboarding@resend.dev>'
+  if (!smtpConfigured()) return { attempted: 0, sent: 0, note: 'SMTP not configured — left queued' }
+  const from = process.env.EMAIL_FROM || 'WTC Accra Hub <membership@wtcaccra.com>'
+  const replyTo = process.env.EMAIL_REPLY_TO || 'membership@wtcaccra.com'
+  const mailer = transport()
 
   const { data: rows } = await admin.from('outbound_emails').select('*').eq('status', 'queued')
     .order('created_at', { ascending: true }).limit(BATCH_SIZE)
   let sent = 0
   for (const row of rows ?? []) {
-    const { error } = await resend.emails.send({ from, to: row.to_email, subject: row.subject, text: row.body, html: brandedHtml(row.subject, row.body), replyTo: process.env.EMAIL_REPLY_TO || "membership@wtcaccra.com" })
-    if (error) {
-      await admin.from('outbound_emails').update({ status: 'failed', error: error.message }).eq('id', row.id)
-    } else {
+    try {
+      await mailer.sendMail({ from, to: row.to_email, replyTo, subject: row.subject, text: row.body, html: brandedHtml(row.subject, row.body) })
       await admin.from('outbound_emails').update({ status: 'sent', sent_at: new Date().toISOString(), error: null }).eq('id', row.id)
       sent += 1
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Send failed'
+      await admin.from('outbound_emails').update({ status: 'failed', error: message }).eq('id', row.id)
     }
   }
+  mailer.close()
   return { attempted: rows?.length ?? 0, sent }
 }
 

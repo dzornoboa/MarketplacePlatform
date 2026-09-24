@@ -4,7 +4,7 @@ import { humanize } from '@/lib/auth/access'
 import { dateTime } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
 import { SubmitButton } from '@/components/submit-button'
-import { sendQueuedNow } from './actions'
+import { sendQueuedNow, sendTestEmail } from './actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,7 +14,7 @@ const TABS = ['queued', 'sent', 'failed'] as const
 
 /* Connection notices are written to outbound_emails by request_connection().
    A DB trigger wakes /api/internal/process-notifications right after each
-   insert (Resend for email, web-push for phone notifications); "Send now"
+   insert (SMTP for email, web-push for phone notifications); "Send now"
    below drains the queue on demand for testing. */
 export default async function AdminEmailsPage({ searchParams }: Props) {
   const { supabase } = await requireAdminProfile()
@@ -44,11 +44,16 @@ export default async function AdminEmailsPage({ searchParams }: Props) {
       <div>
         <p className="eyebrow">Delivery</p>
         <h1>Outbound email queue</h1>
-        <p className="muted">Bid, connection, verification, plan and staff messages are queued here, then sent via Resend and delivered as phone push notifications automatically. Use Send now to drain the backlog immediately (useful right after adding RESEND_API_KEY / VAPID env vars).</p>
+        <p className="muted">Bid, connection, verification, plan and staff messages are queued here, then sent over SMTP and delivered as phone push notifications automatically. Use Send now to drain the backlog immediately (useful right after adding RESEND_API_KEY / VAPID env vars).</p>
       </div>
+      <div className="button-row">
       <form action={sendQueuedNow}>
         <SubmitButton pendingLabel="Sending…">Send now</SubmitButton>
       </form>
+      <form action={sendTestEmail}>
+        <SubmitButton className="button button-outline" pendingLabel="Sending…">Send a test to me</SubmitButton>
+      </form>
+      </div>
     </div>
 
     {error && <div className="alert alert-error">{error}</div>}
@@ -57,7 +62,7 @@ export default async function AdminEmailsPage({ searchParams }: Props) {
     {queued > 0 && <section className="restriction-banner">
       <div>
         <strong>{queued} {queued === 1 ? 'message is' : 'messages are'} waiting to send</strong>
-        <p>Delivery needs RESEND_API_KEY (and SUPABASE_SERVICE_ROLE_KEY) configured on this deployment. Until then messages queue here safely — nothing is lost.</p>
+        <p>Delivery needs the SMTP credentials (SMTP_HOST, SMTP_USER, SMTP_PASSWORD, EMAIL_FROM) and SUPABASE_SERVICE_ROLE_KEY configured on this deployment. Until then messages queue here safely — nothing is lost.</p>
       </div>
     </section>}
 
