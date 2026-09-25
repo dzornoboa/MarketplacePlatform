@@ -2,23 +2,50 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
-/* Supabase can return auth results in the URL *hash* (`#error=...`,
-   `#access_token=...`). A hash never reaches the server, so a failed reset
-   link used to land on the home page with the error invisible — the user just
-   saw the marketing site, or a dead localhost page.
-   This picks those up on any route and forwards them to /auth/confirm, which
-   turns them into a readable message on the page that can fix the problem. */
+/* Supabase hands auth results back in three shapes, and two of them never
+   reach the server:
+
+   - `#access_token=…&refresh_token=…` — the implicit flow, which is what
+     invitations and links sent from the Supabase dashboard produce. The
+     tokens are complete on their own, so the session is set right here. This
+     works in any browser, which matters because invited people open the link
+     on a device that never started the flow.
+   - `#error=…` — a refusal (expired, already used, revoked).
+   - `?code=` / `?token_hash=` — handled on the server by /auth/confirm.
+
+   Without this, an invitation opened on a phone landed on the marketing site
+   with the tokens stranded in the hash. */
 export function AuthLinkHandler() {
   const router = useRouter()
 
   useEffect(() => {
     const { hash, search, pathname } = window.location
-    // Already on the handler route: the server component owns it.
-    if (pathname === '/auth/confirm') return
-
     const fromHash = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash)
     const fromQuery = new URLSearchParams(search)
+
+    const accessToken = fromHash.get('access_token')
+    const refreshToken = fromHash.get('refresh_token')
+    const type = fromHash.get('type') ?? fromQuery.get('type')
+
+    if (accessToken && refreshToken) {
+      window.history.replaceState(null, '', pathname)
+      const destination = type === 'recovery' ? '/reset-password'
+        : type === 'invite' ? '/set-password'
+        : type === 'email_change' ? '/dashboard/settings'
+        : '/dashboard'
+      createClient().auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+        .then(({ error }) => {
+          if (error) router.replace(`/login?error=${encodeURIComponent('That link could not be completed. Request a new one.')}`)
+          else router.replace(destination)
+          router.refresh()
+        })
+      return
+    }
+
+    // Already on the handler route: the server component owns it.
+    if (pathname === '/auth/confirm') return
 
     /* Only Supabase-shaped payloads are actionable. A bare `?error=` in the
        query is this app's own human-readable message — forwarding that would

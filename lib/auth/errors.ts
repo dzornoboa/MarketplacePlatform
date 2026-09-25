@@ -21,6 +21,24 @@ export function friendlyAuthError(
   const recovery = type === 'recovery'
   const invite = type === 'invite'
 
+  /* A PKCE link can only be completed in the browser that asked for it: the
+     code verifier lives in that browser. Opening the email on a phone, or an
+     invitation that was sent from the Supabase dashboard, lands here — and
+     "expired" would be the wrong thing to tell the member. */
+  const noVerifier = code === 'exchange_failed' && /verifier|code challenge|invalid request/i.test(description ?? '')
+  if (noVerifier) {
+    if (recovery) {
+      return {
+        message: 'Open the reset link in the same browser where you asked for it — or request a fresh link below and open it straight from that device.',
+        path: '/forgot-password',
+      }
+    }
+    return {
+      message: 'That link has to be opened in the browser it was requested from. Request a new one, or sign in if your account is already active.',
+      path: '/login',
+    }
+  }
+
   switch (code) {
     case 'otp_expired':
     case 'exchange_failed':
