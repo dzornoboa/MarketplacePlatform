@@ -21,7 +21,7 @@ export async function GET() {
       const name = row.name?.common?.trim()
       const root = row.idd?.root ?? ''
       const suffix = row.idd?.suffixes?.[0] ?? ''
-      const callingCode = root && suffix ? `${root}${suffix}` : root || ''
+      const callingCode = code === 'US' || code === 'CA' ? '+1' : root && suffix ? `${root}${suffix}` : root || ''
       return code && name ? [{ code, name, callingCode }] : []
     }).sort((a, b) => a.name.localeCompare(b.name))
     return NextResponse.json({ countries }, { headers: { 'Cache-Control': 'public, max-age=3600, s-maxage=86400' } })
