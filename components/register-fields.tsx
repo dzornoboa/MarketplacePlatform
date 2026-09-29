@@ -30,6 +30,17 @@ export function RegisterFields({ email, plans = [], initialPlan = '', initialTyp
   const [type, setType] = useState(initialType)
   const [plan, setPlan] = useState(initialPlan)
   const [mail, setMail] = useState(email ?? '')
+  const [dob, setDob] = useState('')
+  const age = (() => {
+    if (!dob) return ''
+    const birth = new Date(`${dob}T00:00:00Z`)
+    if (Number.isNaN(birth.getTime())) return ''
+    const now = new Date()
+    let years = now.getUTCFullYear() - birth.getUTCFullYear()
+    const month = now.getUTCMonth() - birth.getUTCMonth()
+    if (month < 0 || (month === 0 && now.getUTCDate() < birth.getUTCDate())) years--
+    return years >= 0 ? String(years) : ''
+  })()
   const eligible = plans.filter(pl => pl.target_participant_types.length === 0 || (type && pl.target_participant_types.includes(type)))
   const chosen = eligible.find(pl => pl.code === plan) ?? null
   const pickType = (t: string) => { setType(t); if (!plans.find(pl => pl.code === plan && (pl.target_participant_types.length === 0 || pl.target_participant_types.includes(t)))) setPlan('') }
@@ -59,7 +70,10 @@ export function RegisterFields({ email, plans = [], initialPlan = '', initialTyp
       <label>Country<input name="country" autoComplete="country-name" defaultValue="Ghana" /></label>
     </div>
     <div className="form-grid">
-      <label>Date Of Birth<input name="dateOfBirth" type="date" autoComplete="bday" required /></label>
+      <label>Date Of Birth<input name="dateOfBirth" type="date" autoComplete="bday" required value={dob} onChange={e => setDob(e.target.value)} /></label>
+      <label>Age<input value={age} readOnly aria-label="Age calculated from date of birth" /></label>
+    </div>
+    <div className="form-grid">
       <label>Identification Type
         <select name="idType" required defaultValue="">
           <option value="" disabled>Select Identification Type</option>
