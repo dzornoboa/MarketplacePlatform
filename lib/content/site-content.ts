@@ -165,7 +165,7 @@ export async function getHomeContent(): Promise<HomeContent> {
 /* ---- Public chrome: header nav, footer columns and global strings -------- */
 
 export type NavLink = { label: string; href: string }
-export type SiteChrome = { header: NavLink[]; footerPlatform: NavLink[]; settings: Record<string, string> }
+export type SiteChrome = { header: NavLink[]; footerPlatform: NavLink[]; legal: NavLink[]; settings: Record<string, string> }
 
 export const CHROME_FALLBACK: SiteChrome = {
   header: [
@@ -178,10 +178,14 @@ export const CHROME_FALLBACK: SiteChrome = {
   ],
   footerPlatform: [
     { label: 'About', href: '/#about' },
-    { label: 'How it works', href: '/#how-it-works' },
+    { label: 'How It Works', href: '/#how-it-works' },
     { label: 'Membership', href: '/#membership' },
-    { label: 'News and resources', href: '/news' },
-    { label: 'Member sign in', href: '/login' },
+    { label: 'News And Resources', href: '/news' },
+    { label: 'Member Sign In', href: '/login' },
+  ],
+  legal: [
+    { label: 'Privacy Policy', href: '/privacy' },
+    { label: 'Copyright & DMCA', href: '/copyright' },
   ],
   settings: {
     site_tagline: 'Connecting Businesses, Globally.',
@@ -209,9 +213,11 @@ async function loadSiteChrome(): Promise<SiteChrome> {
     const pick = (placement: string) => links.filter(l => l.placement === placement).map(l => ({ label: l.label, href: l.href }))
     const header = pick('header')
     const footerPlatform = pick('footer_platform')
+    const legal = pick('legal')
     return {
       header: header.length ? header : CHROME_FALLBACK.header,
       footerPlatform: footerPlatform.length ? footerPlatform : CHROME_FALLBACK.footerPlatform,
+      legal: legal.length ? legal : CHROME_FALLBACK.legal,
       settings: { ...CHROME_FALLBACK.settings, ...Object.fromEntries((settings ?? []).map(s => [s.key, s.value])) },
     }
   } catch {
