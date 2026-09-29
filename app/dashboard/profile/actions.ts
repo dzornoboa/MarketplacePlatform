@@ -12,6 +12,8 @@ export async function updateProfile(formData: FormData) {
   const phone = String(formData.get('phone') ?? '').trim() || null
   const jobTitle = String(formData.get('jobTitle') ?? '').trim() || null
   const country = String(formData.get('country') ?? '').trim() || null
+  const countryCode = String(formData.get('countryCode') ?? '').trim().toUpperCase() || null
+  const phoneCountryCode = String(formData.get('phoneCountryCode') ?? '').trim() || null
   const city = String(formData.get('city') ?? '').trim() || null
   const dateOfBirth = String(formData.get('dateOfBirth') ?? '').trim()
   const idType = String(formData.get('idType') ?? '').trim()
@@ -29,7 +31,7 @@ export async function updateProfile(formData: FormData) {
   if (idNumber.length < 3 || idNumber.length > 80) redirect('/dashboard/profile?error=Enter%20a%20valid%20identification%20number.')
 
   const patch: Database['public']['Tables']['profiles']['Update'] = {
-    full_name: fullName, username, phone, job_title: jobTitle, country, city,
+    full_name: fullName, username, phone, phone_country_code: phoneCountryCode, job_title: jobTitle, country, country_code: countryCode, city,
     date_of_birth: dateOfBirth, id_type: idType, id_number: idNumber,
   }
 
