@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import { createClient } from '@/lib/supabase/server'
 import { labelForParticipantType } from '@/lib/auth/access'
+import { allow } from '@/lib/security/throttle'
+import { getSupabasePublicConfig } from '@/lib/supabase/config'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -15,10 +17,12 @@ function fitText(text: string, max = 62) {
   return clean.length > max ? clean.slice(0, max - 1) + '…' : clean
 }
 
-async function embedRemoteImage(pdf: PDFDocument, url: string | null | undefined) {
+async function embedRemoteImage(pdf: PDFDocument, url: string | null | undefined, allowedHosts: Set<string>) {
   if (!url) return null
   try {
-    const response = await fetch(url, { cache: 'no-store' })
+    const parsed = new URL(url)
+    if (parsed.protocol !== 'https:' || !allowedHosts.has(parsed.host)) return null
+    const response = await fetch(parsed, { cache: 'no-store', redirect: 'error' })
     if (!response.ok) return null
     const bytes = new Uint8Array(await response.arrayBuffer())
     const type = response.headers.get('content-type') ?? ''
@@ -31,6 +35,7 @@ async function embedRemoteImage(pdf: PDFDocument, url: string | null | undefined
 }
 
 export async function GET(request: Request, { params }: { params: Promise<{ username: string }> }) {
+  if (!(await allow('verified_pdf', 20, 600))) return NextResponse.json({ error: 'Too many requests.' }, { status: 429 })
   const { username } = await params
   const supabase = await createClient()
   const { data, error } = await supabase.rpc('public_verified_member_profile', { member_username: username })
@@ -52,8 +57,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ user
   page.drawRectangle({ x: 0, y: 0, width, height, color: rgb(1,1,1) })
   page.drawRectangle({ x: 0, y: height - 10, width, height: 10, color: orange })
 
-  const origin = new URL(request.url).origin
-  const logo = await embedRemoteImage(pdf, origin + '/brand/wtc-accra-logo-black.png')
+  const requestUrl = new URL(request.url)
+  const origin = requestUrl.origin
+  const supabaseHost = new URL(getSupabasePublicConfig().url).host
+  const allowedHosts = new Set([requestUrl.host, supabaseHost])
+  const logo = await embedRemoteImage(pdf, origin + '/brand/wtc-accra-logo-black.png', allowedHosts)
   if (logo) {
     const scale = Math.min(190 / logo.width, 38 / logo.height)
     page.drawImage(logo, { x: 52, y: height - 92, width: logo.width * scale, height: logo.height * scale })
@@ -65,7 +73,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ user
 
   page.drawRectangle({ x: 46, y: 430, width: width - 92, height: 285, color: light, borderColor: rgb(.86,.88,.91), borderWidth: 1 })
 
-  const avatar = await embedRemoteImage(pdf, member.avatar_url)
+  const avatar = await embedRemoteImage(pdf, member.avatar_url, allowedHosts)
   if (avatar) {
     const side = 110
     page.drawImage(avatar, { x: 72, y: 555, width: side, height: side })
