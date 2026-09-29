@@ -6,10 +6,10 @@ import { notFound } from 'next/navigation'
 import { requireUserProfile } from '@/lib/auth/guards'
 import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { SubmitButton } from '@/components/submit-button'
-import { humanize, labelForParticipantType } from '@/lib/auth/access'
+import { hasCapability, humanize, labelForParticipantType } from '@/lib/auth/access'
 import { date, dateTime, money } from '@/lib/format'
 import { uploadDocument } from '../../documents/actions'
-import { postMessage } from '../actions'
+import { closeDealRoom, postMessage } from '../actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,6 +43,7 @@ export default async function DealRoomPage({ params, searchParams }: Props) {
   const people = (cards ?? []).map(c => ({ ...c, system_role: roleById.get(c.id) ?? (c.participant_type === 'staff' ? 'staff' : 'user') }))
   const personById = new Map((people ?? []).map(p => [p.id, p]))
   const open = room.status === 'active'
+  const canCloseDeal = hasCapability(profile.system_role, 'opportunities') || hasCapability(profile.system_role, 'verification')
 
   return <div className="page-stack">
     <RealtimeRefresh tables={["deal_room_messages","document_records","deal_rooms"]} channel={`room-${id}`} />
@@ -57,7 +58,17 @@ export default async function DealRoomPage({ params, searchParams }: Props) {
     </div>
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
-    {!open && <div className="alert alert-error">This deal room has been closed by WTC Accra. Messages and uploads are disabled; documents stay available.</div>}
+    {!open && <div className="alert alert-success">This deal has been verified and closed by WTC Accra. Messages and uploads are disabled; the transaction record and documents remain available.</div>}
+    {!open && room.deal_value != null && <section className="card deal-close-summary">
+      <p className="eyebrow">Closed Deal Record</p>
+      <dl className="detail-grid detail-grid-two">
+        <div><dt>Closed Deal Value</dt><dd>{money(room.deal_value, room.deal_currency ?? 'USD')}</dd></div>
+        <div><dt>Success Fee</dt><dd>{money(room.success_fee_amount, room.deal_currency ?? 'USD')} <small>({Number(room.success_fee_rate) * 100}%)</small></dd></div>
+        <div><dt>Closed At</dt><dd>{dateTime(room.closed_at)}</dd></div>
+        <div><dt>Status</dt><dd>Deal Verified</dd></div>
+      </dl>
+      {room.close_note && <p className="field-help">WTC Accra Note: {room.close_note}</p>}
+    </section>}
 
     <div className="split-grid admin-detail-grid deal-room-grid">
       <section className="card deal-thread">
@@ -87,11 +98,26 @@ export default async function DealRoomPage({ params, searchParams }: Props) {
             <strong className="avatar-stack"><Avatar src={p?.avatar_url} name={p?.full_name} size={28} />{p?.full_name ?? 'Participant'}<VerifiedCheck verified={p?.is_verified} />{m.user_id === profile.id ? ' (you)' : ''}</strong><span>{humanize(m.role)} <ParticipantBadge type={p?.participant_type} /></span>
             <p className="muted">{p?.system_role && p.system_role !== 'user' ? 'WTC Accra staff' : labelForParticipantType(p?.participant_type)}{p?.job_title ? ` · ${p.job_title}` : ''}</p>
           </div> })}</div>
-          <p className="field-help">WTC Accra staff can see this room and step in if needed.</p>
+          <p className="field-help">Trade Officers, Verification Officers, Administrators and Super Administrators are permanently copied into monitored Deal Rooms so the workflow remains visible and auditable.</p>
         </section>
 
+        {open && canCloseDeal && <section className="card">
+          <p className="eyebrow">WTC Accra Workflow</p>
+          <h2>Verify And Close Deal</h2>
+          <p className="muted">Enter the final successfully closed transaction value. The platform records a 1% success fee and identifies the staff account authorising closure.</p>
+          <form action={closeDealRoom} className="form-stack">
+            <input type="hidden" name="roomId" value={id} />
+            <div className="form-grid">
+              <label>Closed Deal Value<input name="dealValue" type="number" min="0.01" step="0.01" required /></label>
+              <label>Currency<input name="currency" maxLength={3} pattern="[A-Za-z]{3}" defaultValue={opp?.currency ?? 'USD'} required /></label>
+            </div>
+            <label>Closure Note<textarea name="closeNote" rows={3} maxLength={2000} placeholder="Record the closing basis, transaction reference or internal note." /></label>
+            <SubmitButton pendingLabel="Closing…">Mark Deal Verified And Closed</SubmitButton>
+          </form>
+        </section>}
+
         <section className="card">
-          <h2>Shared documents</h2>
+          <h2>Shared Documents</h2>
           {(docs ?? []).length === 0 ? <p className="muted">Nothing shared yet.</p> : <div className="history-list compact">{(docs ?? []).map(d => <div key={d.id}>
             <strong>{d.file_name}</strong><span>{date(d.created_at)}</span>
             <p className="muted">{personById.get(d.owner_user_id)?.full_name ?? 'Participant'} · {humanize(d.purpose)} · <a className="arrow-link" href={`/api/documents/${d.id}`} target="_blank" rel="noopener">Open →</a></p>
