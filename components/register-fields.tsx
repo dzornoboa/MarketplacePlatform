@@ -42,6 +42,7 @@ export function RegisterFields({ email, initialPlan = '', initialType = '' }: { 
   const [currencies, setCurrencies] = useState<CurrencyOption[]>([])
   const [preferredCurrency, setPreferredCurrency] = useState('USD')
   const [currencyTouched, setCurrencyTouched] = useState(false)
+  const [countryTouched, setCountryTouched] = useState(false)
   const [phone, setPhone] = useState('')
 
   useEffect(() => {
@@ -77,9 +78,9 @@ export function RegisterFields({ email, initialPlan = '', initialType = '' }: { 
   const selectedCountry = useMemo(() => countries.find(c => c.code === countryCode) ?? null, [countries, countryCode])
 
   useEffect(() => {
-    if (!selectedCountry || currencyTouched) return
+    if (!selectedCountry || currencyTouched || !countryTouched) return
     setPreferredCurrency(selectedCountry.currencyCode || 'USD')
-  }, [selectedCountry?.code])
+  }, [selectedCountry?.code, countryTouched, currencyTouched])
   const age = (() => {
     if (!dob) return ''
     const birth = new Date(`${dob}T00:00:00Z`)
@@ -138,7 +139,7 @@ export function RegisterFields({ email, initialPlan = '', initialType = '' }: { 
 
     <div className="form-grid">
       <label>Country
-        <select name="countryCode" required value={countryCode} onChange={e => setCountryCode(e.target.value)}>
+        <select name="countryCode" required value={countryCode} onChange={e => { setCountryTouched(true); setCurrencyTouched(false); setCountryCode(e.target.value) }}>
           <option value="" disabled>Select Country</option>
           {countries.map(country => <option key={country.code} value={country.code}>{country.name}{country.callingCode ? ` (${country.callingCode})` : ''}</option>)}
         </select>
