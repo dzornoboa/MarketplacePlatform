@@ -46,7 +46,7 @@ export default async function DashboardPage() {
   const steps = [
     { done: profile.profile_completed, label: 'Complete your profile', href: '/dashboard/profile' },
     { done: kycReady, label: 'Billing address and required documents on file', href: '/dashboard/billing#kyc' },
-    { done: !!state?.has_active_subscription, label: 'Activate a subscription — opens the marketplace', href: '/dashboard/billing' },
+    { done: !!state?.can_view_deal_details, label: state?.grandfathered_verified_access ? 'Verified legacy marketplace access preserved' : 'Activate an access plan — opens restricted marketplace features', href: '/dashboard/billing' },
     { done: profile.verification_status === 'verified', label: 'Earn the WTC Accra verified check', href: '/dashboard/verification' },
   ]
 
@@ -122,7 +122,7 @@ export default async function DashboardPage() {
 
           <div className="member-feed-tabs">
             <strong>For You</strong>
-            <Link href="/dashboard/feed">Network Feed</Link>
+            <Link href="/dashboard/opportunities">Listings</Link>
           </div>
 
           {liveListings.length > 0 && liveListings.map(item => {
@@ -167,9 +167,9 @@ export default async function DashboardPage() {
           </section>}
 
           {liveListings.length === 0 && <section className="member-social-post member-empty-feed">
-            <h2>{accessOpen ? 'Your Network Feed Is Ready' : 'Complete Membership Setup To Unlock The Marketplace'}</h2>
-            <p>{accessOpen ? 'New investment, trade, procurement and partnership opportunities from your network will appear here.' : 'You can still complete your profile, read WTC news and manage your account while access is being activated.'}</p>
-            <Link className="button button-primary" href={accessOpen ? '/dashboard/feed' : '/dashboard/billing'}>{accessOpen ? 'Open Network Feed' : 'View Membership'}</Link>
+            <h2>{accessOpen ? 'Your Listings Workspace Is Ready' : 'Complete Membership Setup To Unlock The Marketplace'}</h2>
+            <p>{accessOpen ? 'Browse investment, trade, procurement and partnership listings from the WTC Accra network.' : 'You can still complete your profile, read WTC news and manage your account while access is being activated.'}</p>
+            <Link className="button button-primary" href={accessOpen ? '/dashboard/opportunities' : '/dashboard/billing'}>{accessOpen ? 'Open Listings' : 'View Membership'}</Link>
           </section>}
         </main>
 
