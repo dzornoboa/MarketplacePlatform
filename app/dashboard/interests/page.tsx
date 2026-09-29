@@ -87,7 +87,7 @@ export default async function InterestsPage({ searchParams }: Props) {
             return <article className="card opportunity-card" key={item.id}>
               <div className="opportunity-head">
                 <div>
-                  <span className={`status-dot status-eoi-${item.status}`}>{humanize(item.status)}</span>
+                  <span className={`status-dot status-eoi-${item.status}`}>{statusLabel(item.status)}</span>
                   <h3>{opportunity?.title ?? 'Opportunity'}</h3>
                   <p className="muted">{opportunity ? `${opportunity.sector} · ${opportunity.country} · ` : ''}Sent {dateTime(item.created_at)}</p>
                 </div>
