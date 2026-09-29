@@ -44,7 +44,7 @@ export async function signup(formData: FormData) {
   const dateOfBirth = String(formData.get('dateOfBirth') ?? '').trim()
   const idType = String(formData.get('idType') ?? '').trim()
   const idNumber = String(formData.get('idNumber') ?? '').trim()
-  const allowedIdTypes = new Set(['ghana_card', 'passport', 'drivers_license', 'voter_id', 'residence_permit', 'national_id', 'other'])
+  const allowedIdTypes = new Set(['passport', 'drivers_license', 'voter_id', 'residence_permit', 'national_id', 'other'])
   const birthDate = dateOfBirth ? new Date(`${dateOfBirth}T00:00:00Z`) : null
   const today = new Date()
   const ageCutoff = new Date(Date.UTC(today.getUTCFullYear() - 13, today.getUTCMonth(), today.getUTCDate()))
@@ -53,6 +53,8 @@ export async function signup(formData: FormData) {
   if (birthDate < oldestReasonable) redirect(withMessage('/register', 'error', 'Enter a valid date of birth.'))
   if (!allowedIdTypes.has(idType)) redirect(withMessage('/register', 'error', 'Select a valid identification type.'))
   if (idNumber.length < 3 || idNumber.length > 80) redirect(withMessage('/register', 'error', 'Enter a valid identification number.'))
+  const username = String(formData.get('username') ?? '').trim().toLowerCase()
+  if (!/^[a-z0-9][a-z0-9._-]{2,29}$/.test(username)) redirect(withMessage('/register', 'error', 'Choose a valid username using lowercase letters, numbers, dots, hyphens or underscores.'))
   const validation = validateSignupInput({ fullName, email, password, participantType })
   if (!validation.ok) redirect(withMessage('/register', 'error', Object.values(validation.errors)[0] ?? 'Check your registration details.'))
   if (!(await allow('signup', 5, 3600))) redirect(withMessage('/register', 'error', 'Too many registrations from this connection. Try again later.'))
@@ -63,24 +65,45 @@ export async function signup(formData: FormData) {
   const COMPANY_TYPES = new Set(['business', 'wtc_association_member', 'wtc_accra_member'])
   const organisationName = String(formData.get('organisationName') ?? '').trim()
   if (COMPANY_TYPES.has(participantType) && organisationName.length < 2) redirect(withMessage('/register', 'error', 'Enter your organisation name.'))
-  const WTC_TYPES = new Set(['wtc_accra_member', 'wtc_association_member'])
-  if (WTC_TYPES.has(participantType) && !email.toLowerCase().endsWith('@wtcaccra.com')) redirect(withMessage('/register', 'error', 'WTC Accra and WTC Association member accounts must register with an @wtcaccra.com email address.'))
+  const country = String(formData.get('country') ?? '').trim()
+  const countryCode = String(formData.get('countryCode') ?? '').trim().toUpperCase()
+  const phoneCountryCode = String(formData.get('phoneCountryCode') ?? '').trim()
+  const phoneLocal = String(formData.get('phoneLocal') ?? '').replace(/\D/g, '')
+  if (!country || !/^[A-Z]{2}$/.test(countryCode)) redirect(withMessage('/register', 'error', 'Select a valid country.'))
+  if (!/^\+[0-9]{1,4}$/.test(phoneCountryCode) || phoneLocal.length < 5 || phoneLocal.length > 15) redirect(withMessage('/register', 'error', 'Enter a valid telephone number for your selected country.'))
+  const nationalNumber = phoneLocal.replace(/^0+/, '')
+  const phone = `${phoneCountryCode}${nationalNumber}`
+  const language = String(formData.get('language') ?? 'en').trim().toLowerCase()
+  const locale = String(formData.get('locale') ?? 'en').trim()
+  const timezone = String(formData.get('timezone') ?? 'UTC').trim()
   const extra = {
     organisation_name: organisationName || null,
     wtca_membership_number: String(formData.get('wtcaMembershipNumber') ?? '').trim() || null,
     wtca_chapter: String(formData.get('wtcaChapter') ?? '').trim() || null,
-    phone: String(formData.get('phone') ?? '').trim() || null,
-    country: String(formData.get('country') ?? '').trim() || null,
+    phone,
+    country,
+    country_code: countryCode,
+    phone_country_code: phoneCountryCode,
+    language,
+    locale,
+    timezone,
+    username,
     plan_code: String(formData.get('planCode') ?? '').trim() || null,
     date_of_birth: dateOfBirth,
     id_type: idType,
     id_number: idNumber,
   }
   const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, participant_type: participantType, ...extra }, emailRedirectTo: `${getSiteUrl()}/auth/confirm` } })
-  if (error) redirect(withMessage('/register', 'error', error.message))
+  if (error) {
+    if (/already|registered|exists/i.test(error.message)) redirect(`/resume-registration?email=${encodeURIComponent(email)}`)
+    redirect(withMessage('/register', 'error', error.message))
+  }
+  // Supabase deliberately returns a user with no identities for a repeated signup.
+  // Never send that person to a misleading "new code sent" screen.
+  if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+    redirect(`/resume-registration?email=${encodeURIComponent(email)}`)
+  }
   if (data.session) { revalidatePath('/', 'layout'); redirect('/dashboard') }
-  /* Email confirmation is on: the account cannot sign in until the code
-     (or link) from the confirmation email is used. */
   redirect(`/verify-email?email=${encodeURIComponent(email)}`)
 }
 
@@ -109,6 +132,30 @@ export async function resendVerificationCode(formData: FormData) {
   const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: `${getSiteUrl()}/auth/confirm` } })
   if (error) redirect(withMessage(back, 'error', /rate|seconds/i.test(error.message) ? 'Please wait a minute before requesting another code.' : 'Could not send a new code. Try again shortly.'))
   redirect(withMessage(back, 'message', 'A new code has been sent.'))
+}
+
+export async function resumeRegistration(formData: FormData) {
+  const email = String(formData.get('email') ?? '').trim()
+  if (validateEmail(email)) redirect(withMessage('/resume-registration', 'error', 'Enter a valid email address.'))
+  if (!(await allow('resume_registration', 4, 900, email))) redirect(withMessage('/resume-registration', 'error', 'Too many attempts. Try again in 15 minutes.'))
+  const supabase = await createClient()
+
+  // Unconfirmed accounts can continue with a fresh signup confirmation.
+  const resend = await supabase.auth.resend({
+    type: 'signup',
+    email,
+    options: { emailRedirectTo: `${getSiteUrl()}/auth/confirm` },
+  })
+  if (!resend.error) {
+    redirect(withMessage(`/verify-email?email=${encodeURIComponent(email)}`, 'message', 'A fresh verification email has been sent. Use the 6-digit code if your email shows one, or open the secure confirmation link.'))
+  }
+
+  // Confirmed/existing accounts continue through password recovery. The profile
+  // already stored in the system remains intact and loads after sign-in.
+  await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${getSiteUrl()}/auth/confirm?next=/reset-password`,
+  })
+  redirect(withMessage('/login', 'message', 'If an account already exists for that email, we sent a secure link so you can set or reset your password and continue with your saved profile.'))
 }
 
 export async function requestPasswordReset(formData: FormData) {
