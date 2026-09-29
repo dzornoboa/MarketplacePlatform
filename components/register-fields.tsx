@@ -91,8 +91,6 @@ export function RegisterFields({ email, plans = [], initialPlan = '', initialTyp
   }
   const company = COMPANY_TYPES.has(type)
   const wtc = WTC_TYPES.has(type)
-  const domain = mail.split('@')[1]?.toLowerCase() ?? ''
-  const wtcWarn = wtc && mail.includes('@') && domain !== 'wtcaccra.com'
 
   const onName = (value: string) => {
     setFullName(value)
@@ -110,9 +108,8 @@ export function RegisterFields({ email, plans = [], initialPlan = '', initialTyp
       {usernameState === 'available' ? '✓ Username Available' : usernameState === 'taken' ? 'That Username Is Already In Use. Try Another Suggestion.' : usernameState === 'checking' ? 'Checking Username…' : usernameState === 'invalid' ? 'Use 3–30 Lowercase Letters, Numbers, Dots, Hyphens Or Underscores.' : 'Your Username Is Unique Even When Another Member Has The Same Full Name.'}
     </p>
 
-    <label>Email<input name="email" type="email" autoComplete="email" required value={mail} onChange={e => setMail(e.target.value)} pattern={wtc ? '.+@wtcaccra\\.com' : undefined} title={wtc ? 'WTC member accounts must use an @wtcaccra.com email address' : undefined} /></label>
-    {wtcWarn && <p className="alert alert-error">{participantTypeLabels[type as keyof typeof participantTypeLabels]} accounts must register with an @wtcaccra.com address. {domain} will not be accepted.</p>}
-    {wtc && !wtcWarn && <p className="field-help">WTC Accra membership will be checked during verification.</p>}
+    <label>Email<input name="email" type="email" autoComplete="email" required value={mail} onChange={e => setMail(e.target.value)} /></label>
+    {wtc && <p className="field-help">Use an email address you can access. WTC membership or chapter affiliation is checked during verification, so international WTC members are supported.</p>}
 
     <label>Account Type
       <select name="participantType" required value={type} onChange={e => pickType(e.target.value)}>
