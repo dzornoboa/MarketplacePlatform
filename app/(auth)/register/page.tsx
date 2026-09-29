@@ -4,6 +4,7 @@ import { RegisterFields } from '@/components/register-fields'
 import { signup } from '../actions'
 import { BrandCircle, Logo, LogoLink } from '@/components/brand'
 import { getPageBlock, getPublicPlans } from '@/lib/content/site-content'
+import { RegistrationDraft } from '@/components/registration-draft'
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
@@ -24,11 +25,12 @@ export default async function RegisterPage({ searchParams }: Props) {
         <h1>Create your account</h1>
         <p className="muted">{chosen ? `You are signing up for the ${chosen.name} plan. ` : ''}After confirming your email you {chosen && Number(chosen.price_usd) === 0 ? 'can browse the marketplace straight away' : 'pay for your plan to activate your account and open the marketplace'}.</p>
         {error && <div className="alert alert-error">{error}</div>}
-        <form action={signup} className="form-stack">
+        <form action={signup} className="form-stack" data-registration-form>
+          <RegistrationDraft />
           <RegisterFields plans={plans} initialPlan={chosen?.code ?? ''} initialType={chosen?.target_participant_types.includes(typeParam) ? typeParam : (chosen?.target_participant_types[0] ?? typeParam)} />
           <SubmitButton>Create account</SubmitButton>
         </form>
-        <div className="auth-links"><span>Already registered?</span><Link href="/login">Sign in</Link></div>
+        <div className="auth-links"><span>Already Registered?</span><Link href="/login">Sign In</Link><span>Started Before?</span><Link href="/resume-registration">Continue Registration</Link></div>
       </section>
       <aside className="auth-aside" data-section="register_aside">
         <BrandCircle className="motif motif-aside" stroke={2} />
