@@ -22,7 +22,7 @@ export default async function AdminVerificationPage({ searchParams }: Props) {
   const sort = str('sort') === 'newest' ? 'newest' : 'oldest'
 
   const { data: requests } = await supabase.from('verification_requests').select('*')
-    .eq('status', status as 'pending_review').order('submitted_at', { ascending: sort === 'oldest' }).limit(200)
+    .eq('status', status as 'pending_review').order('submitted_at', { ascending: sort === 'oldest' }).limit(1000)
   const userIds = [...new Set((requests ?? []).map(r => r.user_id))]
 
   const [{ data: profiles }, { data: documents }, { data: orgMembers }, { data: plans }] = await Promise.all([

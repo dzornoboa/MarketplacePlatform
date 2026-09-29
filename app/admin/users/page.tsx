@@ -20,7 +20,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
   const filter = typeof params.status === 'string' ? params.status : ''
   const search = typeof params.q === 'string' ? params.q.trim() : ''
 
-  let query = supabase.from('profiles').select('*').order('created_at', { ascending: false }).limit(200)
+  let query = supabase.from('profiles').select('*').order('created_at', { ascending: false }).limit(1000)
   if (filter) query = query.eq('verification_status', filter as 'verified')
   if (search) query = query.ilike('full_name', `%${search}%`)
   const { data: profiles } = await query

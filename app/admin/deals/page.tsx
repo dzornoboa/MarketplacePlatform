@@ -29,7 +29,7 @@ export default async function AdminDealsPage({ searchParams }: Props) {
   const sort = typeof params.sort === 'string' && ['newest', 'oldest'].includes(params.sort) ? params.sort : 'oldest'
 
   const { data: allDeals } = await supabase.from('expressions_of_interest')
-    .select('*').eq('status', status as 'submitted').order('created_at', { ascending: sort === 'oldest' }).limit(200)
+    .select('*').eq('status', status as 'submitted').order('created_at', { ascending: sort === 'oldest' }).limit(1000)
 
   const oppIds = [...new Set((allDeals ?? []).map(row => row.opportunity_id))]
   const applicantIds = [...new Set((allDeals ?? []).map(row => row.applicant_id))]

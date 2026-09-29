@@ -19,7 +19,7 @@ export default async function AdminPaymentsPage({ searchParams }: Props) {
   const q = str('q').trim()
   const sort = str('sort') === 'oldest' ? 'oldest' : 'newest'
 
-  let query = supabase.from('payments').select('*').eq('status', status as 'pending').order('created_at', { ascending: sort === 'oldest' }).limit(200)
+  let query = supabase.from('payments').select('*').eq('status', status as 'pending').order('created_at', { ascending: sort === 'oldest' }).limit(1000)
   if (q) query = query.or(`reference.ilike.%${q}%,provider_reference.ilike.%${q}%`)
   const { data: payments } = await query
 
