@@ -6,14 +6,14 @@ type Row = Record<string, string | number | null>
 export type Report = { title: string; columns: { key: string; label: string }[]; rows: Row[] }
 export type ReportParams = Record<string, string | undefined>
 
-export const MEMBER_REPORTS = ['listings', 'bids_placed', 'bids_received', 'payments', 'subscriptions', 'connections'] as const
-export const ADMIN_REPORTS = ['members', 'subscriptions', 'payments', 'listings', 'bids', 'verification'] as const
+export const MEMBER_REPORTS = ['listings', 'deals_sent', 'deals_received', 'payments', 'subscriptions', 'connections'] as const
+export const ADMIN_REPORTS = ['members', 'subscriptions', 'payments', 'listings', 'deals', 'verification'] as const
 export type MemberReport = (typeof MEMBER_REPORTS)[number]
 export type AdminReport = (typeof ADMIN_REPORTS)[number]
 
 const labels: Record<string, string> = {
-  listings: 'Deals', bids_placed: 'Deals Sent', bids_received: 'Deals Received', payments: 'Payments',
-  subscriptions: 'Subscriptions', connections: 'Connections', members: 'Members', bids: 'Deals', verification: 'Verification Requests',
+  listings: 'Deals', deals_sent: 'Deals Sent', deals_received: 'Deals Received', payments: 'Payments',
+  subscriptions: 'Subscriptions', connections: 'Connections', members: 'Members', deals: 'Deals', verification: 'Verification Requests',
 }
 export const reportLabel = (k: string) => labels[k] ?? humanize(k)
 
@@ -50,13 +50,13 @@ export async function memberReport(supabase: Supabase, kind: MemberReport, param
     return { title: 'Your listings', columns: [col('title', 'Title'), col('status', 'Status'), col('sector', 'Sector'), col('country', 'Country'), col('capital_required', 'Amount'), col('date', 'Created'), col('published', 'Published')],
       rows: finish((data ?? []).map(o => ({ id: o.id, title: o.title, status: humanize(o.status), sector: o.sector ?? null, country: o.country ?? null, capital_required: o.capital_required ?? null, date: day(o.created_at), published: day(o.published_at) })), params, 'date') }
   }
-  if (kind === 'bids_placed' || kind === 'bids_received') {
+  if (kind === 'deals_sent' || kind === 'deals_received') {
     const { data } = await supabase.from('expressions_of_interest').select('id,opportunity_id,applicant_id,status,created_at')
-    const mine = (data ?? []).filter(b => kind === 'bids_placed' ? b.applicant_id === userId : b.applicant_id !== userId)
+    const mine = (data ?? []).filter(b => kind === 'deals_sent' ? b.applicant_id === userId : b.applicant_id !== userId)
     const oppIds = [...new Set(mine.map(b => b.opportunity_id))]
     const { data: opps } = oppIds.length ? await supabase.from('opportunities').select('id,title').in('id', oppIds) : { data: [] }
     const title = new Map((opps ?? []).map(o => [o.id, o.title]))
-    return { title: kind === 'bids_placed' ? 'Deal Requests You Sent' : 'Deal Requests On Your Deals', columns: [col('listing', 'Listing'), col('status', 'Stage'), col('date', 'Date')],
+    return { title: kind === 'deals_sent' ? 'Deal Requests You Sent' : 'Deal Requests On Your Deals', columns: [col('listing', 'Listing'), col('status', 'Stage'), col('date', 'Date')],
       rows: finish(mine.map(b => ({ id: b.id, listing: title.get(b.opportunity_id) ?? 'Listing', status: humanize(b.status), date: day(b.created_at) })), params, 'date') }
   }
   if (kind === 'payments') {
@@ -119,14 +119,14 @@ export async function adminReport(supabase: Supabase, kind: AdminReport, params:
     return { title: 'Listings', columns: [col('title', 'Title'), col('owner', 'Owner'), col('status', 'Status'), col('sector', 'Sector'), col('country', 'Country'), col('capital_required', 'Amount'), col('date', 'Created'), col('published', 'Published')],
       rows: finish((data ?? []).map(o => ({ id: o.id, user_id: o.owner_user_id, title: o.title, owner: names.get(o.owner_user_id) ?? 'Member', status: humanize(o.status), sector: o.sector, country: o.country, capital_required: o.capital_required, date: day(o.created_at), published: day(o.published_at) })), params, 'date') }
   }
-  if (kind === 'bids') {
+  if (kind === 'deals') {
     let q = supabase.from('expressions_of_interest').select('id,opportunity_id,applicant_id,status,created_at').limit(2000)
     if (params.status) q = q.eq('status', params.status as 'submitted')
     const { data } = await q
     const [names, { data: opps }] = await Promise.all([nameOf((data ?? []).map(b => b.applicant_id)), supabase.from('opportunities').select('id,title').in('id', [...new Set((data ?? []).map(b => b.opportunity_id))])])
     const title = new Map((opps ?? []).map(o => [o.id, o.title]))
-    return { title: 'Deals', columns: [col('listing', 'Deal'), col('bidder', 'Applicant'), col('status', 'Stage'), col('date', 'Date')],
-      rows: finish((data ?? []).map(b => ({ id: b.id, user_id: b.applicant_id, listing: title.get(b.opportunity_id) ?? 'Listing', bidder: names.get(b.applicant_id) ?? 'Member', status: humanize(b.status), date: day(b.created_at) })), params, 'date') }
+    return { title: 'Deals', columns: [col('listing', 'Deal'), col('applicant', 'Applicant'), col('status', 'Stage'), col('date', 'Date')],
+      rows: finish((data ?? []).map(b => ({ id: b.id, user_id: b.applicant_id, listing: title.get(b.opportunity_id) ?? 'Listing', applicant: names.get(b.applicant_id) ?? 'Member', status: humanize(b.status), date: day(b.created_at) })), params, 'date') }
   }
   let q = supabase.from('verification_requests').select('id,user_id,status,submitted_at,reviewed_at,reviewer_note').limit(2000)
   if (params.status) q = q.eq('status', params.status as 'verified')

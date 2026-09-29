@@ -76,7 +76,7 @@ export default async function ListingDetailPage({ params, searchParams }: Props)
         <p className="lede">{teaser.teaser}</p>
         <section className="restriction-banner">
           <div>
-            <strong>The full listing is for verified, subscribed members</strong>
+            <strong>Restricted Deal Details Require Approved Access</strong>
             <p>{lock.locked ? lock.reason : 'This listing is not available to your account.'}</p>
           </div>
           {lock.locked && lock.action && <Link className="button button-light" href={lock.action.href}>{lock.action.label}</Link>}
@@ -139,7 +139,7 @@ export default async function ListingDetailPage({ params, searchParams }: Props)
         {!isOwner && <section className="card deal-card">
           <h2>{myBid ? 'Your Deal Request' : 'Send A Deal Request'}</h2>
           {myBid
-            ? <p className="muted">You sent a deal request on {date(myBid.created_at)}. Status: <span className={`status-dot status-eoi-${myBid.status}`}>{humanize(myBid.status)}</span>{myBid.status === 'submitted' ? ' — with WTC Accra for due diligence.' : myBid.status === 'under_review' ? ' — cleared, now with the owner.' : ''}</p>
+            ? <p className="muted">You sent a deal request on {date(myBid.created_at)}. Status: <span className={`status-dot status-eoi-${myBid.status}`}>{myBid.status === 'submitted' ? 'Processing' : myBid.status === 'under_review' ? 'Processed' : myBid.status === 'accepted' ? 'Connected' : humanize(myBid.status)}</span>{myBid.status === 'submitted' ? ' — WTC Accra is reviewing the request.' : myBid.status === 'under_review' ? ' — processed and now with the owner.' : ''}</p>
             : <>
                 <p className="muted">Your deal request goes to WTC Accra first. The monitored team reviews it before it reaches the opportunity owner. If accepted, a monitored Deal Room opens for the parties and authorised WTC Accra staff.</p>
                 <form action={expressInterest} className="form-stack">

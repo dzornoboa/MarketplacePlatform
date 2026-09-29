@@ -13,7 +13,7 @@ export async function reviewDeal(formData: FormData) {
     redirect(`${target}?error=${encodeURIComponent('Invalid deal decision.')}`)
   }
   const supabase = await createClient()
-  const { error } = await supabase.rpc('review_bid', { bid_id: dealId, decision, review_note: note || null })
+  const { error } = await supabase.rpc('review_deal_request', { deal_id: dealId, decision, review_note: note || null })
   if (error) redirect(`${target}?error=${encodeURIComponent(error.message)}`)
   revalidatePath('/admin/deals')
   revalidatePath('/dashboard/interests')
