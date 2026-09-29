@@ -5,6 +5,7 @@ import { money, date } from '@/lib/format'
 import { SubmitButton } from '@/components/submit-button'
 import { submitVerification, choosePlan } from './actions'
 import { uploadDocument } from '../documents/actions'
+import { VerifiedMemberShareCard } from '@/components/verified-member-share-card'
 
 export const dynamic = 'force-dynamic'
 
@@ -82,6 +83,26 @@ export default async function VerificationPage({ searchParams }: Props) {
       {profile.verification_status === 'rejected' && <><h2>Verification rejected</h2><p>{current?.reviewer_note || 'Contact WTC Accra support for clarification before resubmitting.'}</p></>}
       {profile.verification_status === 'suspended' && <><h2>Account suspended</h2><p>Contact WTC Accra support. Opportunity access is disabled.</p></>}
     </section>
+
+    {profile.verification_status === 'verified' && profile.username && <section className="card verification-share-section">
+      <div className="verification-share-heading">
+        <div>
+          <p className="eyebrow">Share Your Verified Status</p>
+          <h2>Your WTC Accra Verified Member Card</h2>
+          <p className="muted">Download your branded PDF or share your verified profile on social media so trusted contacts can find and connect with you on WTC Accra Hub.</p>
+        </div>
+      </div>
+      <VerifiedMemberShareCard
+        fullName={profile.full_name}
+        username={profile.username}
+        avatarUrl={profile.avatar_url}
+        jobTitle={profile.job_title}
+        participantType={profile.participant_type}
+        country={profile.country}
+        city={profile.city}
+        showActions
+      />
+    </section>}
 
     {canSubmit && <>
       {/* ---- Checklist ------------------------------------------------ */}
