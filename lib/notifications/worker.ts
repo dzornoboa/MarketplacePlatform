@@ -22,7 +22,7 @@ function brandedHtml(subject: string, body: string, unsubscribeUrl?: string | nu
 }
 
 export function adminClient(): SupabaseClient<Database> | null {
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY
   if (!serviceKey) return null
   const { url } = getSupabasePublicConfig()
   return createSupabaseClient<Database>(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } })
