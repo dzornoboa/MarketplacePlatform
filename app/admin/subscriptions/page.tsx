@@ -23,7 +23,7 @@ export default async function AdminSubscriptionsPage({ searchParams }: Props) {
   const planFilter = str('plan')
   const sort = SORTS.includes(str('sort') as 'newest') ? str('sort') : 'newest'
 
-  let query = supabase.from('subscriptions').select('*').eq('status', status as 'pending').limit(300)
+  let query = supabase.from('subscriptions').select('*').eq('status', status as 'pending').limit(1000)
   if (planFilter) query = query.eq('plan_code', planFilter)
   query = sort === 'ends' ? query.order('ends_at', { ascending: true, nullsFirst: false }) : query.order('created_at', { ascending: sort === 'oldest' })
   const [{ data: rows }, { data: plans }, counts] = await Promise.all([
