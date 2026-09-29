@@ -280,6 +280,7 @@ export type Database = {
       throttle: { Args: { bucket: string; max_hits: number; window_seconds: number; subject_hint?: string | null }; Returns: boolean }
       username_available: { Args: { candidate: string }; Returns: boolean }
       session_bootstrap: { Args: Record<string, never>; Returns: Json }
+      registration_resume_state: { Args: { lookup_email: string }; Returns: Json }
       listing_owner_cards: { Args: { owner_ids: string[] }; Returns: { id: string; full_name: string; participant_type: string | null; country: string | null; organisation: string | null; avatar_url: string | null; job_title: string | null; is_verified: boolean }[] }
       request_introduction: { Args: { opportunity_id: string; request_note?: string | null }; Returns: string }
       review_introduction: { Args: { introduction_id: string; decision: string; staff_note?: string | null; meeting_at?: string | null; meeting_url?: string | null }; Returns: undefined }
