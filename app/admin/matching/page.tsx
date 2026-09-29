@@ -16,7 +16,7 @@ export default async function AdminMatchingPage({ searchParams }: Props) {
   const message = typeof params.message === 'string' ? params.message : null
 
   const [{ data: matches }, { data: members }, { data: opportunities }] = await Promise.all([
-    supabase.from('matches').select('*').order('created_at', { ascending: false }).limit(300),
+    supabase.from('matches').select('*').order('created_at', { ascending: false }).limit(1000),
     supabase.from('profiles').select('id,full_name,participant_type,country,system_role').eq('account_status', 'active').order('full_name').limit(500),
     supabase.from('opportunities').select('id,title,sector,country,status').eq('status', 'published').order('published_at', { ascending: false }).limit(500),
   ])
