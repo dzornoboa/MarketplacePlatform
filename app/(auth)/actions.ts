@@ -130,8 +130,11 @@ export async function resendVerificationCode(formData: FormData) {
   if (!(await allow('resend_code', 3, 600, email))) redirect(withMessage(back, 'error', 'Please wait before requesting another code.'))
   const supabase = await createClient()
   const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: `${getSiteUrl()}/auth/confirm` } })
-  if (error) redirect(withMessage(back, 'error', /rate|seconds/i.test(error.message) ? 'Please wait a minute before requesting another code.' : 'Could not send a new code. Try again shortly.'))
-  redirect(withMessage(back, 'message', 'A new code has been sent.'))
+  if (error) {
+    if (/confirmed|already|registered|exists/i.test(error.message)) redirect(`/resume-registration?email=${encodeURIComponent(email)}`)
+    redirect(withMessage(back, 'error', /rate|seconds/i.test(error.message) ? 'Please wait a minute before requesting another verification email.' : 'Could not send a new verification email. Try again shortly.'))
+  }
+  redirect(withMessage(back, 'message', 'A new verification email has been sent.'))
 }
 
 export async function resumeRegistration(formData: FormData) {
