@@ -13,7 +13,11 @@ export async function GET() {
 
     const root = country.idd?.root ?? ''
     const suffix = country.idd?.suffixes?.[0] ?? ''
-    const callingCode = root && suffix ? `${root}${suffix}` : root || ''
+    const callingCode = (code === 'US' || code === 'CA')
+      ? '+1'
+      : root && suffix
+        ? `${root}${suffix}`
+        : root || ''
     const entries = Object.entries((country.currencies ?? {}) as Record<string, CurrencyInfo>)
     const [currencyCode, currency] = entries[0] ?? ['USD', { name: 'US dollar', symbol: '$' }]
 
