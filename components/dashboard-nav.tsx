@@ -39,24 +39,24 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, a
       label: 'Marketplace',
       links: [
         { href: '/dashboard', label: 'Overview' },
-        { href: '/dashboard/feed', label: 'Home feed' },
-        { href: '/opportunities', label: 'Live listings' },
+        { href: '/dashboard/feed', label: 'Home Feed' },
+        { href: '/opportunities', label: 'Live Listings' },
         { href: '/dashboard/network', label: 'Network', verifiedOnly: true },
         { href: '/dashboard/opportunities', label: 'Opportunities', verifiedOnly: true },
         { href: '/dashboard/matches', label: 'Matches', verifiedOnly: true },
         { href: '/dashboard/saved', label: 'Saved', verifiedOnly: true },
-        { href: '/dashboard/interests', label: 'Expressions of interest', verifiedOnly: true },
+        { href: '/dashboard/interests', label: 'Expressions Of Interest', verifiedOnly: true },
         { href: '/dashboard/introductions', label: 'Introductions', verifiedOnly: true },
-        { href: '/dashboard/deal-rooms', label: 'Deal rooms', verifiedOnly: true },
+        { href: '/dashboard/deal-rooms', label: 'Deal Rooms', verifiedOnly: true },
         { href: '/dashboard/notifications', label: 'Notifications', badge: unreadCount },
         { href: '/dashboard/reports', label: 'Reports' },
       ],
     },
     {
-      label: 'Your business',
+      label: 'Your Business',
       links: [
         { href: '/dashboard/organisation', label: 'Organisation' },
-        { href: '/dashboard/mandate', label: 'Mandate and requirements', verifiedOnly: true },
+        { href: '/dashboard/mandate', label: 'Mandate And Requirements', verifiedOnly: true },
         { href: '/dashboard/documents', label: 'Documents', verifiedOnly: true },
       ],
     },
@@ -65,7 +65,7 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, a
       links: [
         { href: '/dashboard/profile', label: 'Profile' },
         { href: '/dashboard/verification', label: 'Verification' },
-        { href: '/dashboard/billing', label: 'Billing and membership' },
+        { href: '/dashboard/billing', label: 'Billing And Membership' },
         { href: '/dashboard/security', label: 'Security' },
         { href: '/dashboard/settings', label: 'Settings' },
         { href: '/dashboard/support', label: 'Support' },
@@ -106,7 +106,7 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, a
       {(admin || editor) && <div className="nav-group">
         <p className="nav-group-label">Console</p>
         {editor && <Link className={isActive('/editor') ? 'nav-active nav-console' : 'nav-console'} href={adminMfaReady ? '/editor' : '/dashboard/security?required=admin-mfa&next=%2Feditor'}>
-          <span>Editor console</span>{!adminMfaReady && <span className="nav-badge">{adminHasFactor ? 'Enter code' : 'Set up MFA'}</span>}
+          <span>Editor Console</span>{!adminMfaReady && <span className="nav-badge">{adminHasFactor ? 'Enter code' : 'Set up MFA'}</span>}
         </Link>}
         {admin && <Link className={isActive('/admin') ? 'nav-active nav-console' : 'nav-console'} href={adminMfaReady ? '/admin' : '/dashboard/security?required=admin-mfa&next=%2Fadmin'}>
           <span>Administration</span>{!adminMfaReady && <span className="nav-badge">{adminHasFactor ? 'Enter code' : 'Set up MFA'}</span>}
