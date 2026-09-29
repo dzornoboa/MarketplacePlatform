@@ -22,8 +22,8 @@ export type Database = {
         Relationships: []
       }
       opportunities: {
-        Row: { id:string; owner_user_id:string; owner_organization_id:string|null; title:string; summary:string; description:string; sector:string; country:string; city:string|null; kind:Database['public']['Enums']['opportunity_kind']; intent:Database['public']['Enums']['listing_intent']; region:string|null; importance:number; capital_required:number|null; minimum_ticket:number|null; currency:string; deadline:string|null; tags:string[]; status:Database['public']['Enums']['opportunity_status']; is_featured:boolean; review_note:string|null; submitted_at:string|null; published_at:string|null; reviewed_at:string|null; reviewed_by:string|null; created_at:string; updated_at:string }
-        Insert: { id?:string; owner_user_id:string; owner_organization_id?:string|null; title:string; summary:string; description:string; sector:string; country:string; city?:string|null; kind:Database['public']['Enums']['opportunity_kind']; intent?:Database['public']['Enums']['listing_intent']; region?:string|null; importance?:number; capital_required?:number|null; minimum_ticket?:number|null; currency?:string; deadline?:string|null; tags?:string[]; status?:Database['public']['Enums']['opportunity_status']; is_featured?:boolean; review_note?:string|null; submitted_at?:string|null; published_at?:string|null; reviewed_at?:string|null; reviewed_by?:string|null; created_at?:string; updated_at?:string }
+        Row: { id:string; owner_user_id:string; owner_organization_id:string|null; title:string; summary:string; description:string; category:string|null; sector:string; country:string; city:string|null; kind:Database['public']['Enums']['opportunity_kind']; intent:Database['public']['Enums']['listing_intent']; region:string|null; importance:number; capital_required:number|null; minimum_ticket:number|null; currency:string; deadline:string|null; tags:string[]; status:Database['public']['Enums']['opportunity_status']; is_featured:boolean; review_note:string|null; submitted_at:string|null; published_at:string|null; reviewed_at:string|null; reviewed_by:string|null; created_at:string; updated_at:string }
+        Insert: { id?:string; owner_user_id:string; owner_organization_id?:string|null; title:string; summary:string; description:string; category?:string|null; sector:string; country:string; city?:string|null; kind:Database['public']['Enums']['opportunity_kind']; intent?:Database['public']['Enums']['listing_intent']; region?:string|null; importance?:number; capital_required?:number|null; minimum_ticket?:number|null; currency?:string; deadline?:string|null; tags?:string[]; status?:Database['public']['Enums']['opportunity_status']; is_featured?:boolean; review_note?:string|null; submitted_at?:string|null; published_at?:string|null; reviewed_at?:string|null; reviewed_by?:string|null; created_at?:string; updated_at?:string }
         Update: Partial<Database['public']['Tables']['opportunities']['Insert']>
         Relationships: []
       }
@@ -247,7 +247,7 @@ export type Database = {
       request_membership: { Args: { membership_type_code: string }; Returns: string }
       complete_initial_password_change: { Args: { target_user: string }; Returns: undefined }
       get_platform_report_metrics: { Args: Record<string, never>; Returns: Json }
-      public_listing_teasers: { Args: { listing_kind?: string | null; listing_intent?: string | null; listing_sector?: string | null; listing_country?: string | null; max_rows?: number }; Returns: { id: string; title: string; kind: string; intent: string; sector: string; country: string; region: string | null; importance: number; teaser: string; tags: string[]; deadline: string | null; published_at: string | null; title_hidden: boolean }[] }
+      public_listing_teasers: { Args: { listing_kind?: string | null; listing_intent?: string | null; listing_sector?: string | null; listing_country?: string | null; listing_category?: string | null; max_rows?: number }; Returns: { id: string; title: string; kind: string; intent: string; category: string; sector: string; country: string; region: string | null; importance: number; teaser: string; tags: string[]; deadline: string | null; published_at: string | null; title_hidden: boolean }[] }
       public_listing_facets: { Args: Record<string, never>; Returns: { facet: string; value: string; listings: number }[] }
       withdraw_opportunity: { Args: { opportunity_id: string }; Returns: undefined }
       complete_test_payment: { Args: { payment_id: string }; Returns: undefined }
@@ -262,6 +262,7 @@ export type Database = {
       member_email: { Args: { target_user: string }; Returns: string | null }
       refresh_my_matches: { Args: Record<string, never>; Returns: number }
       post_deal_room_message: { Args: { room: string; message_body: string }; Returns: string }
+      close_deal_room: { Args: { room_id: string; closed_value: number; closed_currency?: string; note?: string | null }; Returns: undefined }
       withdraw_bid: { Args: { bid_id: string }; Returns: undefined }
       set_primary_payment_method: { Args: { method_id: string }; Returns: undefined }
       review_bid: { Args: { bid_id: string; decision: string; review_note?: string | null }; Returns: undefined }
