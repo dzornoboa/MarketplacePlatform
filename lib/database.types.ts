@@ -160,8 +160,8 @@ export type Database = {
         Relationships: []
       }
       connections: {
-        Row: { id:string; requester_id:string; addressee_id:string; opportunity_id:string|null; intent:Database['public']['Enums']['connection_intent']; status:Database['public']['Enums']['connection_status']; message:string|null; response_note:string|null; responded_at:string|null; created_at:string; updated_at:string }
-        Insert: { id?:string; requester_id:string; addressee_id:string; opportunity_id?:string|null; intent?:Database['public']['Enums']['connection_intent']; status?:Database['public']['Enums']['connection_status']; message?:string|null; response_note?:string|null; responded_at?:string|null; created_at?:string; updated_at?:string }
+        Row: { id:string; requester_id:string; addressee_id:string; opportunity_id:string|null; intent:Database['public']['Enums']['connection_intent']; status:Database['public']['Enums']['connection_status']; message:string|null; response_note:string|null; responded_at:string|null; last_action_by:string|null; last_action_role:string|null; last_action_at:string|null; created_at:string; updated_at:string }
+        Insert: { id?:string; requester_id:string; addressee_id:string; opportunity_id?:string|null; intent?:Database['public']['Enums']['connection_intent']; status?:Database['public']['Enums']['connection_status']; message?:string|null; response_note?:string|null; responded_at?:string|null; last_action_by?:string|null; last_action_role?:string|null; last_action_at?:string|null; created_at?:string; updated_at?:string }
         Update: Partial<Database['public']['Tables']['connections']['Insert']>
         Relationships: []
       }
