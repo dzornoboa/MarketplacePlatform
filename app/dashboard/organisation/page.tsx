@@ -4,6 +4,7 @@ import { humanize } from '@/lib/auth/access'
 import { date } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
 import { createOrganisation, updateOrganisation } from './actions'
+import { CountryCurrencyFields } from '@/components/country-currency-fields'
 
 export const dynamic = 'force-dynamic'
 
@@ -52,9 +53,9 @@ export default async function OrganisationPage({ searchParams }: Props) {
               <label>Website<input name="website" placeholder="https://" /></label>
             </div>
             <div className="form-grid">
-              <label>Country<input name="country" defaultValue="Ghana" /></label>
-              <label>City<input name="city" placeholder="Accra" /></label>
+              <CountryCurrencyFields initialCountry="Ghana" initialCountryCode="GH" initialCurrency="USD" countryName="country" countryCodeName="countryCode" currencyName="preferredCurrency" currencyLabel="Preferred Currency" />
             </div>
+            <label>City<input name="city" placeholder="Accra" /></label>
             <label>Description<textarea name="description" rows={4} placeholder="What the organisation does." /></label>
             <SubmitButton>Create organisation</SubmitButton>
           </form>
@@ -78,9 +79,9 @@ export default async function OrganisationPage({ searchParams }: Props) {
                     <label>Website<input name="website" defaultValue={org.website ?? ''} placeholder="https://" /></label>
                   </div>
                   <div className="form-grid">
-                    <label>Country<input name="country" defaultValue={org.country ?? ''} /></label>
-                    <label>City<input name="city" defaultValue={org.city ?? ''} /></label>
+                    <CountryCurrencyFields initialCountry={org.country ?? ''} initialCountryCode={org.country_code ?? ''} initialCurrency={org.preferred_currency ?? 'USD'} countryName="country" countryCodeName="countryCode" currencyName="preferredCurrency" currencyLabel="Preferred Currency" />
                   </div>
+                  <label>City<input name="city" defaultValue={org.city ?? ''} /></label>
                   <label>Description<textarea name="description" rows={4} defaultValue={org.description ?? ''} /></label>
                   <SubmitButton>Save organisation</SubmitButton>
                 </form>
