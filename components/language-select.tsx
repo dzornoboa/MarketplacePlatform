@@ -26,6 +26,7 @@ export function LanguageSelect({ name = 'language', defaultValue = 'en', autoTra
     setValue(next)
     if (autoTranslate) {
       localStorage.setItem('wtc-language', next)
+      localStorage.setItem('wtc-auto-translate', '1')
       window.dispatchEvent(new Event('wtc-language-change'))
     }
   }
