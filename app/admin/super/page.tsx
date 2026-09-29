@@ -19,6 +19,8 @@ export default async function SuperAdminPage({ searchParams }: Props) {
   const { supabase, profile: me } = await requireSuperAdmin()
   const params = await searchParams
   const tab = typeof params.tab === 'string' ? params.tab : 'accounts'
+  const error = typeof params.error === 'string' ? params.error : null
+  const message = typeof params.message === 'string' ? params.message : null
 
   const [
     { data: profiles }, { data: audit }, { data: subs }, { data: opportunities }, { data: posts }, { data: blocks },
@@ -70,6 +72,9 @@ export default async function SuperAdminPage({ searchParams }: Props) {
       <h1>Everything, in one place</h1>
       <p className="muted">Full oversight of accounts, access, audit history and every edit made to the public website. Signed in as {me.full_name}.</p>
     </div>
+
+    {error && <div className="alert alert-error">{error}</div>}
+    {message && <div className="alert alert-success">{message}</div>}
 
     <section className="dashboard-grid super-metrics">
       <article className="metric-card"><span>Accounts</span><strong>{totals.accounts}</strong><p>{totals.staff} staff · {totals.accounts - totals.staff} members</p></article>
