@@ -18,8 +18,10 @@ export async function updatePreferences(formData: FormData) {
 
   const timezone = String(formData.get('timezone') ?? '').trim()
   const locale = String(formData.get('locale') ?? '').trim()
+  const language = String(formData.get('language') ?? 'en').trim().toLowerCase()
   if (timezone.length < 3 || timezone.length > 80) redirect(back('error', 'Enter a valid timezone.'))
   if (locale.length < 2 || locale.length > 20) redirect(back('error', 'Enter a valid locale.'))
+  if (!/^[a-z]{2,3}$/.test(language)) redirect(back('error', 'Select a valid dashboard language.'))
 
   const on = (name: string) => String(formData.get(name) ?? '') === 'on'
   const { error } = await supabase.from('user_preferences').upsert({
@@ -31,6 +33,8 @@ export async function updatePreferences(formData: FormData) {
     marketing_emails: on('marketingEmails'),
     timezone,
     locale,
+    language,
+    auto_translate: on('autoTranslate'),
   })
   if (error) redirect(back('error', error.message))
   revalidatePath('/dashboard/settings')
