@@ -60,7 +60,8 @@ export function AutoTranslate() {
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null
     const run = () => {
-      const language = localStorage.getItem(STORAGE_KEY) || 'en'
+      const enabled = localStorage.getItem('wtc-auto-translate') === '1'
+      const language = enabled ? (localStorage.getItem(STORAGE_KEY) || 'en') : 'en'
       void translatePage(language)
     }
     run()
