@@ -9,6 +9,7 @@ import { requiredDocuments, purposeLabel } from '@/lib/kyc'
 import { humanize, labelForParticipantType, systemRoleLabels, systemRoles, accountStatuses, selectableParticipantTypes, participantTypeLabels } from '@/lib/auth/access'
 import { date, dateTime, money } from '@/lib/format'
 import { SubmitButton } from '@/components/submit-button'
+import { CountryCurrencyFields } from '@/components/country-currency-fields'
 import { updateMarketplaceAccess, updateAccountStatus, updateStaffRole, setVerificationStatus, messageMember, setMemberSubscription, setSupportBypass, sendPasswordReset, adminUpdateProfile, requestUserServiceAction } from '../actions'
 
 export const dynamic = 'force-dynamic'
@@ -229,9 +230,17 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
         <label>Job title<input name="jobTitle" defaultValue={person.job_title ?? ''} /></label>
       </div>
       <div className="form-grid">
-        <label>Country<input name="country" defaultValue={person.country ?? ''} /></label>
-        <label>City<input name="city" defaultValue={person.city ?? ''} /></label>
+        <CountryCurrencyFields
+          initialCountry={person.country ?? ''}
+          initialCountryCode={person.country_code ?? ''}
+          initialCurrency={person.preferred_currency ?? 'USD'}
+          countryName="country"
+          countryCodeName="countryCode"
+          currencyName="preferredCurrency"
+          currencyLabel="Preferred Currency"
+        />
       </div>
+      <label>City<input name="city" defaultValue={person.city ?? ''} /></label>
       <div className="form-grid">
         <label>WTCA membership no.<input name="wtcaNumber" defaultValue={person.wtca_membership_number ?? ''} /></label>
         <label>WTCA chapter<input name="wtcaChapter" defaultValue={person.wtca_chapter ?? ''} /></label>
