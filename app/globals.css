@@ -1457,3 +1457,19 @@ h1,h2,h3,h4,
 /* Closed-deal success-fee summary */
 .deal-close-summary{border-top:3px solid var(--wtc-teal)}
 .deal-close-summary dd small{font-size:11px;color:var(--muted)}
+
+
+/* ---------- Registration Payment Prompt / OAuth -------------------------- */
+.access-payment-overlay{position:fixed;inset:0;z-index:120;background:rgba(7,34,68,.55);display:grid;place-items:center;padding:20px}
+.access-payment-modal{width:min(560px,100%);padding:28px;box-shadow:0 24px 70px rgba(0,0,0,.28)}
+.access-payment-modal h2{margin:6px 0 10px;color:var(--wtc-navy)}
+.access-payment-modal p{line-height:1.6}
+.oauth-consent-card{max-width:620px}
+.oauth-scope-list{margin:20px 0;padding:18px;border:1px solid var(--line);border-radius:8px;background:#fafbfc}
+.oauth-scope-list h2{font-size:16px;margin:0 0 10px}
+.feature-grid article .button{margin-top:14px;align-self:flex-start}
+.listing-access-note{margin:18px 0 0}
+@media(max-width:620px){
+  .access-payment-modal{padding:22px}
+  .access-payment-modal .button-row{display:grid;grid-template-columns:1fr}
+}
