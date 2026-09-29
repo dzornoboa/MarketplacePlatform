@@ -21,7 +21,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     { href: '/admin/assistant', label: 'AI agent', show: role === 'super_admin' },
     { href: '/admin/super', label: 'Super admin', show: role === 'super_admin' },
     { href: '/admin/verification', label: 'Verification queue', show: hasCapability(role, 'verification') },
-    { href: '/admin/users', label: 'Members', show: isAdminRole(role) },
+    { href: '/admin/users', label: 'Members', show: hasCapability(role, 'users') },
     { href: '/admin/opportunities', label: 'Opportunities', show: hasCapability(role, 'opportunities') },
     { href: '/admin/bids', label: 'Bids', show: hasCapability(role, 'opportunities') },
     { href: '/admin/introductions', label: 'Introductions', show: hasCapability(role, 'introductions') },

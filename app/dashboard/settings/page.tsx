@@ -4,6 +4,7 @@ import { humanize, labelForParticipantType, systemRoleLabels } from '@/lib/auth/
 import { date } from '@/lib/format'
 import { PushNotificationToggle } from '@/components/push-notification-toggle'
 import { updatePreferences } from './actions'
+import { LanguageSelect } from '@/components/language-select'
 
 export const dynamic = 'force-dynamic'
 
@@ -63,10 +64,15 @@ export default async function SettingsPage({ searchParams }: Props) {
       </div>
 
       <div className="form-grid">
-        <label>Timezone<input name="timezone" defaultValue={preferences?.timezone ?? 'Africa/Accra'} required /></label>
-        <label>Locale<input name="locale" defaultValue={preferences?.locale ?? 'en-GH'} required /></label>
+        <label>Timezone<input name="timezone" defaultValue={preferences?.timezone ?? 'UTC'} required /></label>
+        <label>Locale<input name="locale" defaultValue={preferences?.locale ?? 'en'} required /></label>
       </div>
-      <p className="field-help">Used for dates and times shown across the platform.</p>
+      <label>Dashboard Language<LanguageSelect defaultValue={preferences?.language ?? 'en'} /></label>
+      <label className="switch preference-row">
+        <input type="checkbox" name="autoTranslate" defaultChecked={preferences?.auto_translate ?? false} />
+        <span><strong>Automatic Translation</strong><small>Translate interface text into your selected dashboard language. Changing language is an opt-in request to the configured translation service.</small></span>
+      </label>
+      <p className="field-help">Timezone and locale format dates and times. Dashboard Language controls optional automatic translation.</p>
       <button className="button button-primary" type="submit">Save preferences</button>
     </form>
 

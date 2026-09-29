@@ -4,7 +4,7 @@ import { ParticipantBadge } from '@/components/participant-badge'
 import { Avatar } from '@/components/avatar'
 import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { notFound } from 'next/navigation'
-import { requireAdminProfile } from '@/lib/auth/guards'
+import { requireCapability } from '@/lib/auth/guards'
 import { requiredDocuments, purposeLabel } from '@/lib/kyc'
 import { humanize, labelForParticipantType, systemRoleLabels, systemRoles, accountStatuses, selectableParticipantTypes, participantTypeLabels } from '@/lib/auth/access'
 import { date, dateTime, money } from '@/lib/format'
@@ -19,7 +19,7 @@ type Props = { params: Promise<{ id: string }>; searchParams: Promise<Record<str
    documents, verification history, subscriptions and payments, plus the
    controls to change any of it and to message the member. */
 export default async function AdminMemberPage({ params, searchParams }: Props) {
-  const { supabase, profile: me } = await requireAdminProfile()
+  const { supabase, profile: me } = await requireCapability('users')
   const { id } = await params
   const sp = await searchParams
   const error = typeof sp.error === 'string' ? sp.error : null
@@ -195,13 +195,13 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
         <SubmitButton className="button button-outline" pendingLabel="Sending…">Send reset link</SubmitButton>
       </form>
 
-      <form action={updateStaffRole} className="card review-form">
-        <h3>System role</h3>
+      {me.system_role === 'super_admin' && <form action={updateStaffRole} className="card review-form">
+        <h3>System Role</h3>
         <input type="hidden" name="userId" value={person.id} /><input type="hidden" name="returnTo" value="detail" />
         <select name="systemRole" defaultValue={person.system_role}>{systemRoles.map(r => <option key={r} value={r}>{systemRoleLabels[r]}</option>)}</select>
-        <p className="field-help">Super administrators only.</p>
-        <SubmitButton className="button button-outline" pendingLabel="Saving…">Update role</SubmitButton>
-      </form>
+        <p className="field-help">Role changes take effect on the member's next request. Administrator and Super Administrator routes also require MFA.</p>
+        <SubmitButton className="button button-outline" pendingLabel="Saving…">Update Role</SubmitButton>
+      </form>}
     </div>}
 
     {!self && <form action={adminUpdateProfile} className="card form-stack">

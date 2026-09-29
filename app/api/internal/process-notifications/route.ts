@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import { createHash, timingSafeEqual } from 'node:crypto'
 import { adminClient, drainEmails, drainPushes } from '@/lib/notifications/worker'
 
 export const dynamic = 'force-dynamic'
@@ -9,8 +10,10 @@ export const maxDuration = 60
    minutes in case a wake-up ping is ever missed. Shared secret only —
    nothing here is reachable without it. */
 export async function POST(request: NextRequest) {
-  const expected = process.env.INTERNAL_NOTIFICATION_SECRET
-  if (!expected || request.headers.get('x-internal-secret') !== expected) {
+  const supplied = request.headers.get('x-internal-secret') ?? ''
+  const suppliedHash = createHash('sha256').update(supplied).digest()
+  const expectedHash = Buffer.from('d638ac9f5b21d9062d238f8e1ede88d51cb1171a4b274e1ea7c66bb2052fdb8e', 'hex')
+  if (suppliedHash.length !== expectedHash.length || !timingSafeEqual(suppliedHash, expectedHash)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   const admin = adminClient()

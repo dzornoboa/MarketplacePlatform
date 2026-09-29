@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { VerifiedCheck } from '@/components/verified-check'
 import { ParticipantBadge } from '@/components/participant-badge'
 import { Avatar } from '@/components/avatar'
-import { requireAdminProfile } from '@/lib/auth/guards'
+import { requireCapability } from '@/lib/auth/guards'
 import { humanize, labelForParticipantType, systemRoleLabels, systemRoles, accountStatuses } from '@/lib/auth/access'
 import { date } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic'
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
 export default async function AdminUsersPage({ searchParams }: Props) {
-  const { supabase, profile: me } = await requireAdminProfile()
+  const { supabase, profile: me } = await requireCapability('users')
   const params = await searchParams
   const error = typeof params.error === 'string' ? params.error : null
   const message = typeof params.message === 'string' ? params.message : null

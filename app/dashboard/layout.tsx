@@ -9,6 +9,8 @@ import { date } from '@/lib/format'
 import { DashboardNav } from '@/components/dashboard-nav'
 import { isAdminRole } from '@/lib/auth/access'
 import { RealtimeAccess } from '@/components/realtime-access'
+import { TranslationPreferenceSync } from '@/components/translation-preference-sync'
+import { ClearRegistrationDraft } from '@/components/registration-draft'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,6 +22,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const adminHasFactor = (factors?.totp ?? []).some(f => f.status === 'verified')
   // Profile, access state and unread count all come from the one bootstrap call; a daily cron expires lapsed subscriptions.
   const state = await readAccessState(supabase)
+  const { data: preferences } = await supabase.from('user_preferences').select('language,auto_translate').maybeSingle()
   const count = unread
   const daysLeft = state ? subscriptionDaysLeft(state) : null
   const planName = state?.subscription_plan_name ?? null
@@ -41,6 +44,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       {children}
     </main>
     <RealtimeAccess userId={profile.id} />
+    <TranslationPreferenceSync language={preferences?.language ?? 'en'} enabled={preferences?.auto_translate ?? false} />
+    <ClearRegistrationDraft />
     <Suspense fallback={null}><FlashNotice /></Suspense>
   </div>
 }

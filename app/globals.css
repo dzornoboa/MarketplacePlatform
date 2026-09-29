@@ -1236,3 +1236,19 @@ h1,h2,h3,h4,
 .billing-consent{border:1px solid var(--line-strong);border-radius:var(--radius);padding:14px 16px;background:#f8fafc;display:flex;flex-direction:column;gap:8px}
 .consent-check{display:grid!important;grid-template-columns:auto 1fr;align-items:start;gap:10px!important;font-size:13px!important;letter-spacing:0!important;text-transform:none!important;color:var(--ink)!important;font-weight:600!important}
 .consent-check input[type=checkbox]{width:18px!important;height:18px!important;margin-top:2px;accent-color:var(--wtc-navy);padding:0!important}
+
+
+/* ---------- Global registration and admin form fixes --------------------- */
+.phone-field{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:stretch}
+.phone-prefix{display:flex;align-items:center;padding:0 12px;border:1px solid var(--line-strong);border-right:0;border-radius:var(--radius) 0 0 var(--radius);background:var(--wtc-mist);font-weight:700;color:var(--wtc-navy);white-space:nowrap}
+.phone-field input{min-width:0;width:100%;border-radius:0 var(--radius) var(--radius) 0!important}
+.username-state{margin-top:-4px}
+.username-available{color:var(--success)}
+.username-taken,.username-invalid{color:var(--danger)}
+.auth-card .form-stack{margin-bottom:18px}
+.auth-card .form-stack+form{display:block;margin-top:8px;line-height:1.6}
+.auth-card .form-stack .button{margin-top:4px}
+.review-form .split-grid{grid-template-columns:repeat(2,minmax(0,1fr));width:100%;gap:10px}
+.review-form .split-grid label{min-width:0;width:100%}
+.review-form .split-grid input[type="date"]{min-width:0;width:100%;max-width:100%}
+@media(max-width:680px){.review-form .split-grid{grid-template-columns:1fr}}
