@@ -44,7 +44,7 @@ export default async function NetworkPage({ searchParams }: Props) {
       participant: participant || null,
       member_country: memberCountry || null,
       only_ids: null,
-      max_rows: 60,
+      max_rows: 200,
     }),
     supabase.from('connections').select('*').order('created_at', { ascending: false }),
   ])
