@@ -195,13 +195,13 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
         <SubmitButton className="button button-outline" pendingLabel="Sending…">Send reset link</SubmitButton>
       </form>
 
-      <form action={updateStaffRole} className="card review-form">
-        <h3>System role</h3>
+      {me.system_role === 'super_admin' && <form action={updateStaffRole} className="card review-form">
+        <h3>System Role</h3>
         <input type="hidden" name="userId" value={person.id} /><input type="hidden" name="returnTo" value="detail" />
         <select name="systemRole" defaultValue={person.system_role}>{systemRoles.map(r => <option key={r} value={r}>{systemRoleLabels[r]}</option>)}</select>
-        <p className="field-help">Super administrators only.</p>
-        <SubmitButton className="button button-outline" pendingLabel="Saving…">Update role</SubmitButton>
-      </form>
+        <p className="field-help">Role changes take effect on the member's next request. Administrator and Super Administrator routes also require MFA.</p>
+        <SubmitButton className="button button-outline" pendingLabel="Saving…">Update Role</SubmitButton>
+      </form>}
     </div>}
 
     {!self && <form action={adminUpdateProfile} className="card form-stack">
