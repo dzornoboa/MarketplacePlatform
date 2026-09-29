@@ -21,7 +21,7 @@ export default async function AdminOpportunitiesPage({ searchParams }: Props) {
   const intent = typeof params.intent === 'string' ? params.intent : ''
   const sort = typeof params.sort === 'string' && ['newest', 'oldest', 'title', 'amount'].includes(params.sort) ? params.sort : 'oldest'
 
-  let query = supabase.from('opportunities').select('*').eq('status', status as 'submitted').limit(200)
+  let query = supabase.from('opportunities').select('*').eq('status', status as 'submitted').limit(1000)
   if (q) query = query.or(`title.ilike.%${q}%,sector.ilike.%${q}%,country.ilike.%${q}%`)
   if (intent) query = query.eq('intent', intent as 'seeking_investment')
   query = sort === 'title' ? query.order('title')
