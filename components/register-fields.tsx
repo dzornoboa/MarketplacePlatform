@@ -22,7 +22,6 @@ const HINT: Record<string, string> = {
   wtc_accra_member: 'WTC Accra members join and post deals for free. US$500/year unlocks meeting details and restricted deal opportunities. A 1% success fee applies to closed deals.',
 }
 
-type PlanOption = { code: string; name: string; price_usd: number; billing_interval: string; target_participant_types: string[]; description: string | null }
 type CountryOption = { code: string; name: string; callingCode: string }
 
 function suggestedUsername(name: string) {
@@ -30,9 +29,8 @@ function suggestedUsername(name: string) {
   return base.length >= 3 ? base : ''
 }
 
-export function RegisterFields({ email, plans = [], initialPlan = '', initialType = '' }: { email?: string; plans?: PlanOption[]; initialPlan?: string; initialType?: string }) {
+export function RegisterFields({ email, initialPlan = '', initialType = '' }: { email?: string; plans?: unknown[]; initialPlan?: string; initialType?: string }) {
   const [type, setType] = useState(initialType)
-  const [plan, setPlan] = useState(initialPlan)
   const [mail, setMail] = useState(email ?? '')
   const [fullName, setFullName] = useState('')
   const [username, setUsername] = useState('')
@@ -83,12 +81,7 @@ export function RegisterFields({ email, plans = [], initialPlan = '', initialTyp
     return years >= 0 ? String(years) : ''
   })()
 
-  const eligible = plans.filter(pl => pl.target_participant_types.length === 0 || (type && pl.target_participant_types.includes(type)))
-  const chosen = eligible.find(pl => pl.code === plan) ?? null
-  const pickType = (t: string) => {
-    setType(t)
-    if (!plans.find(pl => pl.code === plan && (pl.target_participant_types.length === 0 || pl.target_participant_types.includes(t)))) setPlan('')
-  }
+  const pickType = (t: string) => setType(t)
   const company = COMPANY_TYPES.has(type)
   const wtc = WTC_TYPES.has(type)
 
@@ -166,15 +159,10 @@ export function RegisterFields({ email, plans = [], initialPlan = '', initialTyp
     </div>
     <p className="field-help">National ID means the official government-issued identity card for your country. Passport and other accepted government IDs are also supported worldwide. You must be at least 18 years old. Registration is blocked immediately for anyone under 18.</p>
 
-    {type && eligible.length > 0 && <div className="form-stack plan-pick">
-      <label>Plan
-        <select name="planCode" value={plan} onChange={e => setPlan(e.target.value)} required>
-          <option value="" disabled>Choose Your Plan</option>
-          {eligible.map(pl => <option key={pl.code} value={pl.code}>{pl.name} — {Number(pl.price_usd) === 0 ? 'Free' : `US${Number(pl.price_usd).toLocaleString()}/${pl.billing_interval}`}</option>)}
-        </select>
-      </label>
-      {chosen && <p className="field-help">{chosen.description ? chosen.description + ' ' : ''}{Number(chosen.price_usd) === 0 ? 'Joining and posting deals are free. Restricted deal details remain protected and require an approved access request.' : 'Joining and posting deals are free. This annual access plan unlocks the restricted detail/networking features defined for your tier once the required verification conditions are met.'} A 1% success fee applies to successfully closed deals.</p>}
-    </div>}
+    {initialPlan && <input type="hidden" name="planCode" value={initialPlan} />}
+    <div className="alert alert-info">
+      <strong>Registration Is Free.</strong> You do not have to pay during account creation. After registration you can activate the annual access plan for your membership type immediately, or skip it and pay later from Billing.
+    </div>
 
     <label>Password<input name="password" type="password" autoComplete="new-password" minLength={8} required /></label>
     <p className="field-help">Use at least 8 characters with upper and lowercase letters and a number. Passwords are never stored in your registration draft.</p>
