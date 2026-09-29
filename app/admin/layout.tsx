@@ -23,7 +23,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     { href: '/admin/verification', label: 'Verification queue', show: hasCapability(role, 'verification') },
     { href: '/admin/users', label: 'Members', show: hasCapability(role, 'users') },
     { href: '/admin/opportunities', label: 'Opportunities', show: hasCapability(role, 'opportunities') },
-    { href: '/admin/bids', label: 'Bids', show: hasCapability(role, 'opportunities') },
+    { href: '/admin/deals', label: 'Deals', show: hasCapability(role, 'opportunities') },
     { href: '/admin/matching', label: 'Matching', show: hasCapability(role, 'matching') },
     { href: '/admin/introductions', label: 'Introductions', show: hasCapability(role, 'introductions') },
     { href: '/admin/subscriptions', label: 'Subscriptions', show: hasCapability(role, 'finance') },
