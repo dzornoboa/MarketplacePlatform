@@ -17,7 +17,7 @@ type Props = { params: Promise<{ id: string }>; searchParams: Promise<Record<str
 
 /* One deal room: the listing, who is in the room, a message thread and the
    documents shared inside it. RLS admits only the owner, the accepted
-   bidder(s) and WTC Accra staff. */
+   participant(s) and WTC Accra staff. */
 export default async function DealRoomPage({ params, searchParams }: Props) {
   const { supabase, profile } = await requireUserProfile()
   const { id } = await params
