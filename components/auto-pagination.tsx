@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 
 const PAGE_SIZE = 40
 const SELECTORS = [
@@ -17,6 +18,7 @@ const SELECTORS = [
 type State = { page: number; totalPages: number; nav: HTMLElement }
 
 export function AutoPagination() {
+  const pathname = usePathname()
   useEffect(() => {
     const states = new WeakMap<Element, State>()
 
@@ -121,15 +123,13 @@ export function AutoPagination() {
       })
     }
 
-    refresh()
-    const observer = new MutationObserver(() => window.requestAnimationFrame(refresh))
-    observer.observe(document.body, { subtree: true, childList: true })
-
+    const frame = window.requestAnimationFrame(refresh)
     return () => {
-      observer.disconnect()
+      window.cancelAnimationFrame(frame)
       document.querySelectorAll('.collection-pagination').forEach(node => node.remove())
+      document.querySelectorAll(SELECTORS).forEach(collection => Array.from(collection.children).forEach(child => ((child as HTMLElement).hidden = false)))
     }
-  }, [])
+  }, [pathname])
 
   return null
 }
