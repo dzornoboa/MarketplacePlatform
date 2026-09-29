@@ -47,15 +47,15 @@ const item = (item_key: string, heading: string, rest: Partial<Omit<ContentItem,
 export const HOME_FALLBACK: HomeContent = {
   hero: section('hero', 'hero', 'navy', {
     eyebrow: 'World Trade Centre Accra',
-    heading: 'Where the world does',
-    heading_emphasis: 'business',
-    body: 'Connect with credible buyers, investors, businesses and WTC members through a professionally managed trade and investment network — verified before it is opened.',
-    cta_label: 'Join the network', cta_href: '/register',
-    secondary_cta_label: 'Member sign in', secondary_cta_href: '/login',
+    heading: 'Where Global Business',
+    heading_emphasis: 'Meets Opportunity',
+    body: 'Connect with verified investors, buyers, businesses and WTC members through a professionally managed trade and investment platform built for credible introductions, qualified opportunities and cross-border growth.',
+    cta_label: 'Join The Network', cta_href: '/register',
+    secondary_cta_label: 'Member Sign In', secondary_cta_href: '/login',
   }),
   hero_card: section('hero_card', 'hero_card', 'navy', {
     eyebrow: 'Private marketplace',
-    heading: 'Opportunities stay protected.',
+    heading: 'Opportunities Stay Protected',
     body: 'The public website explains the network. Actual investment and trade opportunities become visible only after authentication and WTC Accra verification.',
     items: [
       item('identity', 'Identity'),
@@ -65,8 +65,8 @@ export const HOME_FALLBACK: HomeContent = {
   }),
   about: section('about', 'feature_grid', 'navy', {
     eyebrow: 'Built for trusted trade',
-    heading: 'A business platform with',
-    heading_emphasis: 'verification at its core',
+    heading: 'A Business Platform With',
+    heading_emphasis: 'Verification At Its Core',
     body: 'The WTCA is a worldwide network of business centres, professionals and organisations across all industries, supporting one another for the betterment of global commerce. WTC Accra brings that network to Ghana.',
     items: [
       item('verified-participants', 'Verified participants', { body: 'Buyers, investors, businesses and WTC members use one common dashboard, with privileges assigned only after review.' }),
@@ -84,8 +84,8 @@ export const HOME_FALLBACK: HomeContent = {
   }),
   'how-it-works': section('how-it-works', 'steps', 'orange', {
     eyebrow: 'How it works',
-    heading: 'Three steps to',
-    heading_emphasis: 'verified access',
+    heading: 'Three Steps To',
+    heading_emphasis: 'Verified Access',
     items: [
       item('create-account', 'Create an account', { eyebrow: '01', body: 'Choose your participant category and confirm your email address.', accent: 'orange' }),
       item('complete-verification', 'Complete verification', { eyebrow: '02', body: 'Fill in your profile and submit it to WTC Accra for review.', accent: 'teal' }),
@@ -94,8 +94,8 @@ export const HOME_FALLBACK: HomeContent = {
   }),
   value: section('value', 'value_grid', 'orange', {
     eyebrow: 'What membership delivers',
-    heading: 'A world of',
-    heading_emphasis: 'opportunity',
+    heading: 'A World Of',
+    heading_emphasis: 'Business Opportunity',
     body: 'There’s a world of opportunity out there. Can you afford not to connect with it? Six reasons members join the World Trade Centers Association network.',
     items: [
       item('connection', 'Connection', { body: 'A connected network and tools that create new business relationships and increase reach across industries and locations.', accent: 'orange' }),
@@ -108,18 +108,18 @@ export const HOME_FALLBACK: HomeContent = {
   }),
   membership: section('membership', 'cta', 'navy', {
     eyebrow: 'Membership access',
-    heading: 'Start with your',
-    heading_emphasis: 'verified WTC Accra profile',
+    heading: 'Start With Your',
+    heading_emphasis: 'Verified WTC Accra Profile',
     body: 'Registration is open to all; private marketplace access is controlled by WTC Accra.',
-    cta_label: 'Create account', cta_href: '/register',
-    secondary_cta_label: 'Member sign in', secondary_cta_href: '/login',
+    cta_label: 'Create Account', cta_href: '/register',
+    secondary_cta_label: 'Member Sign In', secondary_cta_href: '/login',
   }),
   contact: section('contact', 'contact', 'navy', {
     eyebrow: 'Contact',
-    heading: 'Need help',
-    heading_emphasis: 'joining the platform?',
+    heading: 'Need Help',
+    heading_emphasis: 'Joining The Platform?',
     body: 'Contact World Trade Centre Accra for membership, verification and platform support. Existing members can raise a request from the support area of the member dashboard.',
-    cta_label: 'Create your account', cta_href: '/register',
+    cta_label: 'Create Your Account', cta_href: '/register',
   }),
 }
 
@@ -170,7 +170,7 @@ export type SiteChrome = { header: NavLink[]; footerPlatform: NavLink[]; legal: 
 export const CHROME_FALLBACK: SiteChrome = {
   header: [
     { label: 'About', href: '/#about' },
-    { label: 'How it works', href: '/#how-it-works' },
+    { label: 'How It Works', href: '/#how-it-works' },
     { label: 'Why WTC Accra', href: '/#value' },
     { label: 'Membership', href: '/#membership' },
     { label: 'News', href: '/news' },
