@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { allow } from '@/lib/security/throttle'
 import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
+  if (!(await allow('username_check', 60, 600))) return NextResponse.json({ available: false, valid: false, error: 'Too many requests.' }, { status: 429 })
   const candidate = (request.nextUrl.searchParams.get('username') ?? '').trim().toLowerCase()
   if (!/^[a-z0-9][a-z0-9._-]{2,29}$/.test(candidate)) {
     return NextResponse.json({ available: false, valid: false })
