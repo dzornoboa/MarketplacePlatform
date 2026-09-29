@@ -105,6 +105,12 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['user_termination_requests']['Insert']>
         Relationships: []
       }
+      platform_backups: {
+        Row: { id:string; label:string; scope:string; note:string|null; snapshot:Json; table_counts:Json; created_by:string; created_at:string; last_restored_at:string|null; last_restored_by:string|null; restore_count:number; status:string }
+        Insert: { id?:string; label:string; scope?:string; note?:string|null; snapshot:Json; table_counts?:Json; created_by:string; created_at?:string; last_restored_at?:string|null; last_restored_by?:string|null; restore_count?:number; status?:string }
+        Update: Partial<Database['public']['Tables']['platform_backups']['Insert']>
+        Relationships: []
+      }
       organizations: {
         Row: { id:string; name:string; registration_number:string|null; website:string|null; country:string|null; city:string|null; description:string|null; created_by:string; is_verified:boolean; verified_at:string|null; verified_by:string|null; created_at:string; updated_at:string }
         Insert: { id?:string; name:string; registration_number?:string|null; website?:string|null; country?:string|null; city?:string|null; description?:string|null; created_by:string; is_verified?:boolean; verified_at?:string|null; verified_by?:string|null; created_at?:string; updated_at?:string }
@@ -293,6 +299,10 @@ export type Database = {
       get_support_participant_directory: { Args: Record<string, never>; Returns: { id: string; full_name: string }[] }
       request_user_termination: { Args: { target_user: string; request_type: string; reason: string }; Returns: string }
       review_user_deletion: { Args: { request_id: string; decision: string; confirmation_text?: string | null }; Returns: undefined }
+      create_platform_backup: { Args: { backup_label?: string | null; backup_note?: string | null }; Returns: string }
+      restore_platform_backup: { Args: { backup_id: string; restore_mode?: string; confirmation_text?: string | null }; Returns: undefined }
+      rename_platform_backup: { Args: { backup_id: string; new_label: string; new_note?: string | null }; Returns: undefined }
+      delete_platform_backup: { Args: { backup_id: string }; Returns: undefined }
     }
     Enums: {
       participant_type: 'investor'|'buyer'|'business'|'project_sponsor'|'wtc_association_member'|'wtc_accra_member'|'staff'|'institutional_partner'
