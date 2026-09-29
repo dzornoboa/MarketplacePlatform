@@ -137,8 +137,8 @@ export default async function BillingPage({ searchParams }: Props) {
     <RealtimeRefresh tables={["payments","subscriptions"]} />
     <div>
       <p className="eyebrow">Billing and membership</p>
-      <h1>Subscription and membership</h1>
-      <p className="muted">Membership is billed annually and opens the marketplace for twelve months. Access pauses on the renewal date until the next year is paid.</p>
+      <h1>Access Plan And Membership</h1>
+      <p className="muted">Account registration is free. Paid annual access plans unlock the restricted marketplace features for eligible membership types after the required verification and activation checks.</p>
     </div>
     {error && !sectionNotice && <div className="alert alert-error">{error}</div>}
     {message && !sectionNotice && <div className="alert alert-success">{message}</div>}
@@ -198,7 +198,7 @@ export default async function BillingPage({ searchParams }: Props) {
       <article className="metric-card">
         <span>Subscription</span>
         <strong>{active ? (activePlan?.name ?? 'Active') : awaiting ? 'Awaiting approval' : pending ? 'Payment due' : expired ? 'Expired' : 'None'}</strong>
-        <p>{active ? `Active until ${date(active.ends_at)}.` : awaiting ? 'Paid; WTC Accra is confirming eligibility.' : pending ? 'Complete the payment above.' : expired ? 'Renew to restore access.' : 'An active subscription unlocks published opportunities.'}</p>
+        <p>{active ? `Active until ${date(active.ends_at)}.` : awaiting ? 'Paid; WTC Accra is confirming eligibility.' : pending ? 'Complete the payment above.' : expired ? 'Renew to restore access.' : 'An active eligible access plan unlocks the full published deal catalogue.'}</p>
       </article>
       <article className="metric-card">
         <span>Marketplace access</span>
@@ -215,7 +215,7 @@ export default async function BillingPage({ searchParams }: Props) {
     <section className="pricing-section">
       <div className="pricing-head">
         <h2>{matched.length > 0 ? `Plans for ${labelForParticipantType(myType)} participants` : 'Plans'}</h2>
-        <p className="muted">One annual membership fee per group, billed yearly. Pay by card, mobile money or bank transfer; the marketplace opens as soon as the payment is confirmed.</p>
+        <p className="muted">Choose the annual access plan for your participant type when you are ready. Registration and posting remain free; full restricted access opens after payment and any required verification or approval.</p>
       </div>
       {matched.length > 0 && <div className="pricing-cards" data-count={matched.length}>{matched.map(pricingCard)}</div>}
       {others.length > 0 && <details className="plan-others">

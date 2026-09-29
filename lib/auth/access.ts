@@ -212,6 +212,9 @@ export function marketplaceLock(state: AccessState): MarketplaceLock {
   if ((state.participant_type === 'business' || state.participant_type === 'buyer' || state.participant_type === 'project_sponsor' || state.participant_type === 'institutional_partner') && state.verification_status !== 'verified') {
     return { locked: true, reason: 'Complete and verify your Business profile before restricted deal details can be unlocked.', action: { label: 'Complete Verification', href: '/dashboard/verification' } }
   }
+  if (state.participant_type === 'wtc_accra_member' && state.verification_status !== 'verified') {
+    return { locked: true, reason: 'WTC Accra Member full deal access requires profile completion and verification before restricted details unlock.', action: { label: 'Complete Verification', href: '/dashboard/verification' } }
+  }
   if (state.participant_type === 'wtc_association_member' && state.verification_status !== 'verified') {
     return { locked: true, reason: 'WTCA Member deal access requires WTC Accra verification before restricted details unlock.', action: { label: 'Complete Verification', href: '/dashboard/verification' } }
   }
