@@ -6,7 +6,7 @@ import { requireUserProfile } from '@/lib/auth/guards'
 import { humanize } from '@/lib/auth/access'
 import { dateTime } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
-import { respondToInterest, withdrawBid } from '../opportunities/actions'
+import { respondToInterest, withdrawDeal } from '../opportunities/actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,17 +35,17 @@ export default async function InterestsPage({ searchParams }: Props) {
   return <div className="page-stack">
     <div>
       <p className="eyebrow">Deal flow</p>
-      <h1>Bids</h1>
-      <p className="muted">Bids you have placed on other members' listings, and bids received on yours. Every bid passes WTC Accra due diligence before it reaches the owner, and both parties are notified at each step.</p>
+      <h1>Deals</h1>
+      <p className="muted">Deals you have placed on other members' listings, and deals received on yours. Every deal passes WTC Accra due diligence before it reaches the owner, and both parties are notified at each step.</p>
     </div>
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
 
     <section>
       <h2>Received on your listings</h2>
-      <p className="muted">Only bids WTC Accra has cleared appear here. Accepting one tells the bidder and the trade desk, who can then open a deal room.</p>
+      <p className="muted">Only deals WTC Accra has cleared appear here. Accepting one tells the participant and the trade desk, who can then open a deal room.</p>
       {received.length === 0
-        ? <section className="card empty-state"><BrandCircle /><h2>No cleared bids yet</h2><p>When a member bids on one of your listings and WTC Accra clears it, it appears here for you to accept or decline.</p></section>
+        ? <section className="card empty-state"><BrandCircle /><h2>No cleared deals yet</h2><p>When a member deals on one of your listings and WTC Accra clears it, it appears here for you to accept or decline.</p></section>
         : <div className="opportunity-list">{received.map(item => {
             const opportunity = byId.get(item.opportunity_id)
             return <article className="card opportunity-card" key={item.id}>
@@ -61,10 +61,10 @@ export default async function InterestsPage({ searchParams }: Props) {
               {item.owner_note && <p className="field-help">Your note: {item.owner_note}</p>}
               {item.status !== 'accepted' && item.status !== 'declined' && <form action={respondToInterest} className="review-form">
                 <input type="hidden" name="eoiId" value={item.id} />
-                <label>Note to the bidder</label>
+                <label>Note to the participant</label>
                 <textarea name="ownerNote" rows={2} />
                 <div className="button-row">
-                  <button className="button button-primary" name="decision" value="accept">Accept bid</button>
+                  <button className="button button-primary" name="decision" value="accept">Accept deal</button>
                   <button className="button button-danger" name="decision" value="decline">Decline</button>
                 </div>
               </form>}
@@ -73,9 +73,9 @@ export default async function InterestsPage({ searchParams }: Props) {
     </section>
 
     <section>
-      <h2>Bids you placed</h2>
+      <h2>Deals you placed</h2>
       {sent.length === 0
-        ? <p className="muted">You have not bid on any listing yet. <a className="arrow-link" href="/opportunities">Browse live listings →</a></p>
+        ? <p className="muted">You have not deal on any listing yet. <a className="arrow-link" href="/opportunities">Browse live listings →</a></p>
         : <div className="opportunity-list">{sent.map(item => {
             const opportunity = byId.get(item.opportunity_id)
             return <article className="card opportunity-card" key={item.id}>
@@ -92,7 +92,7 @@ export default async function InterestsPage({ searchParams }: Props) {
               <div className="button-row">
                 {item.status === 'accepted' && <Link className="button button-primary" href="/dashboard/deal-rooms">Open deal room</Link>}
                 {item.status === 'under_review' && <Link className="button button-outline" href={`/dashboard/introductions?opportunity=${item.opportunity_id}`}>Request an introduction</Link>}
-                {(item.status === 'submitted' || item.status === 'under_review') && <form action={withdrawBid}><input type="hidden" name="eoiId" value={item.id} /><SubmitButton className="button button-danger" pendingLabel="Withdrawing…">Withdraw bid</SubmitButton></form>}
+                {(item.status === 'submitted' || item.status === 'under_review') && <form action={withdrawDeal}><input type="hidden" name="eoiId" value={item.id} /><SubmitButton className="button button-danger" pendingLabel="Withdrawing…">Withdraw deal</SubmitButton></form>}
               </div>
             </article>
           })}</div>}
