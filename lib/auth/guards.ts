@@ -76,6 +76,17 @@ export async function requireCapability(capability: StaffCapability) {
   return context
 }
 
+export async function requireAnyCapability(capabilities: StaffCapability[]) {
+  const context = await requireUserProfile()
+  const role = context.profile.system_role
+  if (!isStaffRole(role) || !capabilities.some(capability => hasCapability(role, capability))) redirect('/dashboard')
+  if (isAdminRole(role)) {
+    const aal = typeof context.claims.aal === 'string' ? context.claims.aal : null
+    if (!hasAdminMfaAccess(role, aal)) redirect('/dashboard/security?required=admin-mfa')
+  }
+  return context
+}
+
 type SupabaseLike = Awaited<ReturnType<typeof createClient>>
 
 const loadAccessState = cache(async (supabase: SupabaseLike) => {
