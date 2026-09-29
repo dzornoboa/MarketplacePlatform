@@ -24,9 +24,9 @@ export async function updateProfile(formData: FormData) {
   if (!/^[a-z0-9][a-z0-9._-]{2,29}$/.test(username)) redirect('/dashboard/profile?error=Choose%20a%20valid%20username.')
   const birthDate = dateOfBirth ? new Date(`${dateOfBirth}T00:00:00Z`) : null
   const today = new Date()
-  const ageCutoff = new Date(Date.UTC(today.getUTCFullYear() - 13, today.getUTCMonth(), today.getUTCDate()))
+  const ageCutoff = new Date(Date.UTC(today.getUTCFullYear() - 18, today.getUTCMonth(), today.getUTCDate()))
   const oldestReasonable = new Date(Date.UTC(today.getUTCFullYear() - 120, today.getUTCMonth(), today.getUTCDate()))
-  if (!birthDate || Number.isNaN(birthDate.getTime()) || birthDate > ageCutoff || birthDate < oldestReasonable) redirect('/dashboard/profile?error=Enter%20a%20valid%20date%20of%20birth.%20You%20must%20be%20at%20least%2013.')
+  if (!birthDate || Number.isNaN(birthDate.getTime()) || birthDate > ageCutoff || birthDate < oldestReasonable) redirect('/dashboard/profile?error=Enter%20a%20valid%20date%20of%20birth.%20You%20must%20be%20at%20least%2018.')
   if (!allowedIdTypes.has(idType)) redirect('/dashboard/profile?error=Select%20a%20valid%20identification%20type.')
   if (idNumber.length < 3 || idNumber.length > 80) redirect('/dashboard/profile?error=Enter%20a%20valid%20identification%20number.')
 
@@ -54,7 +54,7 @@ export async function updateProfile(formData: FormData) {
 
 /* Profile photo: stored in the public avatars bucket under the member's own
    folder; the URL is saved on the profile and used everywhere the member
-   appears (sidebar, directory, listings, bids, deal rooms, consoles). */
+   appears (sidebar, directory, deals, deal rooms, consoles). */
 export async function uploadAvatar(formData: FormData) {
   const { supabase, profile } = await requireUserProfile()
   const file = formData.get('avatar')
