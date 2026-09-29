@@ -106,17 +106,17 @@ export async function respondToInterest(formData: FormData) {
   const id = String(formData.get('eoiId') ?? '')
   const decision = String(formData.get('decision') ?? '')
   const note = String(formData.get('ownerNote') ?? '').trim()
-  const allowed: Record<string, 'under_review' | 'accepted' | 'declined'> = {
-    review: 'under_review', accept: 'accepted', decline: 'declined',
-  }
-  const status = allowed[decision]
-  if (!id || !status) redirect(to('/dashboard/interests', 'error', 'Invalid response.'))
+  if (!id || !['accept', 'decline'].includes(decision)) redirect(to('/dashboard/interests', 'error', 'Invalid response.'))
   const supabase = await createClient()
-  const { error } = await supabase.from('expressions_of_interest')
-    .update({ status, owner_note: note || null }).eq('id', id)
+  const { error } = await supabase.rpc('respond_to_deal_request', {
+    deal_id: id,
+    decision,
+    response_note: note || null,
+  })
   if (error) redirect(to('/dashboard/interests', 'error', error.message))
   revalidatePath('/dashboard/interests')
-  redirect(to('/dashboard/interests', 'message', 'Response recorded.'))
+  revalidatePath('/dashboard/deal-rooms')
+  redirect(to('/dashboard/interests', 'message', decision === 'accept' ? 'Deal connected. The monitored Deal Room is now available.' : 'Deal request declined.'))
 }
 
 /* Saved opportunities are a private shortlist — RLS scopes both the insert and
