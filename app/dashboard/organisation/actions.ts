@@ -21,11 +21,18 @@ export async function createOrganisation(formData: FormData) {
   if (name.length < 2 || name.length > 160) redirect(back('error', 'Organisation name must be between 2 and 160 characters.'))
   if (website && !website.startsWith('https://')) redirect(back('error', 'Website must start with https://.'))
 
+  const countryCode = String(formData.get('countryCode') ?? '').trim().toUpperCase()
+  const preferredCurrency = String(formData.get('preferredCurrency') ?? 'USD').trim().toUpperCase()
+  if (!/^[A-Z]{2}$/.test(countryCode)) redirect(back('error', 'Select a valid country.'))
+  if (!/^[A-Z]{3}$/.test(preferredCurrency)) redirect(back('error', 'Select a valid preferred currency.'))
+
   const { error } = await supabase.from('organizations').insert({
     name,
     registration_number: String(formData.get('registrationNumber') ?? '').trim() || null,
     website: website || null,
     country: String(formData.get('country') ?? '').trim() || null,
+    country_code: countryCode,
+    preferred_currency: preferredCurrency,
     city: String(formData.get('city') ?? '').trim() || null,
     description: String(formData.get('description') ?? '').trim() || null,
     created_by: String(userId),
@@ -43,12 +50,19 @@ export async function updateOrganisation(formData: FormData) {
   if (name.length < 2 || name.length > 160) redirect(back('error', 'Organisation name must be between 2 and 160 characters.'))
   if (website && !website.startsWith('https://')) redirect(back('error', 'Website must start with https://.'))
 
+  const countryCode = String(formData.get('countryCode') ?? '').trim().toUpperCase()
+  const preferredCurrency = String(formData.get('preferredCurrency') ?? 'USD').trim().toUpperCase()
+  if (!/^[A-Z]{2}$/.test(countryCode)) redirect(back('error', 'Select a valid country.'))
+  if (!/^[A-Z]{3}$/.test(preferredCurrency)) redirect(back('error', 'Select a valid preferred currency.'))
+
   const supabase = await createClient()
   const { error } = await supabase.from('organizations').update({
     name,
     registration_number: String(formData.get('registrationNumber') ?? '').trim() || null,
     website: website || null,
     country: String(formData.get('country') ?? '').trim() || null,
+    country_code: countryCode,
+    preferred_currency: preferredCurrency,
     city: String(formData.get('city') ?? '').trim() || null,
     description: String(formData.get('description') ?? '').trim() || null,
   }).eq('id', id)
