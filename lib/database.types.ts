@@ -274,6 +274,7 @@ export type Database = {
       member_emails: { Args: Record<string, never>; Returns: { id: string; email: string }[] }
       payment_readiness: { Args: { target?: string | null }; Returns: Json }
       throttle: { Args: { bucket: string; max_hits: number; window_seconds: number; subject_hint?: string | null }; Returns: boolean }
+      username_available: { Args: { candidate: string }; Returns: boolean }
       session_bootstrap: { Args: Record<string, never>; Returns: Json }
       listing_owner_cards: { Args: { owner_ids: string[] }; Returns: { id: string; full_name: string; participant_type: string | null; country: string | null; organisation: string | null; avatar_url: string | null; job_title: string | null; is_verified: boolean }[] }
       request_introduction: { Args: { opportunity_id: string; request_note?: string | null }; Returns: string }
