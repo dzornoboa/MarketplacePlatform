@@ -43,12 +43,17 @@ export default async function DashboardPage() {
   const post = state ? postingLock(state) : null
   const { data: readiness } = await supabase.rpc('payment_readiness')
   const kycReady = (readiness as { ready?: boolean } | null)?.ready === true
+  const verified = profile.verification_status === 'verified'
+  const profileReady = profile.profile_completed || verified
+  const billingReady = kycReady || verified || !!state?.has_active_subscription
+  const accessReady = !!state?.can_view_deal_details || !!state?.grandfathered_verified_access || !!state?.has_active_subscription
   const steps = [
-    { done: profile.profile_completed, label: 'Complete your profile', href: '/dashboard/profile' },
-    { done: kycReady, label: 'Billing address and required documents on file', href: '/dashboard/billing#kyc' },
-    { done: !!state?.can_view_deal_details, label: state?.grandfathered_verified_access ? 'Verified legacy marketplace access preserved' : 'Activate an access plan — opens restricted marketplace features', href: '/dashboard/billing' },
-    { done: profile.verification_status === 'verified', label: 'Earn the WTC Accra verified check', href: '/dashboard/verification' },
+    { done: profileReady, label: 'Complete Your Profile', href: '/dashboard/profile' },
+    { done: billingReady, label: 'Billing Address And Required Documents On File', href: '/dashboard/billing#kyc' },
+    { done: accessReady, label: state?.grandfathered_verified_access ? 'Verified Legacy Marketplace Access Preserved' : 'Activate An Access Plan', href: '/dashboard/billing' },
+    { done: verified, label: 'Earn The WTC Accra Verified Check', href: '/dashboard/verification' },
   ]
+  const outstandingSteps = steps.filter(step => !step.done)
 
   const memberExperience = profile.system_role === 'user'
   if (memberExperience) {
@@ -191,7 +196,9 @@ export default async function DashboardPage() {
             <h2>Profile And Access</h2>
             <div className="member-progress-meter"><span style={{ width: `${Math.round((steps.filter(step => step.done).length / steps.length) * 100)}%` }} /></div>
             <p>{steps.filter(step => step.done).length} Of {steps.length} Setup Steps Complete</p>
-            {steps.filter(step => !step.done).slice(0, 2).map(step => <Link key={step.label} href={step.href}>○ {step.label}</Link>)}
+            {outstandingSteps.length === 0
+              ? <span className="member-progress-complete">✓ Setup Complete</span>
+              : outstandingSteps.slice(0, 2).map(step => <Link key={step.label} href={step.href}>○ {step.label}</Link>)}
           </section>
         </aside>
       </div>
@@ -273,13 +280,15 @@ export default async function DashboardPage() {
     <section className="card">
       <h2>Getting to full access</h2>
       <p className="muted">A subscription opens the marketplace. The verified check is awarded by WTC Accra after reviewing your documents and tells other members you are a verified source.</p>
-      <ol className="checklist">
-        {steps.map(step => <li key={step.label} className={step.done ? 'checklist-done' : ''}>
-          <span aria-hidden="true">{step.done ? '✓' : '○'}</span>
-          <Link href={step.href}>{step.label}</Link>
-          <em>{step.done ? 'Complete' : 'Outstanding'}</em>
-        </li>)}
-      </ol>
+      {outstandingSteps.length === 0
+        ? <div className="alert alert-success">✓ Membership Setup Complete. Your completed steps have been cleared from this list.</div>
+        : <ol className="checklist">
+            {outstandingSteps.map(step => <li key={step.label}>
+              <span aria-hidden="true">○</span>
+              <Link href={step.href}>{step.label}</Link>
+              <em>Outstanding</em>
+            </li>)}
+          </ol>}
     </section>
 
     <section className="split-grid">
