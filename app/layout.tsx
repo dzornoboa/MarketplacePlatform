@@ -6,6 +6,7 @@ import { AuthLinkHandler } from '@/components/auth-link-handler'
 import { MenuAutoClose } from '@/components/menu-autoclose'
 import { HelpAssistantMount } from '@/components/help-assistant-mount'
 import { ServiceWorkerRegister } from '@/components/service-worker-register'
+import { AutoTranslate } from '@/components/auto-translate'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -28,5 +29,5 @@ const openSans = Open_Sans({
 
 // Open Sans is the WTCA brand font for both the logo lockup and all copy.
 export default function RootLayout({ children }: { children: ReactNode }) {
-  return <html lang="en"><body className={openSans.variable}><Suspense fallback={null}><AuthLinkHandler /><MenuAutoClose /><HelpAssistantMount /><ServiceWorkerRegister /></Suspense>{children}</body></html>
+  return <html lang="en"><body className={openSans.variable}><Suspense fallback={null}><AuthLinkHandler /><MenuAutoClose /><HelpAssistantMount /><ServiceWorkerRegister /><AutoTranslate /></Suspense>{children}</body></html>
 }
