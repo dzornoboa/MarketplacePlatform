@@ -13,6 +13,11 @@ const SELECTORS = [
   '.notification-list',
   '.content-grid',
   '.admin-card-grid',
+  '.review-list',
+  '.data-table tbody',
+  '.thread-list',
+  '.request-list',
+  '.results-grid',
 ].join(',')
 
 type State = { page: number; totalPages: number; nav: HTMLElement }
