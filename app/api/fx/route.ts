@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { allow } from '@/lib/security/throttle'
 
 export const revalidate = 3600
 
@@ -9,6 +10,7 @@ type RateResponse = {
 }
 
 export async function GET(request: Request) {
+  if (!(await allow('fx_quote', 90, 600))) return NextResponse.json({ error: 'Too many currency requests. Try again shortly.' }, { status: 429 })
   const url = new URL(request.url)
   const from = (url.searchParams.get('from') ?? 'USD').trim().toUpperCase()
   const to = (url.searchParams.get('to') ?? 'USD').trim().toUpperCase()
