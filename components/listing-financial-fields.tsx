@@ -24,6 +24,7 @@ export function ListingFinancialFields({
   const [countryCode, setCountryCode] = useState(initialCountryCode ?? '')
   const [currency, setCurrency] = useState((initialCurrency || 'USD').toUpperCase())
   const [currencyTouched, setCurrencyTouched] = useState(false)
+  const [countryTouched, setCountryTouched] = useState(false)
   const [capital, setCapital] = useState(String(initialCapitalRequired ?? ''))
   const [ticket, setTicket] = useState(String(initialMinimumTicket ?? ''))
 
@@ -46,14 +47,14 @@ export function ListingFinancialFields({
   const country = useMemo(() => countries.find(item => item.code === countryCode) ?? null, [countries, countryCode])
 
   useEffect(() => {
-    if (!country || currencyTouched) return
+    if (!country || currencyTouched || !countryTouched) return
     setCurrency(country.currencyCode || 'USD')
-  }, [country?.code])
+  }, [country?.code, countryTouched, currencyTouched])
 
   return <>
     <div className="form-grid">
       <label>Country
-        <select name="countryCode" value={countryCode} onChange={event => setCountryCode(event.target.value)} required>
+        <select name="countryCode" value={countryCode} onChange={event => { setCountryTouched(true); setCurrencyTouched(false); setCountryCode(event.target.value) }} required>
           <option value="" disabled>Select Country</option>
           {countries.map(item => <option key={item.code} value={item.code}>{item.flag ? item.flag + ' ' : ''}{item.name}</option>)}
         </select>
