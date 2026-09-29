@@ -9,7 +9,7 @@ import { requiredDocuments, purposeLabel } from '@/lib/kyc'
 import { humanize, labelForParticipantType, systemRoleLabels, systemRoles, accountStatuses, selectableParticipantTypes, participantTypeLabels } from '@/lib/auth/access'
 import { date, dateTime, money } from '@/lib/format'
 import { SubmitButton } from '@/components/submit-button'
-import { updateMarketplaceAccess, updateAccountStatus, updateStaffRole, setVerificationStatus, messageMember, setMemberSubscription, setSupportBypass, sendPasswordReset, adminUpdateProfile } from '../actions'
+import { updateMarketplaceAccess, updateAccountStatus, updateStaffRole, setVerificationStatus, messageMember, setMemberSubscription, setSupportBypass, sendPasswordReset, adminUpdateProfile, requestUserServiceAction } from '../actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -193,6 +193,18 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
         <p className="field-help">Emails the member a reset link{email ? ` (${email})` : ''} and notifies them in-app. Support never sees or sets the password.</p>
         <input type="hidden" name="userId" value={person.id} />
         <SubmitButton className="button button-outline" pendingLabel="Sending…">Send reset link</SubmitButton>
+      </form>
+
+      <form action={requestUserServiceAction} className="card review-form danger-zone">
+        <h3>Terminate Or Delete Account</h3>
+        <p className="field-help"><strong>Terminate Services</strong> disables the account immediately and ends active memberships/subscriptions. <strong>Delete Account</strong> is permanent and always requires a Super Administrator confirmation before deletion.</p>
+        <input type="hidden" name="userId" value={person.id} />
+        <select name="requestType" defaultValue="terminate">
+          <option value="terminate">Terminate Services</option>
+          <option value="delete">Request Permanent Account Deletion</option>
+        </select>
+        <textarea name="reason" rows={3} minLength={5} required placeholder="Reason for termination or deletion" />
+        <SubmitButton className="button button-danger" pendingLabel="Submitting…">Submit Service Action</SubmitButton>
       </form>
 
       {me.system_role === 'super_admin' && <form action={updateStaffRole} className="card review-form">
