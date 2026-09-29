@@ -70,7 +70,7 @@ export default async function DashboardPage() {
     const ownerById = new Map((owners ?? []).map(owner => [owner.id, owner]))
     const orgId = orgLinks?.[0]?.organization_id
     const { data: organisation } = orgId
-      ? await supabase.from('organizations').select('name,city,country,logo_url').eq('id', orgId).maybeSingle()
+      ? await supabase.from('organizations').select('name,city,country').eq('id', orgId).maybeSingle()
       : { data: null }
 
     return <div className="member-home">
