@@ -33,6 +33,9 @@ export default function PrivacyPage() {
       <h2>Fonts, Analytics And Session Recording</h2>
       <p>The website serves its primary web font through the application rather than loading the font directly from Google Fonts in a visitor's browser. As of this policy date, the application does not intentionally deploy PostHog, Hotjar, FullStory or another session-replay tool that records form-entry keystrokes. If analytics or session-replay technology is introduced, sensitive form fields must be masked or excluded and any consent requirements must be implemented before recording begins.</p>
 
+      <h2>Language And Automatic Translation</h2>
+      <p>You can select a preferred dashboard language. Automatic translation is optional. When enabled, interface text may be sent to the translation provider configured by WTC Accra, such as Google Cloud Translation or an approved AI translation service, solely to return the requested translation. Email addresses, URLs and certain technical values are excluded where practical. You can switch automatic translation off from Dashboard Settings.</p>
+
       <h2>Cookies And Similar Technologies</h2>
       <p>Authentication and security functions may use cookies or similar browser storage that is necessary to keep you signed in, protect sessions and remember essential preferences. Any non-essential analytics or advertising technology should be separately disclosed and controlled where consent is required.</p>
 
