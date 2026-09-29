@@ -16,8 +16,10 @@ export async function updateProfile(formData: FormData) {
   const dateOfBirth = String(formData.get('dateOfBirth') ?? '').trim()
   const idType = String(formData.get('idType') ?? '').trim()
   const idNumber = String(formData.get('idNumber') ?? '').trim()
-  const allowedIdTypes = new Set(['ghana_card', 'passport', 'drivers_license', 'voter_id', 'residence_permit', 'national_id', 'other'])
+  const username = String(formData.get('username') ?? '').trim().toLowerCase()
+  const allowedIdTypes = new Set(['passport', 'drivers_license', 'voter_id', 'residence_permit', 'national_id', 'other'])
   if (fullName.length < 2) redirect('/dashboard/profile?error=Enter%20your%20full%20name.')
+  if (!/^[a-z0-9][a-z0-9._-]{2,29}$/.test(username)) redirect('/dashboard/profile?error=Choose%20a%20valid%20username.')
   const birthDate = dateOfBirth ? new Date(`${dateOfBirth}T00:00:00Z`) : null
   const today = new Date()
   const ageCutoff = new Date(Date.UTC(today.getUTCFullYear() - 13, today.getUTCMonth(), today.getUTCDate()))
@@ -27,7 +29,7 @@ export async function updateProfile(formData: FormData) {
   if (idNumber.length < 3 || idNumber.length > 80) redirect('/dashboard/profile?error=Enter%20a%20valid%20identification%20number.')
 
   const patch: Database['public']['Tables']['profiles']['Update'] = {
-    full_name: fullName, phone, job_title: jobTitle, country, city,
+    full_name: fullName, username, phone, job_title: jobTitle, country, city,
     date_of_birth: dateOfBirth, id_type: idType, id_number: idNumber,
   }
 
