@@ -15,7 +15,6 @@ export default async function VerifyEmailPage({ searchParams }: Props) {
   if (!email) redirect('/register')
   const error = typeof params.error === 'string' ? params.error : null
   const message = typeof params.message === 'string' ? params.message : null
-  const wtc = email.toLowerCase().endsWith('@wtcaccra.com')
 
   return (
     <main className="center-page">
@@ -23,7 +22,7 @@ export default async function VerifyEmailPage({ searchParams }: Props) {
         <LogoLink />
         <p className="eyebrow">Verify your email</p>
         <h1>Enter the code we sent</h1>
-        <p className="muted">A 6-digit verification code has been sent to <strong>{email}</strong>.{wtc ? ' WTC member accounts are only created once the @wtcaccra.com address is confirmed.' : ' Your account activates as soon as you enter it.'}</p>
+        <p className="muted">A verification email has been sent to <strong>{email}</strong>. Enter the 6-digit code shown in the email. If your email contains a secure confirmation link instead, you can use that link to continue.</p>
         {error && <div className="alert alert-error">{error}</div>}
         {message && <div className="alert alert-success">{message}</div>}
         <form action={verifyEmailCode} className="form-stack">
