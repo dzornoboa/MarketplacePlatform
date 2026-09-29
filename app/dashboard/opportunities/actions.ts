@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { dealCategories, categoryTag } from '@/lib/deals/categories'
 
 function to(path: string, key: 'error' | 'message', message: string) {
   return `${path}${path.includes('?') ? '&' : '?'}${key}=${encodeURIComponent(message)}`
@@ -29,6 +30,7 @@ export async function createOpportunity(formData: FormData) {
   const title = String(formData.get('title') ?? '').trim()
   const summary = String(formData.get('summary') ?? '').trim()
   const description = String(formData.get('description') ?? '').trim()
+  const category = String(formData.get('category') ?? '').trim()
   const sector = String(formData.get('sector') ?? '').trim()
   const country = String(formData.get('country') ?? '').trim()
   const city = String(formData.get('city') ?? '').trim()
@@ -36,11 +38,13 @@ export async function createOpportunity(formData: FormData) {
   const intent = String(formData.get('intent') ?? '')
   const currency = String(formData.get('currency') ?? 'USD').trim().toUpperCase()
   const deadline = String(formData.get('deadline') ?? '').trim()
-  const tags = String(formData.get('tags') ?? '').split(',').map(t => t.trim()).filter(Boolean).slice(0, 12)
+  const userTags = String(formData.get('tags') ?? '').split(',').map(t => t.trim()).filter(Boolean)
+  const tags = [...new Set([`category:${categoryTag(category)}`, ...userTags])].slice(0, 12)
 
   if (title.length < 5 || title.length > 180) redirect(to('/dashboard/opportunities/new', 'error', 'Title must be between 5 and 180 characters.'))
   if (summary.length < 20 || summary.length > 700) redirect(to('/dashboard/opportunities/new', 'error', 'Summary must be between 20 and 700 characters.'))
   if (description.length < 50) redirect(to('/dashboard/opportunities/new', 'error', 'Description must be at least 50 characters.'))
+  if (!(dealCategories as readonly string[]).includes(category)) redirect(to('/dashboard/opportunities/new', 'error', 'Select a valid deal category.'))
   if (!sector || !country) redirect(to('/dashboard/opportunities/new', 'error', 'Sector and country are required.'))
   if (!KINDS.has(kind)) redirect(to('/dashboard/opportunities/new', 'error', 'Select an opportunity type.'))
   if (!INTENTS.has(intent)) redirect(to('/dashboard/opportunities/new', 'error', 'Select what you are posting as.'))
@@ -48,7 +52,7 @@ export async function createOpportunity(formData: FormData) {
 
   const { data, error } = await supabase.from('opportunities').insert({
     owner_user_id: String(userId),
-    title, summary, description, sector, country,
+    title, summary, description, category, sector, country,
     city: city || null,
     kind: kind as 'investment' | 'trade' | 'procurement' | 'partnership',
     intent: intent as 'seeking_investment',
@@ -151,6 +155,7 @@ export async function updateOpportunity(formData: FormData) {
   const title = String(formData.get('title') ?? '').trim()
   const summary = String(formData.get('summary') ?? '').trim()
   const description = String(formData.get('description') ?? '').trim()
+  const category = String(formData.get('category') ?? '').trim()
   const sector = String(formData.get('sector') ?? '').trim()
   const country = String(formData.get('country') ?? '').trim()
   const kind = String(formData.get('kind') ?? '')
@@ -161,14 +166,17 @@ export async function updateOpportunity(formData: FormData) {
   if (title.length < 5 || title.length > 180) redirect(to(target, 'error', 'Title must be between 5 and 180 characters.'))
   if (summary.length < 20 || summary.length > 700) redirect(to(target, 'error', 'Summary must be between 20 and 700 characters.'))
   if (description.length < 50) redirect(to(target, 'error', 'Description must be at least 50 characters.'))
+  if (!(dealCategories as readonly string[]).includes(category)) redirect(to(target, 'error', 'Select a valid deal category.'))
   if (!sector || !country) redirect(to(target, 'error', 'Sector and country are required.'))
   if (!KINDS.has(kind)) redirect(to(target, 'error', 'Select an opportunity type.'))
   if (!INTENTS.has(intent)) redirect(to(target, 'error', 'Select what you are posting as.'))
   if (!/^[A-Z]{3}$/.test(currency)) redirect(to(target, 'error', 'Currency must be a 3-letter code such as USD or GHS.'))
 
   const supabase = await createClient()
+  const userTags = String(formData.get('tags') ?? '').split(',').map(t => t.trim()).filter(Boolean)
+  const tags = [...new Set([`category:${categoryTag(category)}`, ...userTags])].slice(0, 12)
   const { error } = await supabase.from('opportunities').update({
-    title, summary, description, sector, country,
+    title, summary, description, category, sector, country,
     city: String(formData.get('city') ?? '').trim() || null,
     region: String(formData.get('region') ?? '').trim() || null,
     kind: kind as 'investment',
@@ -177,7 +185,7 @@ export async function updateOpportunity(formData: FormData) {
     minimum_ticket: optionalNumber(formData.get('minimumTicket')),
     currency,
     deadline: deadline || null,
-    tags: String(formData.get('tags') ?? '').split(',').map(t => t.trim()).filter(Boolean).slice(0, 12),
+    tags,
     status: 'draft', review_note: null, // a rejected/changes-requested listing goes back to draft once edited
   }).eq('id', id)
 
