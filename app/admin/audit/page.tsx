@@ -17,7 +17,7 @@ export default async function AdminAuditPage({ searchParams }: Props) {
   const since = typeof params.since === 'string' ? params.since : ''
   const sort = typeof params.sort === 'string' && ['newest', 'oldest'].includes(params.sort) ? params.sort : 'newest'
 
-  let query = supabase.from('audit_events').select('*').order('created_at', { ascending: sort === 'oldest' }).limit(300)
+  let query = supabase.from('audit_events').select('*').order('created_at', { ascending: sort === 'oldest' }).limit(5000)
   if (entity) query = query.eq('entity_type', entity)
   if (q) query = query.ilike('action', `%${q}%`)
   if (actor) query = query.eq('actor_id', actor)
