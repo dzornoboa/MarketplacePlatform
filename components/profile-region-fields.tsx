@@ -17,6 +17,7 @@ export function ProfileRegionFields({ country, countryCode, phone, phoneCountryC
   const [code, setCode] = useState(countryCode ?? '')
   const [currency, setCurrency] = useState((preferredCurrency || 'USD').toUpperCase())
   const [currencyTouched, setCurrencyTouched] = useState(false)
+  const [countryTouched, setCountryTouched] = useState(false)
   const cleanLocalNumber = (raw: string, dial: string) => {
     let digits = raw.replace(/\D/g, '')
     const dialDigits = dial.replace(/\D/g, '')
@@ -47,9 +48,9 @@ export function ProfileRegionFields({ country, countryCode, phone, phoneCountryC
   const selected = useMemo(() => countries.find(c => c.code === code) ?? null, [countries, code])
 
   useEffect(() => {
-    if (!selected || currencyTouched) return
+    if (!selected || currencyTouched || !countryTouched) return
     setCurrency(selected.currencyCode || 'USD')
-  }, [selected?.code])
+  }, [selected?.code, countryTouched, currencyTouched])
   const dial = selected?.callingCode || phoneCountryCode || ''
   const normalizedLocal = cleanLocalNumber(localPhone, dial)
   const fullPhone = dial && normalizedLocal ? `${dial}${normalizedLocal}` : normalizedLocal
@@ -57,7 +58,7 @@ export function ProfileRegionFields({ country, countryCode, phone, phoneCountryC
   return <>
     <div className="form-grid">
       <label>Country
-        <select name="countryCode" value={code} onChange={e => setCode(e.target.value)} required>
+        <select name="countryCode" value={code} onChange={e => { setCountryTouched(true); setCurrencyTouched(false); setCode(e.target.value) }} required>
           <option value="" disabled>Select Country</option>
           {countries.map(item => <option key={item.code} value={item.code}>{item.name}{item.callingCode ? ` (${item.callingCode})` : ''}</option>)}
         </select>
