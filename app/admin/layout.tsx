@@ -31,6 +31,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     { href: '/admin/support', label: 'Support', show: hasCapability(role, 'support') },
     { href: '/admin/emails', label: 'Email queue', show: isAdminRole(role) },
     { href: '/admin/audit', label: 'Audit log', show: isAdminRole(role) },
+    { href: '/admin/security-monitor', label: 'Security Monitor', show: isAdminRole(role) },
     { href: '/admin/backups', label: 'Backup & Restore', show: isAdminRole(role) },
   ].filter(link => link.show)
 
