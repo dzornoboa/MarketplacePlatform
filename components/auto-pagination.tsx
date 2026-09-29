@@ -49,7 +49,10 @@ export function AutoPagination() {
         nav = document.createElement('nav')
         nav.className = 'collection-pagination'
         nav.setAttribute('aria-label', 'Pagination')
-        collection.insertAdjacentElement('afterend', nav)
+        const host = collection.tagName === 'TBODY'
+          ? (collection.closest('.table-wrap') ?? collection.closest('table') ?? collection)
+          : collection
+        host.insertAdjacentElement('afterend', nav)
       }
 
       nav.replaceChildren()
