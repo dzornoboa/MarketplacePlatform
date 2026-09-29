@@ -24,7 +24,7 @@ export default async function AdminIntroductionsPage({ searchParams }: Props) {
   const sort = str('sort') === 'newest' ? 'newest' : 'oldest'
 
   const [{ data: rows }, counts] = await Promise.all([
-    supabase.from('introductions').select('*').eq('status', status as 'requested').order('created_at', { ascending: sort === 'oldest' }).limit(200),
+    supabase.from('introductions').select('*').eq('status', status as 'requested').order('created_at', { ascending: sort === 'oldest' }).limit(1000),
     Promise.all(TABS.map(async t => ({ t, n: (await supabase.from('introductions').select('*', { count: 'exact', head: true }).eq('status', t)).count ?? 0 }))),
   ])
   const oppIds = [...new Set((rows ?? []).map(r => r.opportunity_id))]
