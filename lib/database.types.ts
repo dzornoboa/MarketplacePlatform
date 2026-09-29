@@ -264,8 +264,11 @@ export type Database = {
       post_deal_room_message: { Args: { room: string; message_body: string }; Returns: string }
       close_deal_room: { Args: { room_id: string; closed_value: number; closed_currency?: string; note?: string | null }; Returns: undefined }
       withdraw_bid: { Args: { bid_id: string }; Returns: undefined }
+      withdraw_deal_request: { Args: { deal_id: string }; Returns: undefined }
       set_primary_payment_method: { Args: { method_id: string }; Returns: undefined }
       review_bid: { Args: { bid_id: string; decision: string; review_note?: string | null }; Returns: undefined }
+      review_deal_request: { Args: { deal_id: string; decision: string; review_note?: string | null }; Returns: undefined }
+      respond_to_deal_request: { Args: { deal_id: string; decision: string; response_note?: string | null }; Returns: undefined }
       confirm_payment: { Args: { payment_id: string; decision: string; note?: string | null }; Returns: undefined }
       record_provider_payment: { Args: { payment_reference: string; provider_ref: string; succeeded: boolean }; Returns: undefined }
       request_connection: { Args: { addressee: string; connection_intent?: string; opportunity?: string | null; note?: string | null }; Returns: string }
