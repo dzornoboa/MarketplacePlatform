@@ -179,6 +179,7 @@ export type AccessState = {
   posting_is_free?: boolean
   success_fee_rate?: number
   has_paid_plan?: boolean
+  grandfathered_verified_access?: boolean
   subscription_plan_name?: string | null
   subscription_fee?: number | null
   subscription_ends_at: string | null
