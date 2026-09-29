@@ -5,6 +5,7 @@ import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
 import { postingLockFor, listingIntents, listingIntentLabels, listingIntentHelp } from '@/lib/auth/access'
 import { createOpportunity } from '../actions'
 import { dealCategories } from '@/lib/deals/categories'
+import { ListingFinancialFields } from '@/components/listing-financial-fields'
 
 export const dynamic = 'force-dynamic'
 
@@ -67,18 +68,8 @@ export default async function NewOpportunityPage({ searchParams }: Props) {
         </label>
       </div>
       <label>Sector<input name="sector" required placeholder="Agribusiness" /></label>
-      <div className="form-grid">
-        <label>Country<input name="country" required defaultValue="Ghana" /></label>
-        <label>City<input name="city" placeholder="Accra" /></label>
-      </div>
-      <div className="form-grid">
-        <label>Capital required<input name="capitalRequired" type="number" min="0" step="1000" placeholder="2500000" /></label>
-        <label>Minimum ticket<input name="minimumTicket" type="number" min="0" step="1000" placeholder="250000" /></label>
-      </div>
-      <div className="form-grid">
-        <label>Currency<input name="currency" maxLength={3} defaultValue="USD" pattern="[A-Za-z]{3}" required /></label>
-        <label>Deadline<input name="deadline" type="date" /></label>
-      </div>
+      <ListingFinancialFields initialCountry="Ghana" initialCountryCode="GH" initialCurrency="USD" initialCity="Accra" />
+      <label>Deadline<input name="deadline" type="date" /></label>
       <label>Tags<input name="tags" placeholder="processing, export, expansion" /></label>
       <p className="field-help">Comma separated, up to 12 tags. The selected category is automatically added as a searchable system tag.</p>
       <div className="button-row">
