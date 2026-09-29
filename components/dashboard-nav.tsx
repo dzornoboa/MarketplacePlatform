@@ -85,7 +85,7 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, a
         {!open && unreadCount > 0 && <span className="nav-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>}
       </button></div>
     </div>
-    <Link className="sidebar-user" href="/dashboard/profile"><Avatar src={profile.avatar_url} name={profile.full_name} size={36} /><span><strong>{profile.full_name || 'Your profile'}<VerifiedCheck verified={profile.verification_status === 'verified'} size={14} /></strong><small>{staff ? 'Staff workspace' : 'Member workspace'}</small>{!staff && <ParticipantBadge type={profile.participant_type} requested={profile.requested_participant_type} />}{!staff && planLabel && <span className="plan-tag">{planLabel}</span>}</span></Link>
+    <Link className="sidebar-user" href="/dashboard/profile"><Avatar src={profile.avatar_url} name={profile.full_name} size={36} /><span><strong>{profile.full_name || 'Your Profile'}<VerifiedCheck verified={profile.verification_status === 'verified'} size={14} /></strong><small>{staff ? 'WTC Accra Staff · WTC Accra Member' : 'Member Workspace'}</small>{staff ? <span className="plan-tag">{profile.system_role.replaceAll('_',' ')}</span> : <ParticipantBadge type={profile.participant_type} requested={profile.requested_participant_type} />}{!staff && planLabel && <span className="plan-tag">{planLabel}</span>}</span></Link>
     <nav id="dashboard-nav">
       {groups.map(group => <div className="nav-group" key={group.label}>
         <p className="nav-group-label">{group.label}</p>
@@ -103,13 +103,13 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, a
         })}
       </div>)}
 
-      {(admin || editor) && <div className="nav-group">
-        <p className="nav-group-label">Console</p>
-        {editor && <Link className={isActive('/editor') ? 'nav-active nav-console' : 'nav-console'} href={adminMfaReady ? '/editor' : '/dashboard/security?required=admin-mfa&next=%2Feditor'}>
-          <span>Editor Console</span>{!adminMfaReady && <span className="nav-badge">{adminHasFactor ? 'Enter code' : 'Set up MFA'}</span>}
-        </Link>}
-        {admin && <Link className={isActive('/admin') ? 'nav-active nav-console' : 'nav-console'} href={adminMfaReady ? '/admin' : '/dashboard/security?required=admin-mfa&next=%2Fadmin'}>
-          <span>Administration</span>{!adminMfaReady && <span className="nav-badge">{adminHasFactor ? 'Enter code' : 'Set up MFA'}</span>}
+      {staff && <div className="nav-group">
+        <p className="nav-group-label">Staff Access</p>
+        <Link className={isActive('/admin') ? 'nav-active nav-console' : 'nav-console'} href={admin && !adminMfaReady ? '/dashboard/security?required=admin-mfa&next=%2Fadmin' : '/admin'}>
+          <span>{admin ? 'Administration' : 'Staff Console'}</span>{admin && !adminMfaReady && <span className="nav-badge">{adminHasFactor ? 'Enter code' : 'Set up MFA'}</span>}
+        </Link>
+        {editor && <Link className={isActive('/editor') ? 'nav-active nav-console' : 'nav-console'} href={admin && !adminMfaReady ? '/dashboard/security?required=admin-mfa&next=%2Feditor' : '/editor'}>
+          <span>Editor Console</span>{admin && !adminMfaReady && <span className="nav-badge">{adminHasFactor ? 'Enter code' : 'Set up MFA'}</span>}
         </Link>}
       </div>}
     </nav>

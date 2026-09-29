@@ -106,15 +106,15 @@ export default async function AdminUsersPage({ searchParams }: Props) {
                     <button className="button button-secondary" type="submit">Update status</button>
                   </form>
 
-                  <form action={updateStaffRole} className="review-form">
-                    <label>System role</label>
+                  {me.system_role === 'super_admin' && <form action={updateStaffRole} className="review-form">
+                    <label>System Role</label>
                     <input type="hidden" name="userId" value={person.id} />
                     <select name="systemRole" defaultValue={person.system_role}>
                       {systemRoles.map(r => <option key={r} value={r}>{systemRoleLabels[r]}</option>)}
                     </select>
-                    <p className="field-help">Only a super administrator can change roles.</p>
-                    <button className="button button-outline" type="submit">Update role</button>
-                  </form>
+                    <p className="field-help">Assigning any staff role automatically marks the account as WTC Accra Staff, activates WTC Accra membership, and grants only that role&apos;s permitted console controls. Administrator roles require MFA.</p>
+                    <button className="button button-outline" type="submit">Update Role</button>
+                  </form>}
                 </div>}
           </article>
         })}</div>}
