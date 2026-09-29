@@ -69,6 +69,14 @@ export default async function CheckoutPage({ searchParams }: Props) {
               </div>
               <p className="field-help">Test mode: any values are accepted and nothing is stored.</p>
             </>}
+        <div className="billing-consent">
+          <label className="consent-check">
+            <input type="checkbox" name="billingAgreement" value="accepted" required />
+            <span>I agree to the membership billing terms and authorize this payment for the amount shown above.</span>
+          </label>
+          <p className="field-help">This payment activates a 12-month membership. The current checkout does not automatically renew or schedule a future charge. If automatic renewal is introduced, renewal pricing, frequency and cancellation terms will be shown separately and require your affirmative consent before any recurring charge.</p>
+          <p className="field-help">You can contact WTC Accra or use Dashboard → Support for billing or cancellation assistance before any future renewal is agreed.</p>
+        </div>
         <div className="button-row">
           <SubmitButton name="outcome" value="success" pendingLabel="Processing…">Pay {money(payment.amount, payment.currency)}</SubmitButton>
           <SubmitButton name="outcome" value="cancel" className="button button-outline" pendingLabel="Cancelling…">Cancel</SubmitButton>
