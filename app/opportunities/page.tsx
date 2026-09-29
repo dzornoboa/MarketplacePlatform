@@ -7,6 +7,7 @@ import { humanize, labelForIntent, listingIntents, listingIntentLabels } from '@
 import { relativeDays } from '@/lib/format'
 import { SessionCta } from '@/components/header-session'
 import { getPageBlock } from '@/lib/content/site-content'
+import { readAccessState } from '@/lib/auth/guards'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,13 +33,17 @@ export default async function PublicListingsPage({ searchParams }: Props) {
 
   // Session-aware: the function returns real titles only to signed-in users.
   const supabase = await createClient()
-  const [{ data: listings }, { data: facets }] = await Promise.all([
+  const [{ data: claimsData }, accessState, { data: listings }, { data: facets }] = await Promise.all([
+    supabase.auth.getClaims(),
+    readAccessState(supabase),
     supabase.rpc('public_listing_teasers', {
       listing_kind: kind || null, listing_intent: intent || null,
       listing_sector: sector || null, listing_country: country || null, listing_category: category || null, max_rows: 60,
     }),
     supabase.rpc('public_listing_facets'),
   ])
+  const signedIn = !!claimsData?.claims?.sub
+  const fullAccess = !!accessState?.can_view_deal_details
   const intro = await getPageBlock('listings', 'intro', { eyebrow: 'Private marketplace', heading: 'Live', heading_emphasis: 'listings', body: 'Discover reviewed investment, trade, procurement and partnership deals. Deal category, sector and market information help you find relevant opportunities while restricted figures, identities and networking remain protected.', cta_label: 'Join the network', cta_href: '/register', secondary_cta_label: 'Member sign in', secondary_cta_href: '/login', image_url: null })
   const facet = (name: string) => (facets ?? []).filter(f => f.facet === name)
   const filtered = !!(kind || intent || category || sector || country)
@@ -51,6 +56,10 @@ export default async function PublicListingsPage({ searchParams }: Props) {
         {intro.body && <p className="lede">{intro.body}</p>}
         <SessionCta memberHref="/dashboard/feed" memberLabel="Open your feed" primaryLabel={intro.cta_label ?? undefined} primaryHref={intro.cta_href ?? undefined} secondaryLabel={intro.secondary_cta_label ?? undefined} secondaryHref={intro.secondary_cta_href ?? undefined} />
       </div>
+
+      {!signedIn
+        ? <div className="restriction-banner listing-access-note"><div><strong>Preview Only</strong><p>Visitors see only a small sample of live deals. Sign in or create a free account to discover more.</p></div><Link className="button button-light" href="/register">Join Free</Link></div>
+        : !fullAccess && <div className="restriction-banner listing-access-note"><div><strong>Limited Deal Discovery</strong><p>Your account can browse a limited selection while full restricted access is inactive. Complete the access requirements for your membership type to unlock the full catalogue and protected details.</p></div><Link className="button button-light" href="/dashboard/billing">View Access Plan</Link></div>}
 
       <form className="filter-row card" method="get">
         <label>Posted as
