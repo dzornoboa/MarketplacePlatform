@@ -18,7 +18,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install --no-audit --no-fund
+      - run: npm ci --no-fund
+      - run: npm audit --omit=dev --audit-level=high
       - run: npm run test:unit
       - run: npm run typecheck
       - run: npm run build
