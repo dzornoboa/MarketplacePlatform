@@ -153,3 +153,53 @@ export async function adminUpdateProfile(formData: FormData) {
   revalidatePath(`/admin/users/${targetUser}`); revalidatePath('/admin/users')
   redirect(back('message', 'Profile updated.', targetUser))
 }
+
+
+export async function requestUserServiceAction(formData: FormData) {
+  const targetUser = String(formData.get('userId') ?? '')
+  const requestType = String(formData.get('requestType') ?? '')
+  const reason = String(formData.get('reason') ?? '').trim()
+  if (!targetUser || !['terminate', 'delete'].includes(requestType)) redirect(back('error', 'Choose a valid service action.', targetUser || undefined))
+  if (reason.length < 5) redirect(back('error', 'Provide a clear reason for this action.', targetUser))
+
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('request_user_termination', {
+    target_user: targetUser,
+    request_type: requestType,
+    reason,
+  })
+  if (error) redirect(back('error', error.message, targetUser))
+
+  revalidatePath('/admin/users')
+  revalidatePath('/admin/super')
+  revalidatePath('/admin/audit')
+  revalidatePath(`/admin/users/${targetUser}`)
+
+  redirect(back(
+    'message',
+    requestType === 'terminate'
+      ? 'Services terminated. The account is disabled and active memberships/subscriptions were ended.'
+      : 'Permanent deletion requested. A Super Administrator must confirm before the account is deleted.',
+    targetUser,
+  ))
+}
+
+export async function reviewUserDeletion(formData: FormData) {
+  const requestId = String(formData.get('requestId') ?? '')
+  const decision = String(formData.get('decision') ?? '')
+  const confirmationText = String(formData.get('confirmationText') ?? '').trim()
+  if (!requestId || !['approve', 'reject'].includes(decision)) redirect('/admin/super?tab=deletions&error=Invalid%20deletion%20review.')
+
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('review_user_deletion', {
+    request_id: requestId,
+    decision,
+    confirmation_text: confirmationText || null,
+  })
+  if (error) redirect(`/admin/super?tab=deletions&error=${encodeURIComponent(error.message)}`)
+
+  revalidatePath('/admin/super')
+  revalidatePath('/admin/users')
+  revalidatePath('/admin/audit')
+  redirect(`/admin/super?tab=deletions&message=${encodeURIComponent(decision === 'approve' ? 'User account permanently deleted.' : 'Deletion request rejected.')}`)
+}
