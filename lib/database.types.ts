@@ -99,6 +99,12 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['audit_events']['Insert']>
         Relationships: []
       }
+      security_events: {
+        Row: { id:number; event_type:string; severity:string; bucket:string|null; subject_hash:string|null; details:Json; created_at:string }
+        Insert: { id?:never; event_type:string; severity?:string; bucket?:string|null; subject_hash?:string|null; details?:Json; created_at?:string }
+        Update: Partial<Database['public']['Tables']['security_events']['Insert']>
+        Relationships: []
+      }
       user_termination_requests: {
         Row: { id:string; target_user:string; target_email:string|null; target_name:string|null; request_type:string; reason:string; status:string; requested_by:string; approved_by:string|null; requested_at:string; reviewed_at:string|null; executed_at:string|null }
         Insert: { id?:string; target_user:string; target_email?:string|null; target_name?:string|null; request_type:string; reason:string; status?:string; requested_by:string; approved_by?:string|null; requested_at?:string; reviewed_at?:string|null; executed_at?:string|null }
