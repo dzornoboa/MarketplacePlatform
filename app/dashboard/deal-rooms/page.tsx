@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { requireUserProfile } from '@/lib/auth/guards'
 import { humanize } from '@/lib/auth/access'
-import { date, dateTime } from '@/lib/format'
+import { date } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
 
 export const dynamic = 'force-dynamic'
@@ -39,46 +39,42 @@ export default async function DealRoomsPage() {
           <h2>No deal rooms yet</h2>
           <p>When an expression of interest turns into a live transaction, WTC Accra opens a deal room and adds both parties here.</p>
         </section>
-      : <div className="opportunity-list">{(rooms ?? []).map(room => {
+      : <div className="deal-room-grid">{(rooms ?? []).map(room => {
           const opportunity = oppById.get(room.opportunity_id)
           const roomMembers = (members ?? []).filter(m => m.deal_room_id === room.id)
           const roomDocs = (documents ?? []).filter(d => d.deal_room_id === room.id)
-          return <article className="card opportunity-card" key={room.id}>
-            <div className="opportunity-head">
-              <div>
-                <span className={room.status === 'active' ? 'status-dot status-verified' : 'status-dot'}>{humanize(room.status)}</span>
-                <h3><Link href={`/dashboard/deal-rooms/${room.id}`}>{opportunity?.title ?? 'Opportunity'}</Link></h3>
-                <p className="muted">{opportunity ? `${opportunity.sector} · ${opportunity.country} · ` : ''}opened {date(room.created_at)}</p>
-              </div>
+          const participantNames = roomMembers.slice(0, 3).map(member => {
+            const person = personById.get(member.user_id)
+            return member.user_id === profile.id ? 'You' : person?.full_name ?? 'Participant'
+          })
+          const extraParticipants = Math.max(0, roomMembers.length - participantNames.length)
+          return <article className="card deal-room-card" key={room.id}>
+            <div className="deal-room-card-head">
+              <span className={room.status === 'active' ? 'status-dot status-verified' : 'status-dot'}>{humanize(room.status)}</span>
+              <span className="deal-room-date">{date(room.created_at)}</span>
             </div>
 
-            <dl className="detail-grid detail-grid-two">
+            <div className="deal-room-card-copy">
+              <h3><Link href={`/dashboard/deal-rooms/${room.id}`}>{opportunity?.title ?? 'Opportunity'}</Link></h3>
+              <p className="muted">{opportunity ? [opportunity.sector, opportunity.country].filter(Boolean).join(' · ') : 'Private Transaction'}</p>
+            </div>
+
+            <dl className="deal-room-stats">
               <div><dt>Participants</dt><dd>{roomMembers.length}</dd></div>
               <div><dt>Documents</dt><dd>{roomDocs.length}</dd></div>
             </dl>
-            <div><Link className="button button-primary" href={`/dashboard/deal-rooms/${room.id}`}>Open deal room — messages and files</Link></div>
 
-            <div className="item-editor">
-              <h3>Participants</h3>
-              <div className="history-list">{roomMembers.map(member => {
-                const person = personById.get(member.user_id)
-                return <div key={member.user_id}>
-                  <strong>{member.user_id === profile.id ? 'You' : person?.full_name ?? 'Participant'}</strong>
-                  <span>{humanize(member.role)}</span>
-                  {person?.job_title && <p className="muted">{person.job_title}</p>}
-                </div>
-              })}</div>
-            </div>
-
-            {roomDocs.length > 0 && <div className="item-editor">
-              <h3>Shared documents</h3>
-              <div className="history-list">{roomDocs.map(doc => <div key={doc.id}>
-                <strong>{doc.file_name}</strong>
-                <span>{dateTime(doc.created_at)}</span>
-                <a className="button button-outline" href={`/api/documents/${doc.id}`} target="_blank" rel="noopener">Open</a>
-              </div>)}</div>
-              <p className="field-help">Links are signed and expire after two minutes.</p>
+            {participantNames.length > 0 && <div className="deal-room-participants">
+              <span>Participants</span>
+              <p>{participantNames.join(', ')}{extraParticipants > 0 ? ` +${extraParticipants} more` : ''}</p>
             </div>}
+
+            {roomDocs.length > 0 && <div className="deal-room-document-preview">
+              <span>Latest Document</span>
+              <p>{roomDocs[0]?.file_name}</p>
+            </div>}
+
+            <Link className="button button-primary deal-room-open" href={`/dashboard/deal-rooms/${room.id}`}>Open Deal Room</Link>
           </article>
         })}</div>}
   </div>
