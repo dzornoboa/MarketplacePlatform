@@ -5,6 +5,15 @@ import { selectableParticipantTypes, participantTypeLabels } from '@/lib/auth/ac
 
 const COMPANY_TYPES = new Set(['business', 'wtc_association_member', 'wtc_accra_member'])
 const WTC_TYPES = new Set(['wtc_association_member', 'wtc_accra_member'])
+const ID_TYPES = [
+  ['ghana_card', 'Ghana Card'],
+  ['passport', 'Passport'],
+  ['drivers_license', "Driver's Licence"],
+  ['voter_id', 'Voter ID'],
+  ['residence_permit', 'Residence Permit'],
+  ['national_id', 'Other National ID'],
+  ['other', 'Other Government-Issued ID'],
+] as const
 const HINT: Record<string, string> = {
   investor: 'Individuals, funds and institutions deploying capital. Investment mandate, curated deal flow and managed introductions. US$1,750 a year.',
   business: 'Companies raising capital, sourcing suppliers or finding buyers and partners. Post opportunities, receive bids and open deal rooms. US$8,750 a year.',
@@ -49,6 +58,17 @@ export function RegisterFields({ email, plans = [], initialPlan = '', initialTyp
       <label>Phone<input name="phone" autoComplete="tel" placeholder="+233 …" /></label>
       <label>Country<input name="country" autoComplete="country-name" defaultValue="Ghana" /></label>
     </div>
+    <div className="form-grid">
+      <label>Date Of Birth<input name="dateOfBirth" type="date" autoComplete="bday" required /></label>
+      <label>Identification Type
+        <select name="idType" required defaultValue="">
+          <option value="" disabled>Select Identification Type</option>
+          {ID_TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
+      </label>
+    </div>
+    <label>Identification Number<input name="idNumber" autoComplete="off" required minLength={3} maxLength={80} placeholder="Enter The Number On Your Selected ID" /></label>
+    <p className="field-help">Your date of birth and identification details are collected for age eligibility and identity verification. They are not displayed on your public member profile. You must be at least 13 years old to create an account.</p>
     {type && eligible.length > 0 && <div className="form-stack plan-pick">
       <label>Plan
         <select name="planCode" value={plan} onChange={e => setPlan(e.target.value)} required>
