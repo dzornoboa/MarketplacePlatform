@@ -46,8 +46,9 @@ export default async function BillingPage({ searchParams }: Props) {
   ])
   const kyc = kycChecklist({ type: profile.participant_type ?? profile.requested_participant_type, purposes: (myDocs ?? []).map(d => d.purpose), hasBillingAddress: !!billingAddress, hasOrganisation: (orgCount ?? 0) > 0, verified: profile.verification_status === 'verified' })
   const active = (subscriptions ?? []).find(s => s.status === 'active')
-  const pending = (subscriptions ?? []).find(s => s.status === 'pending')
-  const awaiting = (subscriptions ?? []).find(s => s.status === 'awaiting_approval')
+  const activeCreatedAt = active ? new Date(active.created_at).getTime() : 0
+  const pending = (subscriptions ?? []).find(s => s.status === 'pending' && (!active || new Date(s.created_at).getTime() > activeCreatedAt))
+  const awaiting = (subscriptions ?? []).find(s => s.status === 'awaiting_approval' && (!active || new Date(s.created_at).getTime() > activeCreatedAt))
   const expired = !active && (subscriptions ?? []).find(s => s.status === 'expired')
   const daysLeft = state ? subscriptionDaysLeft(state) : null
   const email = String(claims.email ?? '')
@@ -144,7 +145,7 @@ export default async function BillingPage({ searchParams }: Props) {
     {message && !sectionNotice && <div className="alert alert-success">{message}</div>}
     {expired && <div className="alert alert-error">Your {expired.plan_code.replaceAll('_', ' ')} subscription expired on {date(expired.ends_at)}. Marketplace access is paused until you renew below.</div>}
     {active && daysLeft !== null && daysLeft <= 30 && daysLeft >= 0 && <div className="alert alert-error">Your subscription ends in {daysLeft} day{daysLeft === 1 ? '' : 's'} ({date(active.ends_at)}). Renew or change plan below to keep marketplace access.</div>}
-    {awaiting && <div className="alert alert-success">Your {awaiting.plan_code.replaceAll('_', ' ')} plan is paid and awaiting WTC Accra approval. You will be notified as soon as it is confirmed.</div>}
+    {awaiting && profile.verification_status !== 'verified' && <div className="alert alert-success">Your {awaiting.plan_code.replaceAll('_', ' ')} plan is paid and awaiting WTC Accra approval. You will be notified as soon as it is confirmed.</div>}
     {pending && <form action={cancelPlanChange} className="field-help">Changed your mind? <button className="link-button" type="submit">Cancel this plan change</button></form>}
 
     {pending && pendingPlan && Number(pendingPlan.price_usd) > 0 && !kyc.ready && <div id="pay">
