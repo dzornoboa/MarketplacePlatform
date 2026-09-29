@@ -72,8 +72,10 @@ export async function signup(formData: FormData) {
   const countryCode = String(formData.get('countryCode') ?? '').trim().toUpperCase()
   const phoneCountryCode = String(formData.get('phoneCountryCode') ?? '').trim()
   const phoneLocal = String(formData.get('phoneLocal') ?? '').replace(/\D/g, '')
+  const preferredCurrency = String(formData.get('preferredCurrency') ?? 'USD').trim().toUpperCase()
   if (!country || !/^[A-Z]{2}$/.test(countryCode)) redirect(withMessage('/register', 'error', 'Select a valid country.'))
   if (!/^\+[0-9]{1,4}$/.test(phoneCountryCode) || phoneLocal.length < 5 || phoneLocal.length > 15) redirect(withMessage('/register', 'error', 'Enter a valid telephone number for your selected country.'))
+  if (!/^[A-Z]{3}$/.test(preferredCurrency)) redirect(withMessage('/register', 'error', 'Select a valid preferred currency.'))
   const nationalNumber = phoneLocal.replace(/^0+/, '')
   const phone = `${phoneCountryCode}${nationalNumber}`
   const language = String(formData.get('language') ?? 'en').trim().toLowerCase()
@@ -87,6 +89,7 @@ export async function signup(formData: FormData) {
     country,
     country_code: countryCode,
     phone_country_code: phoneCountryCode,
+    preferred_currency: preferredCurrency,
     language,
     locale,
     timezone,
