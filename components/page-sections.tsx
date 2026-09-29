@@ -68,6 +68,7 @@ function FeatureGrid({ section }: { section: ContentSection }) {
         <BrandArc className="card-arc" color="var(--accent)" />
         <strong>{feature.heading}</strong>
         {feature.body && <p>{feature.body}</p>}
+        {feature.href && <Link className="button button-outline" href={feature.href}>Join Free</Link>}
       </article>)}</div>
   </section>
 }
@@ -153,7 +154,7 @@ function Plans({ section, plans }: { section: ContentSection; plans: PlanSummary
           <strong className="plan-price">{money(plan.price_usd)}<small>/{plan.billing_interval}</small></strong>
           {plan.description && <p className="muted">{plan.description}</p>}
           <p className="field-help">For: {plan.target_participant_types.map(t => labelForParticipantType(t)).join(', ') || 'All participants'}</p>
-          <MemberAware memberHref="/dashboard/billing" memberLabel="Manage my plan" memberClass="button button-outline"><Link className="button button-outline" href={`/register?plan=${plan.code}${plan.target_participant_types[0] ? `&type=${plan.target_participant_types[0]}` : ''}`}>{Number(plan.price_usd) === 0 ? 'Start free' : 'Sign up for this plan'}</Link></MemberAware>
+          <MemberAware memberHref="/dashboard/billing" memberLabel="Manage My Access" memberClass="button button-outline"><Link className="button button-outline" href={`/register?${plan.target_participant_types[0] ? `type=${plan.target_participant_types[0]}` : ''}`}>Join Free</Link></MemberAware>
         </article>)}</div>}
   </section>
 }
