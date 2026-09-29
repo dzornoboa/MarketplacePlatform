@@ -19,6 +19,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const { data: backup, error } = await supabase.from('platform_backups').select('*').eq('id', id).maybeSingle()
   if (error || !backup) return NextResponse.json({ error: 'Backup not found' }, { status: 404 })
 
+  await supabase.rpc('log_platform_backup_export', { backup_id: id })
+
   const body = JSON.stringify({
     format: 'wtc-accra-hub-logical-backup-v1',
     exported_at: new Date().toISOString(),
