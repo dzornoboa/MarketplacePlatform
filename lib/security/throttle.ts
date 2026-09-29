@@ -10,7 +10,7 @@ import { getSupabasePublicConfig } from '@/lib/supabase/config'
 export async function clientKey(): Promise<string> {
   const h = await headers()
   const ip = (h.get('x-forwarded-for') ?? h.get('x-real-ip') ?? 'unknown').split(',')[0].trim()
-  const salt = process.env.THROTTLE_SALT ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'wtc'
+  const salt = process.env.THROTTLE_SALT ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? 'wtc-rate-limit'
   return createHash('sha256').update(`${salt}:${ip}`).digest('hex').slice(0, 32)
 }
 
