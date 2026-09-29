@@ -12,10 +12,14 @@ export function ProfileRegionFields({ country, countryCode, phone, phoneCountryC
 }) {
   const [countries, setCountries] = useState<CountryOption[]>([])
   const [code, setCode] = useState(countryCode ?? '')
-  const [localPhone, setLocalPhone] = useState(() => {
-    const raw = phone ?? ''
-    return phoneCountryCode && raw.startsWith(phoneCountryCode) ? raw.slice(phoneCountryCode.length) : raw.replace(/^\+/, '')
-  })
+  const cleanLocalNumber = (raw: string, dial: string) => {
+    let digits = raw.replace(/\D/g, '')
+    const dialDigits = dial.replace(/\D/g, '')
+    if (dialDigits && digits.startsWith(dialDigits)) digits = digits.slice(dialDigits.length)
+    return digits.replace(/^0+/, '')
+  }
+
+  const [localPhone, setLocalPhone] = useState(() => cleanLocalNumber(phone ?? '', phoneCountryCode ?? ''))
 
   useEffect(() => {
     fetch('/api/regions').then(r => r.json()).then((data: { countries?: CountryOption[] }) => {
@@ -23,15 +27,21 @@ export function ProfileRegionFields({ country, countryCode, phone, phoneCountryC
       setCountries(list)
       if (!code) {
         const match = list.find(c => c.name.toLowerCase() === (country ?? '').toLowerCase())
-        if (match) setCode(match.code)
+        if (match) {
+          setCode(match.code)
+          setLocalPhone(cleanLocalNumber(phone ?? '', match.callingCode))
+        }
+      } else {
+        const match = list.find(c => c.code === code)
+        if (match) setLocalPhone(cleanLocalNumber(phone ?? '', match.callingCode))
       }
     }).catch(() => {})
   }, [])
 
   const selected = useMemo(() => countries.find(c => c.code === code) ?? null, [countries, code])
   const dial = selected?.callingCode || phoneCountryCode || ''
-  const normalizedLocal = localPhone.replace(/\D/g, '').replace(/^0+/, '')
-  const fullPhone = dial && normalizedLocal ? `${dial}${normalizedLocal}` : localPhone
+  const normalizedLocal = cleanLocalNumber(localPhone, dial)
+  const fullPhone = dial && normalizedLocal ? `${dial}${normalizedLocal}` : normalizedLocal
 
   return <>
     <div className="form-grid">
@@ -44,7 +54,7 @@ export function ProfileRegionFields({ country, countryCode, phone, phoneCountryC
       <label>Telephone Number
         <div className="phone-field">
           <span className="phone-prefix">{dial || '+'}</span>
-          <input type="tel" inputMode="tel" value={localPhone} onChange={e => setLocalPhone(e.target.value.replace(/[^0-9 ()-]/g, ''))} required />
+          <input type="tel" inputMode="tel" value={localPhone} onChange={e => setLocalPhone(e.target.value.replace(/[^0-9 ()-]/g, ''))} placeholder="20 123 4567" required />
         </div>
       </label>
     </div>
