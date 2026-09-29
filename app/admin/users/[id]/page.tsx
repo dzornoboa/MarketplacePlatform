@@ -199,7 +199,7 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
         <h3>System Role</h3>
         <input type="hidden" name="userId" value={person.id} /><input type="hidden" name="returnTo" value="detail" />
         <select name="systemRole" defaultValue={person.system_role}>{systemRoles.map(r => <option key={r} value={r}>{systemRoleLabels[r]}</option>)}</select>
-        <p className="field-help">Role changes take effect on the member's next request. Administrator and Super Administrator routes also require MFA.</p>
+        <p className="field-help">Assigning a staff role marks this account as WTC Accra Staff and activates WTC Accra membership. The assigned role controls which console sections are available. Administrator and Super Administrator routes also require MFA.</p>
         <SubmitButton className="button button-outline" pendingLabel="Saving…">Update Role</SubmitButton>
       </form>}
     </div>}
