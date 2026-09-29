@@ -48,7 +48,7 @@ export default async function FeedPage({ searchParams }: Props) {
     .select('id,title,slug,excerpt,category,image_url,published_at')
     .eq('status', 'published').order('published_at', { ascending: false }).limit(6)
 
-  let listingQuery = supabase.from('opportunities').select('*').eq('status', 'published').limit(60)
+  let listingQuery = supabase.from('opportunities').select('*').eq('status', 'published').limit(200)
   if (category) listingQuery = listingQuery.eq('category', category)
   if (sector) listingQuery = listingQuery.eq('sector', sector)
   if (country) listingQuery = listingQuery.eq('country', country)
@@ -154,7 +154,7 @@ export default async function FeedPage({ searchParams }: Props) {
         </label>
         <label className="switch"><input type="checkbox" name="followed" value="1" defaultChecked={followed} /> Only members I follow</label>
         <button className="button button-outline" type="submit">Apply</button>
-        <Link className="text-link" href="/dashboard/feed">Reset</Link>
+        <Link className="text-link" href="/dashboard/opportunities">Reset</Link>
       </form>
 
       {visible.length === 0

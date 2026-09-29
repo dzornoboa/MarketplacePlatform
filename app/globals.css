@@ -1473,3 +1473,36 @@ h1,h2,h3,h4,
   .access-payment-modal{padding:22px}
   .access-payment-modal .button-row{display:grid;grid-template-columns:1fr}
 }
+
+
+/* ---------- Large Collection Pagination --------------------------------- */
+.collection-pagination{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:22px 0 8px;padding:14px 0;border-top:1px solid var(--line)}
+.pagination-button{min-width:38px;height:38px;padding:0 12px;border:1px solid var(--line-strong);border-radius:7px;background:#fff;color:var(--wtc-navy);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.pagination-button:hover:not(:disabled){background:var(--wtc-mist);border-color:var(--wtc-navy)}
+.pagination-button:disabled{opacity:.42;cursor:not-allowed}
+.pagination-current{background:var(--wtc-navy);color:#fff;border-color:var(--wtc-navy)}
+.pagination-ellipsis{padding:0 2px;color:var(--muted)}
+.pagination-jump{display:flex;align-items:center;gap:6px;margin-left:auto;font-size:11px;font-weight:700;color:var(--muted)}
+.pagination-jump select{height:38px;padding:0 28px 0 10px;border:1px solid var(--line-strong);border-radius:7px;background:#fff}
+.pagination-meta{width:100%;font-size:10px;color:var(--muted);text-align:right}
+
+/* Listing/posting collections use a maximum of four cards per desktop row.
+   AutoPagination limits each page to 40 items (10 desktop rows). */
+.opportunity-list,.member-grid{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:18px;align-items:stretch}
+.opportunity-list>.opportunity-card,.member-grid>.member-card{min-width:0;height:100%}
+@media(min-width:720px){
+  .opportunity-list,.member-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(min-width:1080px){
+  .opportunity-list,.member-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media(max-width:720px){
+  .pagination-jump{margin-left:0}
+  .pagination-meta{text-align:left}
+}
+
+/* Result popups always have an explicit close control in addition to
+   outside-click, Escape and automatic dismissal. */
+.flash-dialog{position:relative}
+.flash-close{position:absolute;top:8px;right:10px;width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--muted);font-size:24px;line-height:1;cursor:pointer}
+.flash-close:hover{background:rgba(0,0,0,.06);color:var(--ink)}
