@@ -137,45 +137,38 @@ export async function resendVerificationCode(formData: FormData) {
   if (validateEmail(email)) redirect('/register')
   if (!(await allow('resend_code', 3, 600, email))) redirect(withMessage(back, 'error', 'Please wait before requesting another code.'))
   const supabase = await createClient()
-  const { data: state } = await supabase.rpc('registration_resume_state', { lookup_email: email })
-  const existing = state as { exists?: boolean; confirmed?: boolean; profile_completed?: boolean } | null
-  if (existing?.confirmed) {
-    redirect(`/resume-registration?email=${encodeURIComponent(email)}&existing=1`)
-  }
-  const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: `${getSiteUrl()}/auth/confirm` } })
-  if (error) redirect(withMessage(back, 'error', /rate|seconds/i.test(error.message) ? 'Please wait a minute before requesting another verification email.' : 'Could not send a new verification email. Try again shortly.'))
-  redirect(withMessage(back, 'message', 'A fresh verification email has been sent. Enter the 6-digit code from the email, or use its secure confirmation link.'))
+  await supabase.auth.resend({
+    type: 'signup',
+    email,
+    options: { emailRedirectTo: `${getSiteUrl()}/auth/confirm` },
+  }).catch(() => undefined)
+  redirect(withMessage(back, 'message', 'If this address still needs verification, a fresh email will arrive shortly. If it is already confirmed, use Continue Existing Account below.'))
 }
 
 export async function resumeRegistration(formData: FormData) {
   const email = String(formData.get('email') ?? '').trim()
   if (validateEmail(email)) redirect(withMessage('/resume-registration', 'error', 'Enter a valid email address.'))
   if (!(await allow('resume_registration', 4, 900, email))) redirect(withMessage('/resume-registration', 'error', 'Too many attempts. Try again in 15 minutes.'))
+
   const supabase = await createClient()
-  const { data: state } = await supabase.rpc('registration_resume_state', { lookup_email: email })
-  const existing = state as { exists?: boolean; confirmed?: boolean; profile_completed?: boolean; password_change_required?: boolean } | null
 
-  if (existing?.exists && existing.confirmed) {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${getSiteUrl()}/auth/confirm?next=/reset-password`,
-    })
-    if (error) redirect(withMessage(`/resume-registration?email=${encodeURIComponent(email)}`, 'error', 'We found your account, but could not send the secure password link. Try again shortly.'))
-    redirect(withMessage(`/resume-registration?email=${encodeURIComponent(email)}&existing=1`, 'message', existing.profile_completed
-      ? 'Your account already exists. We sent a secure password link so you can sign in again and update your details if needed.'
-      : 'Your email is already confirmed and your account setup is incomplete. We sent a secure password link. Set or reset your password, sign in, and your saved information will load so you can continue.'))
-  }
+  // Do not reveal whether the address exists or whether it is already confirmed.
+  // Confirmed accounts receive a password continuation link; unfinished accounts
+  // receive a fresh signup-confirmation message. Unknown addresses receive neither.
+  await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${getSiteUrl()}/auth/confirm?next=/reset-password`,
+  }).catch(() => undefined)
+  await supabase.auth.resend({
+    type: 'signup',
+    email,
+    options: { emailRedirectTo: `${getSiteUrl()}/auth/confirm` },
+  }).catch(() => undefined)
 
-  if (existing?.exists) {
-    const { error } = await supabase.auth.resend({
-      type: 'signup',
-      email,
-      options: { emailRedirectTo: `${getSiteUrl()}/auth/confirm` },
-    })
-    if (error) redirect(withMessage(`/verify-email?email=${encodeURIComponent(email)}`, 'error', 'Could not send the verification email. Try again shortly.'))
-    redirect(withMessage(`/verify-email?email=${encodeURIComponent(email)}`, 'message', 'A fresh verification email has been sent. Enter the 6-digit code from the email, or use the secure confirmation link.'))
-  }
-
-  redirect(withMessage('/register', 'error', 'We could not find an account for that email. Start a new free registration.'))
+  redirect(withMessage(
+    `/resume-registration?email=${encodeURIComponent(email)}`,
+    'message',
+    'If an account is associated with this address, we sent the appropriate secure email to continue. Check your inbox and spam folder.',
+  ))
 }
 
 export async function requestPasswordReset(formData: FormData) {
