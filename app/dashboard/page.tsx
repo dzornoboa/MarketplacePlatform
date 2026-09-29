@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { VerifiedCheck } from '@/components/verified-check'
 import { ParticipantBadge } from '@/components/participant-badge'
+import { Avatar } from '@/components/avatar'
 import { money } from '@/lib/format'
 import { BarChart } from '@/components/charts'
 import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
@@ -48,6 +49,154 @@ export default async function DashboardPage() {
     { done: !!state?.has_active_subscription, label: 'Activate a subscription — opens the marketplace', href: '/dashboard/billing' },
     { done: profile.verification_status === 'verified', label: 'Earn the WTC Accra verified check', href: '/dashboard/verification' },
   ]
+
+  const memberExperience = profile.system_role === 'user'
+  if (memberExperience) {
+    const accessOpen = !!state && !marketplaceLock(state).locked
+    const [{ data: news }, listingResult, directoryResult, { data: orgLinks }] = await Promise.all([
+      supabase.from('content_posts').select('id,title,slug,excerpt,category,image_url,published_at').eq('status', 'published').order('published_at', { ascending: false }).limit(4),
+      accessOpen
+        ? supabase.from('opportunities').select('id,title,summary,sector,country,city,kind,intent,currency,capital_required,owner_user_id,published_at').eq('status', 'published').neq('owner_user_id', profile.id).order('published_at', { ascending: false }).limit(5)
+        : Promise.resolve({ data: [] }),
+      accessOpen
+        ? supabase.rpc('member_directory', { search: null, participant: null, member_country: null, only_ids: null, max_rows: 6 })
+        : Promise.resolve({ data: [] }),
+      supabase.from('organization_members').select('organization_id').eq('user_id', profile.id).limit(1),
+    ])
+    const liveListings = listingResult.data ?? []
+    const suggestedMembers = (directoryResult.data ?? []).filter(person => person.id !== profile.id).slice(0, 4)
+    const ownerIds = [...new Set(liveListings.map(item => item.owner_user_id))]
+    const { data: owners } = ownerIds.length ? await supabase.rpc('listing_owner_cards', { owner_ids: ownerIds }) : { data: [] }
+    const ownerById = new Map((owners ?? []).map(owner => [owner.id, owner]))
+    const orgId = orgLinks?.[0]?.organization_id
+    const { data: organisation } = orgId
+      ? await supabase.from('organizations').select('name,city,country').eq('id', orgId).maybeSingle()
+      : { data: null }
+
+    return <div className="member-home">
+      {browse?.locked && <section className="restriction-banner member-restriction">
+        <div><strong>Marketplace Access Is Restricted</strong><p>{browse.reason}</p></div>
+        {browse.action && <Link className="button button-light" href={browse.action.href}>{browse.action.label}</Link>}
+      </section>}
+
+      <div className="member-home-grid">
+        <aside className="member-home-left">
+          <section className="member-profile-card">
+            <div className="member-profile-cover" />
+            <div className="member-profile-body">
+              <Link href="/dashboard/profile" className="member-profile-avatar"><Avatar src={profile.avatar_url} name={profile.full_name} size={76} /></Link>
+              <h2><Link href="/dashboard/profile">{displayName}</Link><VerifiedCheck verified={profile.verification_status === 'verified'} size={16} /></h2>
+              <p>{profile.job_title || labelForParticipantType(profile.participant_type ?? profile.requested_participant_type)}</p>
+              <small>{[profile.city, profile.country].filter(Boolean).join(', ') || 'Location Not Set'}</small>
+              {organisation?.name && <Link className="member-profile-org" href="/dashboard/organisation"><strong>{organisation.name}</strong></Link>}
+            </div>
+            <div className="member-profile-stats">
+              <Link href="/dashboard/network"><span>Connections</span><strong>{connT.accepted ?? 0}</strong></Link>
+              <Link href="/dashboard/saved"><span>Saved Opportunities</span><strong>{(mySaved ?? []).length}</strong></Link>
+              <Link href="/dashboard/matches"><span>Matches</span><strong>{(myMatches ?? []).length}</strong></Link>
+            </div>
+            <Link className="member-profile-footer" href="/dashboard/billing"><span>Membership</span><strong>{state?.subscription_plan_name ?? (state?.has_active_subscription ? 'Active Plan' : 'View Plans')}</strong></Link>
+          </section>
+
+          <section className="member-mini-card">
+            <strong>Quick Access</strong>
+            <Link href="/dashboard/opportunities">Your Listings <span>{myListings ?? 0}</span></Link>
+            <Link href="/dashboard/interests">Expressions Of Interest <span>{(myBids ?? []).length}</span></Link>
+            <Link href="/dashboard/deal-rooms">Deal Rooms</Link>
+            <Link href="/dashboard/reports">Reports</Link>
+          </section>
+        </aside>
+
+        <main className="member-home-center">
+          <section className="member-compose-card">
+            <div className="member-compose-start">
+              <Avatar src={profile.avatar_url} name={profile.full_name} size={46} />
+              <Link href="/dashboard/opportunities/new">Share A Business Opportunity Or Requirement</Link>
+            </div>
+            <div className="member-compose-actions">
+              <Link href="/dashboard/opportunities/new"><span>＋</span> Post Opportunity</Link>
+              <Link href="/dashboard/network"><span>◎</span> Find Members</Link>
+              <Link href="/dashboard/introductions"><span>↗</span> Request Introduction</Link>
+            </div>
+          </section>
+
+          <div className="member-feed-tabs">
+            <strong>For You</strong>
+            <Link href="/dashboard/feed">Network Feed</Link>
+          </div>
+
+          {liveListings.length > 0 && liveListings.map(item => {
+            const owner = ownerById.get(item.owner_user_id)
+            return <article className="member-social-post" key={item.id}>
+              <div className="member-post-head">
+                <Avatar src={owner?.avatar_url ?? null} name={owner?.full_name ?? 'Member'} size={46} />
+                <div>
+                  <strong>{owner?.organisation || owner?.full_name || 'Verified Member'}<VerifiedCheck verified={owner?.is_verified ?? false} size={14} /></strong>
+                  <span>{owner ? labelForParticipantType(owner.participant_type) : 'WTC Accra Network'} · {item.country}</span>
+                  <small>{item.sector} · {humanize(item.kind)}</small>
+                </div>
+              </div>
+              <div className="member-post-content">
+                <span className="eyebrow">{item.intent.replaceAll('_', ' ')}</span>
+                <h2><Link href={`/dashboard/opportunities/${item.id}`}>{item.title}</Link></h2>
+                <p>{item.summary}</p>
+                <div className="member-post-facts">
+                  <span>{item.city ? `${item.city}, ` : ''}{item.country}</span>
+                  {Number(item.capital_required ?? 0) > 0 && <strong>{money(item.capital_required, item.currency)}</strong>}
+                </div>
+              </div>
+              <div className="member-post-actions">
+                <Link href={`/dashboard/opportunities/${item.id}`}>View Opportunity</Link>
+                <Link href="/dashboard/network">Connect</Link>
+                <Link href="/dashboard/saved">Save</Link>
+              </div>
+            </article>
+          })}
+
+          {(news ?? []).length > 0 && <section className="member-news-feed">
+            <div className="member-section-title"><h2>WTC News And Resources</h2><Link href="/news">View All →</Link></div>
+            {(news ?? []).map(post => <article className="member-social-post member-news-post" key={post.id}>
+              {post.image_url && <img src={post.image_url} alt="" />}
+              <div className="member-post-content">
+                <span className="eyebrow">{post.category === 'resource' ? 'Resource' : 'News'}</span>
+                <h2><Link href={`/news/${post.slug}`}>{post.title}</Link></h2>
+                {post.excerpt && <p>{post.excerpt}</p>}
+              </div>
+              <div className="member-post-actions"><Link href={`/news/${post.slug}`}>Read Article</Link><Link href="/news">More News</Link></div>
+            </article>)}
+          </section>}
+
+          {liveListings.length === 0 && <section className="member-social-post member-empty-feed">
+            <h2>{accessOpen ? 'Your Network Feed Is Ready' : 'Complete Membership Setup To Unlock The Marketplace'}</h2>
+            <p>{accessOpen ? 'New investment, trade, procurement and partnership opportunities from your network will appear here.' : 'You can still complete your profile, read WTC news and manage your account while access is being activated.'}</p>
+            <Link className="button button-primary" href={accessOpen ? '/dashboard/feed' : '/dashboard/billing'}>{accessOpen ? 'Open Network Feed' : 'View Membership'}</Link>
+          </section>}
+        </main>
+
+        <aside className="member-home-right">
+          <section className="member-right-card">
+            <div className="member-section-title"><h2>People To Connect With</h2><Link href="/dashboard/network">See All</Link></div>
+            {suggestedMembers.length === 0 ? <p className="muted">More verified members will appear as your network grows.</p> : suggestedMembers.map(person => <div className="member-suggestion" key={person.id}>
+              <Avatar src={person.avatar_url} name={person.full_name} size={44} />
+              <div><strong>{person.full_name}<VerifiedCheck verified={person.is_verified} size={12} /></strong><span>{[person.job_title, person.organisation].filter(Boolean).join(' · ') || labelForParticipantType(person.participant_type)}</span><small>{person.country || 'WTC Network'}</small><Link href="/dashboard/network">+ Connect</Link></div>
+            </div>)}
+          </section>
+
+          <section className="member-right-card">
+            <div className="member-section-title"><h2>Recent Activity</h2><Link href="/dashboard/notifications">View All</Link></div>
+            {(notifications ?? []).length === 0 ? <p className="muted">Your verification, deal and network updates will appear here.</p> : <div className="member-activity-list">{(notifications ?? []).slice(0, 4).map(n => <Link key={n.id} href={n.href || '/dashboard/notifications'}><strong>{n.title}</strong><span>{n.body || 'Open notification'}</span></Link>)}</div>}
+          </section>
+
+          <section className="member-right-card member-progress-card">
+            <h2>Profile And Access</h2>
+            <div className="member-progress-meter"><span style={{ width: `${Math.round((steps.filter(step => step.done).length / steps.length) * 100)}%` }} /></div>
+            <p>{steps.filter(step => step.done).length} Of {steps.length} Setup Steps Complete</p>
+            {steps.filter(step => !step.done).slice(0, 2).map(step => <Link key={step.label} href={step.href}>○ {step.label}</Link>)}
+          </section>
+        </aside>
+      </div>
+    </div>
+  }
 
   return <div className="page-stack">
     <div>
