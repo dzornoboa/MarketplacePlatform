@@ -22,7 +22,13 @@ export default function PrivacyPage() {
       <p>We use personal information to create and secure accounts, verify participants and organisations, administer memberships and subscriptions, process or reconcile payments, provide trade and investment services, manage introductions and marketplace activity, communicate operational information, respond to support requests, prevent abuse, meet legal obligations and improve the platform.</p>
 
       <h2>Age Eligibility And Children</h2>
-      <p>The WTC Accra Hub is a business platform and is not directed to children under 13. Registration requires a date of birth and accounts for users identified as under 13 are blocked. We do not knowingly offer marketplace accounts to children under 13. If you believe a child under 13 has provided personal information, contact us so the account and associated information can be reviewed and handled appropriately.</p>
+      <p>The WTC Accra Hub is a business platform and is not directed to children under 18. Registration requires a date of birth and accounts for users identified as under 18 are blocked. We do not knowingly offer marketplace accounts to children under 18. If you believe a child under 18 has provided personal information, contact us so the account and associated information can be reviewed and handled appropriately.</p>
+
+      <h2>Registration Agreement And Deal Monitoring</h2>
+      <p>Registration records the version and time of your electronic acceptance of the platform NDA, Terms and User Agreement. Deal requests, matchmaking access requests, introductions and Deal Room discussions may be monitored by authorised Trade Officers, Verification Officers, Administrators and Super Administrators. Workflow records may include the name and role of the staff member who authorised a status change.</p>
+
+      <h2>Deal Access And Success Fees</h2>
+      <p>Account creation and deal posting may be free while restricted deal details, networking or meeting information can depend on the annual access plan and verification requirements associated with your participant type. The platform may also retain transaction values and calculated success-fee records where a monitored deal is marked successfully closed.</p>
 
       <h2>Legal Bases And International Users</h2>
       <p>Depending on your location and the activity involved, we may process information to perform a contract or provide requested services, comply with legal obligations, protect legitimate business and security interests, or where applicable on the basis of consent. International users may have additional rights under local privacy laws.</p>
