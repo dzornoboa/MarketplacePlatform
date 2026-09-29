@@ -13,10 +13,22 @@ export async function updateProfile(formData: FormData) {
   const jobTitle = String(formData.get('jobTitle') ?? '').trim() || null
   const country = String(formData.get('country') ?? '').trim() || null
   const city = String(formData.get('city') ?? '').trim() || null
+  const dateOfBirth = String(formData.get('dateOfBirth') ?? '').trim()
+  const idType = String(formData.get('idType') ?? '').trim()
+  const idNumber = String(formData.get('idNumber') ?? '').trim()
+  const allowedIdTypes = new Set(['ghana_card', 'passport', 'drivers_license', 'voter_id', 'residence_permit', 'national_id', 'other'])
   if (fullName.length < 2) redirect('/dashboard/profile?error=Enter%20your%20full%20name.')
+  const birthDate = dateOfBirth ? new Date(`${dateOfBirth}T00:00:00Z`) : null
+  const today = new Date()
+  const ageCutoff = new Date(Date.UTC(today.getUTCFullYear() - 13, today.getUTCMonth(), today.getUTCDate()))
+  const oldestReasonable = new Date(Date.UTC(today.getUTCFullYear() - 120, today.getUTCMonth(), today.getUTCDate()))
+  if (!birthDate || Number.isNaN(birthDate.getTime()) || birthDate > ageCutoff || birthDate < oldestReasonable) redirect('/dashboard/profile?error=Enter%20a%20valid%20date%20of%20birth.%20You%20must%20be%20at%20least%2013.')
+  if (!allowedIdTypes.has(idType)) redirect('/dashboard/profile?error=Select%20a%20valid%20identification%20type.')
+  if (idNumber.length < 3 || idNumber.length > 80) redirect('/dashboard/profile?error=Enter%20a%20valid%20identification%20number.')
 
   const patch: Database['public']['Tables']['profiles']['Update'] = {
     full_name: fullName, phone, job_title: jobTitle, country, city,
+    date_of_birth: dateOfBirth, id_type: idType, id_number: idNumber,
   }
 
   /* The participant type is locked once verified (the select is disabled, so
