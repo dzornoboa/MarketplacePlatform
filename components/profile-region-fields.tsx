@@ -26,7 +26,7 @@ export function ProfileRegionFields({ country, countryCode, phone, phoneCountryC
         if (match) setCode(match.code)
       }
     }).catch(() => {})
-  }, [code, country])
+  }, [])
 
   const selected = useMemo(() => countries.find(c => c.code === code) ?? null, [countries, code])
   const dial = selected?.callingCode || phoneCountryCode || ''
