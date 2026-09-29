@@ -1514,3 +1514,14 @@ h1,h2,h3,h4,
 .compact-review{min-width:260px}
 .compact-review input{min-width:180px}
 .data-table tbody tr[hidden]{display:none}
+
+
+/* ---------- Backup & Restore --------------------------------------------- */
+.backup-actions{position:relative}
+.backup-actions>summary{list-style:none;cursor:pointer;display:inline-flex}
+.backup-actions>summary::-webkit-details-marker{display:none}
+.backup-actions-panel{position:absolute;right:0;top:calc(100% + 8px);z-index:40;width:min(420px,82vw);max-height:70vh;overflow:auto;padding:18px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 18px 48px rgba(10,35,65,.18)}
+.backup-actions-panel hr{width:100%;border:0;border-top:1px solid var(--line);margin:4px 0}
+@media(max-width:760px){
+  .backup-actions-panel{position:fixed;left:16px;right:16px;top:12vh;width:auto;max-height:76vh}
+}
