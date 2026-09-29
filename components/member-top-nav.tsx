@@ -23,7 +23,7 @@ export function MemberTopNav({ profile, unreadCount = 0 }: Props) {
   const links = [
     { href: '/dashboard', label: 'Home', icon: '⌂' },
     { href: '/dashboard/network', label: 'My Network', icon: '◎' },
-    { href: '/opportunities', label: 'Opportunities', icon: '▣' },
+    { href: '/dashboard/opportunities', label: 'Listings', icon: '▣' },
     { href: '/dashboard/deal-rooms', label: 'Messages', icon: '✉' },
     { href: '/dashboard/notifications', label: 'Notifications', icon: '●', badge: unreadCount },
   ]
