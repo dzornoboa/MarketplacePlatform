@@ -149,7 +149,7 @@ export function MoneyCurrencyField({
 
   return <>
     <label>{amountLabel}
-      <input name={amountName} type="number" min="0" step="0.01" value={amount} onChange={event => setAmount(event.target.value)} />
+      <input name={amountName} type="number" min="0" step="0.01" value={amount} onChange={event => setAmount(event.target.value)} required />
     </label>
     <label>Currency
       <select name={currencyName} value={currency} onChange={event => setCurrency(event.target.value)} required>
