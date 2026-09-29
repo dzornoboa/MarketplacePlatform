@@ -37,7 +37,7 @@ export async function updateProfile(formData: FormData) {
 
   const patch: Database['public']['Tables']['profiles']['Update'] = {
     full_name: fullName, username, phone, phone_country_code: phoneCountryCode, preferred_currency: preferredCurrency, job_title: jobTitle, country, country_code: countryCode, city,
-    date_of_birth: dateOfBirth, id_type: idType, id_number: idNumber,
+    date_of_birth: dateOfBirth, id_type: idType, id_number: idNumber, profile_completed: true,
   }
 
   /* The participant type is locked once verified (the select is disabled, so
@@ -48,7 +48,6 @@ export async function updateProfile(formData: FormData) {
     const requested = String(formData.get('participantType') ?? '')
     if (!isSelectableParticipantType(requested)) redirect('/dashboard/profile?error=Select%20a%20valid%20participant%20type.')
     patch.requested_participant_type = requested
-    patch.profile_completed = true
   }
 
   const { error } = await supabase.from('profiles').update(patch).eq('id', profile.id)
