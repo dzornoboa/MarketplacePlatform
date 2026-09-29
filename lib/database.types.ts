@@ -303,6 +303,7 @@ export type Database = {
       restore_platform_backup: { Args: { backup_id: string; restore_mode?: string; confirmation_text?: string | null }; Returns: undefined }
       rename_platform_backup: { Args: { backup_id: string; new_label: string; new_note?: string | null }; Returns: undefined }
       delete_platform_backup: { Args: { backup_id: string }; Returns: undefined }
+      log_platform_backup_export: { Args: { backup_id: string }; Returns: undefined }
     }
     Enums: {
       participant_type: 'investor'|'buyer'|'business'|'project_sponsor'|'wtc_association_member'|'wtc_accra_member'|'staff'|'institutional_partner'
