@@ -100,6 +100,15 @@ export function RegisterFields({ email, plans = [], initialPlan = '', initialTyp
   const phoneDisplay = selectedCountry?.callingCode ?? ''
 
   return <>
+    <div className="form-grid">
+      <label>Date Of Birth<input name="dateOfBirth" type="date" autoComplete="bday" required max={new Date(Date.UTC(new Date().getUTCFullYear() - 18, new Date().getUTCMonth(), new Date().getUTCDate())).toISOString().slice(0,10)} value={dob} onChange={e => setDob(e.target.value)} /></label>
+      <label>Age<input value={age} readOnly aria-label="Age calculated from date of birth" /></label>
+    </div>
+    {!dob
+      ? <p className="field-help">Enter your date of birth first. Registration is strictly limited to users aged 18 or older.</p>
+      : Number(age) < 18
+        ? <div className="alert alert-error">Registration is only available to users aged 18 or older. Account creation has been stopped.</div>
+        : <>
     <label>Full Name<input name="fullName" autoComplete="name" required value={fullName} onChange={e => onName(e.target.value)} /></label>
     <label>Username
       <input name="username" autoComplete="username" value={username} onChange={e => setUsername(e.target.value.toLowerCase().replace(/\s+/g, '.'))} minLength={3} maxLength={30} required />
@@ -146,11 +155,6 @@ export function RegisterFields({ email, plans = [], initialPlan = '', initialTyp
     </label>
     <p className="field-help">The international calling code follows your selected country automatically. Your number is saved in international format.</p>
 
-    <div className="form-grid">
-      <label>Date Of Birth<input name="dateOfBirth" type="date" autoComplete="bday" required max={new Date(Date.UTC(new Date().getUTCFullYear() - 18, new Date().getUTCMonth(), new Date().getUTCDate())).toISOString().slice(0,10)} value={dob} onChange={e => setDob(e.target.value)} /></label>
-      <label>Age<input value={age} readOnly aria-label="Age calculated from date of birth" /></label>
-    </div>
-    {dob && Number(age) < 18 ? <div className="alert alert-error">Registration is only available to users aged 18 or older. You cannot continue with account creation.</div> : <>
     <div className="form-grid">
       <label>Identification Type
         <select name="idType" required defaultValue="">
