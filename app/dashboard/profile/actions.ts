@@ -20,6 +20,9 @@ export async function updateProfile(formData: FormData) {
   const idNumber = String(formData.get('idNumber') ?? '').trim()
   const username = String(formData.get('username') ?? '').trim().toLowerCase()
   const allowedIdTypes = new Set(['passport', 'drivers_license', 'voter_id', 'residence_permit', 'national_id', 'other'])
+  if (phoneCountryCode && !/^\+[1-9][0-9]{0,3}$/.test(phoneCountryCode)) redirect('/dashboard/profile?error=Select%20a%20valid%20country%20calling%20code.')
+  const normalizedPhoneForValidation = phone?.replace(/[\s()-]/g, '') ?? null
+  if (normalizedPhoneForValidation && !/^\+[1-9][0-9]{6,14}$/.test(normalizedPhoneForValidation)) redirect('/dashboard/profile?error=Enter%20a%20valid%20international%20telephone%20number.')
   if (fullName.length < 2) redirect('/dashboard/profile?error=Enter%20your%20full%20name.')
   if (!/^[a-z0-9][a-z0-9._-]{2,29}$/.test(username)) redirect('/dashboard/profile?error=Choose%20a%20valid%20username.')
   const birthDate = dateOfBirth ? new Date(`${dateOfBirth}T00:00:00Z`) : null
