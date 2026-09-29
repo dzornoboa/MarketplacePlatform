@@ -5,7 +5,7 @@ import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { humanize, labelForParticipantType } from '@/lib/auth/access'
 import { money, dateTime } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
-import { reviewBid } from './actions'
+import { reviewDeal } from './actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,7 +19,7 @@ const QUEUES = [
   { key: 'withdrawn', label: 'Withdrawn' },
 ] as const
 
-export default async function AdminBidsPage({ searchParams }: Props) {
+export default async function AdminDealsPage({ searchParams }: Props) {
   const { supabase } = await requireCapability('opportunities')
   const params = await searchParams
   const error = typeof params.error === 'string' ? params.error : null
@@ -30,10 +30,10 @@ export default async function AdminBidsPage({ searchParams }: Props) {
   const sort = typeof params.sort === 'string' && ['newest', 'oldest'].includes(params.sort) ? params.sort : 'oldest'
 
   let query = supabase.from('expressions_of_interest').select('*').eq('status', status as 'submitted').limit(200)
-  const { data: allBids } = await query.order('created_at', { ascending: sort === 'oldest' })
+  const { data: allDeals } = await query.order('created_at', { ascending: sort === 'oldest' })
 
-  const oppIds = [...new Set((allBids ?? []).map(b => b.opportunity_id))]
-  const userIds = [...new Set((allBids ?? []).map(b => b.applicant_id))]
+  const oppIds = [...new Set((allDeals ?? []).map(b => b.opportunity_id))]
+  const userIds = [...new Set((allDeals ?? []).map(b => b.applicant_id))]
   const [{ data: opportunities }, { data: applicants }] = await Promise.all([
     oppIds.length ? supabase.from('opportunities').select('id,title,sector,country,owner_user_id,capital_required,currency').in('id', oppIds) : Promise.resolve({ data: [] }),
     userIds.length ? supabase.from('profiles').select('id,full_name,participant_type,country,verification_status,avatar_url').in('id', userIds) : Promise.resolve({ data: [] }),
@@ -44,9 +44,9 @@ export default async function AdminBidsPage({ searchParams }: Props) {
   const oppById = new Map((opportunities ?? []).map(o => [o.id, o]))
   const applicantById = new Map((applicants ?? []).map(a => [a.id, a]))
   const ownerById = new Map((owners ?? []).map(o => [o.id, o]))
-  // Search matches the listing title or the bidder's name, so it runs after the lookups.
+  // Search matches the listing title or the participant's name, so it runs after the lookups.
   const needle = q.toLowerCase()
-  const bids = (allBids ?? []).filter(b => !needle
+  const deals = (allDeals ?? []).filter(b => !needle
     || (oppById.get(b.opportunity_id)?.title ?? '').toLowerCase().includes(needle)
     || (applicantById.get(b.applicant_id)?.full_name ?? '').toLowerCase().includes(needle))
 
@@ -59,49 +59,49 @@ export default async function AdminBidsPage({ searchParams }: Props) {
     <RealtimeRefresh tables={["expressions_of_interest"]} />
     <div>
       <p className="eyebrow">Trade desk</p>
-      <h1>Bid due diligence</h1>
-      <p className="muted">Every bid a member places comes here first. Clearing it sends it to the listing owner and copies both parties; rejecting it stops it and tells the bidder.</p>
+      <h1>Deal due diligence</h1>
+      <p className="muted">Every deal a member places comes here first. Clearing it sends it to the listing owner and copies both parties; rejecting it stops it and tells the participant.</p>
     </div>
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
 
     <nav className="queue-tabs">
-      {counts.map(q => <a key={q.key} className={q.key === status ? 'queue-tab queue-tab-active' : 'queue-tab'} href={`/admin/bids?status=${q.key}`}>{q.label}<span>{q.count}</span></a>)}
+      {counts.map(q => <a key={q.key} className={q.key === status ? 'queue-tab queue-tab-active' : 'queue-tab'} href={`/admin/deals?status=${q.key}`}>{q.label}<span>{q.count}</span></a>)}
     </nav>
 
     <form className="filter-row card" method="get">
       <input type="hidden" name="status" value={status} />
-      <label>Search<input name="q" defaultValue={q} placeholder="Listing title or bidder" /></label>
+      <label>Search<input name="q" defaultValue={q} placeholder="Listing title or participant" /></label>
       <label>Sort<select name="sort" defaultValue={sort}><option value="oldest">Oldest first</option><option value="newest">Newest first</option></select></label>
       <button className="button button-outline" type="submit">Apply</button>
     </form>
 
-    {bids.length === 0
-      ? <section className="card empty-state"><BrandCircle /><h2>{q ? 'No matches' : 'Queue is clear'}</h2><p>No bids with status “{humanize(status)}”.</p></section>
-      : <div className="review-list">{bids.map(bid => {
-          const opp = oppById.get(bid.opportunity_id)
-          const applicant = applicantById.get(bid.applicant_id)
+    {deals.length === 0
+      ? <section className="card empty-state"><BrandCircle /><h2>{q ? 'No matches' : 'Queue is clear'}</h2><p>No deals with status “{humanize(status)}”.</p></section>
+      : <div className="review-list">{deals.map(deal => {
+          const opp = oppById.get(deal.opportunity_id)
+          const applicant = applicantById.get(deal.applicant_id)
           const owner = opp ? ownerById.get(opp.owner_user_id) : undefined
-          return <article className="card review-card" key={bid.id}>
+          return <article className="card review-card" key={deal.id}>
             <div className="review-head">
               <div>
                 <h2>{opp?.title ?? 'Listing'}</h2>
                 <p>{opp ? `${opp.sector} · ${opp.country} · ${money(opp.capital_required, opp.currency)} · owner ${owner?.full_name ?? '—'}` : ''}</p>
               </div>
-              <span>{dateTime(bid.created_at)}</span>
+              <span>{dateTime(deal.created_at)}</span>
             </div>
             <dl className="detail-grid">
-              <div><dt>Bidder</dt><dd className="avatar-stack"><Avatar src={applicant?.avatar_url} name={applicant?.full_name} size={26} /><Link href={`/admin/users/${bid.applicant_id}`}>{applicant?.full_name ?? 'Member'}</Link></dd></div>
+              <div><dt>Dealder</dt><dd className="avatar-stack"><Avatar src={applicant?.avatar_url} name={applicant?.full_name} size={26} /><Link href={`/admin/users/${deal.applicant_id}`}>{applicant?.full_name ?? 'Member'}</Link></dd></div>
               <div><dt>Participant type</dt><dd>{labelForParticipantType(applicant?.participant_type)}</dd></div>
-              <div><dt>Bidder verification</dt><dd>{humanize(applicant?.verification_status)}</dd></div>
+              <div><dt>Dealder verification</dt><dd>{humanize(applicant?.verification_status)}</dd></div>
               <div><dt>Country</dt><dd>{applicant?.country ?? '—'}</dd></div>
             </dl>
-            <p className="prose">{bid.message}</p>
-            {bid.owner_note && <p className="field-help">Note: {bid.owner_note}</p>}
-            {status === 'submitted' && <form action={reviewBid} className="review-form">
-              <input type="hidden" name="bidId" value={bid.id} />
+            <p className="prose">{deal.message}</p>
+            {deal.owner_note && <p className="field-help">Note: {deal.owner_note}</p>}
+            {status === 'submitted' && <form action={reviewDeal} className="review-form">
+              <input type="hidden" name="dealId" value={deal.id} />
               <label>Due diligence note</label>
-              <textarea name="reviewNote" rows={2} placeholder="Recorded in the audit log. Shown to the bidder if rejected." />
+              <textarea name="reviewNote" rows={2} placeholder="Recorded in the audit log. Shown to the participant if rejected." />
               <div className="button-row">
                 <button className="button button-primary" name="decision" value="clear">Clear to owner</button>
                 <button className="button button-danger" name="decision" value="reject">Reject</button>
