@@ -12,8 +12,8 @@ export type MemberReport = (typeof MEMBER_REPORTS)[number]
 export type AdminReport = (typeof ADMIN_REPORTS)[number]
 
 const labels: Record<string, string> = {
-  listings: 'Listings', bids_placed: 'Bids placed', bids_received: 'Bids received', payments: 'Payments',
-  subscriptions: 'Subscriptions', connections: 'Connections', members: 'Members', bids: 'Bids', verification: 'Verification requests',
+  listings: 'Deals', bids_placed: 'Deals Sent', bids_received: 'Deals Received', payments: 'Payments',
+  subscriptions: 'Subscriptions', connections: 'Connections', members: 'Members', bids: 'Deals', verification: 'Verification Requests',
 }
 export const reportLabel = (k: string) => labels[k] ?? humanize(k)
 
@@ -56,7 +56,7 @@ export async function memberReport(supabase: Supabase, kind: MemberReport, param
     const oppIds = [...new Set(mine.map(b => b.opportunity_id))]
     const { data: opps } = oppIds.length ? await supabase.from('opportunities').select('id,title').in('id', oppIds) : { data: [] }
     const title = new Map((opps ?? []).map(o => [o.id, o.title]))
-    return { title: kind === 'bids_placed' ? 'Bids you placed' : 'Bids on your listings', columns: [col('listing', 'Listing'), col('status', 'Stage'), col('date', 'Date')],
+    return { title: kind === 'bids_placed' ? 'Deal Requests You Sent' : 'Deal Requests On Your Deals', columns: [col('listing', 'Listing'), col('status', 'Stage'), col('date', 'Date')],
       rows: finish(mine.map(b => ({ id: b.id, listing: title.get(b.opportunity_id) ?? 'Listing', status: humanize(b.status), date: day(b.created_at) })), params, 'date') }
   }
   if (kind === 'payments') {
@@ -125,7 +125,7 @@ export async function adminReport(supabase: Supabase, kind: AdminReport, params:
     const { data } = await q
     const [names, { data: opps }] = await Promise.all([nameOf((data ?? []).map(b => b.applicant_id)), supabase.from('opportunities').select('id,title').in('id', [...new Set((data ?? []).map(b => b.opportunity_id))])])
     const title = new Map((opps ?? []).map(o => [o.id, o.title]))
-    return { title: 'Bids', columns: [col('listing', 'Listing'), col('bidder', 'Bidder'), col('status', 'Stage'), col('date', 'Date')],
+    return { title: 'Deals', columns: [col('listing', 'Deal'), col('bidder', 'Applicant'), col('status', 'Stage'), col('date', 'Date')],
       rows: finish((data ?? []).map(b => ({ id: b.id, user_id: b.applicant_id, listing: title.get(b.opportunity_id) ?? 'Listing', bidder: names.get(b.applicant_id) ?? 'Member', status: humanize(b.status), date: day(b.created_at) })), params, 'date') }
   }
   let q = supabase.from('verification_requests').select('id,user_id,status,submitted_at,reviewed_at,reviewer_note').limit(2000)
