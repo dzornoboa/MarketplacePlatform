@@ -158,7 +158,7 @@ p{margin:0}
 .cta-section .button-row{position:relative;z-index:1}
 
 /* --- Public footer ------------------------------------------------------ */
-.public-footer{position:relative;overflow:hidden;background:var(--wtc-mist);color:var(--ink);padding:clamp(52px,6vw,76px) var(--gutter) 28px;display:grid;grid-template-columns:1.6fr .8fr 1fr;gap:clamp(30px,4vw,60px)}
+.public-footer{position:relative;overflow:hidden;background:var(--wtc-mist);color:var(--ink);padding:clamp(52px,6vw,76px) var(--gutter) 28px;display:grid;grid-template-columns:1.5fr .75fr 1fr .7fr;gap:clamp(24px,3vw,48px)}
 .public-footer>div{position:relative;z-index:1;display:flex;flex-direction:column;gap:12px;align-items:flex-start}
 .public-footer strong{font-size:11px;text-transform:uppercase;letter-spacing:.16em;color:var(--wtc-navy)}
 .public-footer p{color:var(--muted);line-height:1.7;font-size:14px;max-width:46ch}
