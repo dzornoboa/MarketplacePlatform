@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { convertCurrency } from '@/lib/fx/server'
 
 /* Posts into a deal room; post_deal_room_message() checks membership and
    that the room is still open, then notifies the other participants. */
@@ -28,12 +29,15 @@ export async function closeDealRoom(formData: FormData) {
   const target = `/dashboard/deal-rooms/${roomId}`
   if (!roomId || !Number.isFinite(value) || value <= 0) redirect(`${target}?error=${encodeURIComponent('Enter the final closed deal value.')}`)
   if (!/^[A-Z]{3}$/.test(currency)) redirect(`${target}?error=${encodeURIComponent('Enter a valid 3-letter currency code.')}`)
+  const quote = await convertCurrency(value, currency, 'USD')
   const supabase = await createClient()
   const { error } = await supabase.rpc('close_deal_room', {
     room_id: roomId,
     closed_value: value,
     closed_currency: currency,
     note: note || null,
+    closed_value_usd: quote?.converted ?? (currency === 'USD' ? value : null),
+    rate_to_usd: quote?.rate ?? (currency === 'USD' ? 1 : null),
   })
   if (error) redirect(`${target}?error=${encodeURIComponent(error.message)}`)
   revalidatePath(target)

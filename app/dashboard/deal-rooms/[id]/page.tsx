@@ -10,6 +10,7 @@ import { hasCapability, humanize, labelForParticipantType } from '@/lib/auth/acc
 import { date, dateTime, money } from '@/lib/format'
 import { uploadDocument } from '../../documents/actions'
 import { closeDealRoom, postMessage } from '../actions'
+import { MoneyCurrencyField } from '@/components/country-currency-fields'
 
 export const dynamic = 'force-dynamic'
 
@@ -63,8 +64,9 @@ export default async function DealRoomPage({ params, searchParams }: Props) {
       <p className="eyebrow">Closed Deal Record</p>
       <dl className="detail-grid detail-grid-two">
         <div><dt>Closed Deal Value</dt><dd>{money(room.deal_value, room.deal_currency ?? 'USD')}</dd></div>
-        <div><dt>Success Fee</dt><dd>{money(room.success_fee_amount, room.deal_currency ?? 'USD')} <small>({Number(room.success_fee_rate) * 100}%)</small></dd></div>
+        <div><dt>Success Fee</dt><dd>{money(room.success_fee_amount, room.deal_currency ?? 'USD')} <small>({Number(room.success_fee_rate) * 100}%)</small>{room.success_fee_amount_usd != null && room.deal_currency !== 'USD' ? <><br /><small>≈ {money(room.success_fee_amount_usd, 'USD')} at recorded FX rate</small></> : null}</dd></div>
         <div><dt>Closed At</dt><dd>{dateTime(room.closed_at)}</dd></div>
+        {room.deal_value_usd != null && room.deal_currency !== 'USD' && <div><dt>USD Equivalent</dt><dd>{money(room.deal_value_usd, 'USD')}{room.fx_rate_to_usd ? <small> · 1 {room.deal_currency} = {Number(room.fx_rate_to_usd).toFixed(4)} USD</small> : null}</dd></div>}
         <div><dt>Status</dt><dd>Deal Verified</dd></div>
       </dl>
       {room.close_note && <p className="field-help">WTC Accra Note: {room.close_note}</p>}
@@ -108,8 +110,7 @@ export default async function DealRoomPage({ params, searchParams }: Props) {
           <form action={closeDealRoom} className="form-stack">
             <input type="hidden" name="roomId" value={id} />
             <div className="form-grid">
-              <label>Closed Deal Value<input name="dealValue" type="number" min="0.01" step="0.01" required /></label>
-              <label>Currency<input name="currency" maxLength={3} pattern="[A-Za-z]{3}" defaultValue={opp?.currency ?? 'USD'} required /></label>
+              <MoneyCurrencyField amountName="dealValue" amountLabel="Closed Deal Value" initialCurrency={opp?.currency ?? 'USD'} />
             </div>
             <label>Closure Note<textarea name="closeNote" rows={3} maxLength={2000} placeholder="Record the closing basis, transaction reference or internal note." /></label>
             <SubmitButton pendingLabel="Closing…">Mark Deal Verified And Closed</SubmitButton>

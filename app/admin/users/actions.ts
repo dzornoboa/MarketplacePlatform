@@ -138,12 +138,18 @@ export async function adminUpdateProfile(formData: FormData) {
   const fullName = String(formData.get('fullName') ?? '').trim()
   if (fullName.length < 2) redirect(back('error', 'Full name is required.', targetUser))
   const type = String(formData.get('participantType') ?? '')
+  const countryCode = String(formData.get('countryCode') ?? '').trim().toUpperCase()
+  const preferredCurrency = String(formData.get('preferredCurrency') ?? 'USD').trim().toUpperCase()
+  if (countryCode && !/^[A-Z]{2}$/.test(countryCode)) redirect(back('error', 'Select a valid country.', targetUser))
+  if (!/^[A-Z]{3}$/.test(preferredCurrency)) redirect(back('error', 'Select a valid preferred currency.', targetUser))
   const supabase = await createClient()
   const { error } = await supabase.from('profiles').update({
     full_name: fullName,
     phone: String(formData.get('phone') ?? '').trim() || null,
     job_title: String(formData.get('jobTitle') ?? '').trim() || null,
     country: String(formData.get('country') ?? '').trim() || null,
+    country_code: countryCode || null,
+    preferred_currency: preferredCurrency,
     city: String(formData.get('city') ?? '').trim() || null,
     wtca_membership_number: String(formData.get('wtcaNumber') ?? '').trim() || null,
     wtca_chapter: String(formData.get('wtcaChapter') ?? '').trim() || null,

@@ -5,6 +5,7 @@ import { requireUserProfile } from '@/lib/auth/guards'
 import { humanize, listingIntents, listingIntentLabels, listingIntentHelp } from '@/lib/auth/access'
 import { updateOpportunity } from '../../actions'
 import { dealCategories } from '@/lib/deals/categories'
+import { ListingFinancialFields } from '@/components/listing-financial-fields'
 
 export const dynamic = 'force-dynamic'
 
@@ -80,19 +81,16 @@ export default async function EditOpportunityPage({ params, searchParams }: Prop
         </label>
       </div>
       <label>Sector<input name="sector" defaultValue={item.sector} required /></label>
-      <div className="form-grid">
-        <label>Country<input name="country" defaultValue={item.country} required /></label>
-        <label>City<input name="city" defaultValue={item.city ?? ''} /></label>
-      </div>
+      <ListingFinancialFields
+        initialCountry={item.country}
+        initialCountryCode={item.country_code}
+        initialCity={item.city}
+        initialCurrency={item.currency}
+        initialCapitalRequired={item.capital_required}
+        initialMinimumTicket={item.minimum_ticket}
+      />
       <label>Region<input name="region" defaultValue={item.region ?? ''} placeholder="West Africa" /></label>
-      <div className="form-grid">
-        <label>Capital required<input name="capitalRequired" type="number" min="0" step="1000" defaultValue={item.capital_required ?? ''} /></label>
-        <label>Minimum ticket<input name="minimumTicket" type="number" min="0" step="1000" defaultValue={item.minimum_ticket ?? ''} /></label>
-      </div>
-      <div className="form-grid">
-        <label>Currency<input name="currency" maxLength={3} pattern="[A-Za-z]{3}" defaultValue={item.currency} required /></label>
-        <label>Deadline<input name="deadline" type="date" defaultValue={item.deadline ?? ''} /></label>
-      </div>
+      <label>Deadline<input name="deadline" type="date" defaultValue={item.deadline ?? ''} /></label>
       <label>Tags<input name="tags" defaultValue={item.tags.join(', ')} /></label>
       <p className="field-help">The deal rating and publication status are set by the WTC Accra trade desk and cannot be changed here.</p>
 

@@ -6,6 +6,7 @@ import { SubmitButton } from '@/components/submit-button'
 import { methodTitle } from '@/lib/payments/method-title'
 import { saveBillingAddress, savePaymentMethod, setPrimaryPaymentMethod, removePaymentMethod } from '@/app/dashboard/billing/methods'
 import { CardNumberInput, PhoneInput } from '@/components/formatted-inputs'
+import { CountryCurrencyFields } from '@/components/country-currency-fields'
 
 type Address = Database['public']['Tables']['billing_addresses']['Row']
 type Method = Database['public']['Tables']['payment_methods']['Row']
@@ -39,6 +40,7 @@ export function PaymentDetails({ address, methods, notice }: { address: Address 
               <div>
                 <strong>{address.billing_name}</strong>{address.company && <span className="muted"> · {address.company}</span>}
                 <p className="muted">{[address.line1, address.line2, address.city, address.region, address.postal_code, address.country].filter(Boolean).join(', ')}</p>
+                <p className="muted">Billing Currency: {address.currency ?? 'USD'}</p>
                 {(address.email || address.phone || address.tax_id) && <p className="muted">{[address.email, address.phone, address.tax_id ? `TIN ${address.tax_id}` : null].filter(Boolean).join(' · ')}</p>}
               </div>
               <div className="button-row"><button type="button" className="button button-outline" onClick={() => setEditingAddress(true)}>Edit</button></div>
@@ -60,9 +62,17 @@ export function PaymentDetails({ address, methods, notice }: { address: Address 
           <label>City<input name="city" defaultValue={address?.city ?? ''} required /></label>
           <label>Region / state<input name="region" defaultValue={address?.region ?? ''} /></label>
         </div>
+        <label>Postal Code<input name="postalCode" defaultValue={address?.postal_code ?? ''} /></label>
         <div className="form-grid">
-          <label>Postal code<input name="postalCode" defaultValue={address?.postal_code ?? ''} /></label>
-          <label>Country<input name="country" defaultValue={address?.country ?? 'Ghana'} required /></label>
+          <CountryCurrencyFields
+            initialCountry={address?.country ?? 'Ghana'}
+            initialCountryCode={address?.country_code ?? 'GH'}
+            initialCurrency={address?.currency ?? 'USD'}
+            countryName="country"
+            countryCodeName="countryCode"
+            currencyName="billingCurrency"
+            currencyLabel="Billing Currency"
+          />
         </div>
         <label>Tax ID / TIN (optional)<input name="taxId" defaultValue={address?.tax_id ?? ''} /></label>
         <div className="button-row"><SubmitButton pendingLabel="Saving…">{address ? 'Update address' : 'Save address'}</SubmitButton>{address && <button type="button" className="button button-outline" onClick={() => setEditingAddress(false)}>Cancel</button>}</div>

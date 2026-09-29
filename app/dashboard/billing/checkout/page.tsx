@@ -6,6 +6,7 @@ import { humanize } from '@/lib/auth/access'
 import { money } from '@/lib/format'
 import { completeTestPayment } from '../actions'
 import { CardNumberInput, ExpiryInput, CvcInput, PhoneInput } from '@/components/formatted-inputs'
+import { FxQuote } from '@/components/country-currency-fields'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,7 +45,7 @@ export default async function CheckoutPage({ searchParams }: Props) {
     <section className="card checkout-card">
       <dl className="detail-grid detail-grid-two">
         <div><dt>Plan</dt><dd>{plan?.name ?? payment.plan_code}</dd></div>
-        <div><dt>Amount</dt><dd><strong className="plan-price">{money(payment.amount, payment.currency)}</strong></dd></div>
+        <div><dt>Amount</dt><dd><strong className="plan-price">{money(payment.amount, payment.currency)}</strong>{billing?.currency && billing.currency !== payment.currency ? <FxQuote amount={Number(payment.amount)} from={payment.currency} to={billing.currency} /> : null}</dd></div>
         <div><dt>Reference</dt><dd className="pay-reference">{payment.reference}</dd></div>
         <div><dt>Method</dt><dd>{humanize(payment.method)}</dd></div>
         {billing && <div><dt>Billed to</dt><dd>{billing.billing_name}{billing.company ? ` · ${billing.company}` : ''}<br /><small className="muted">{[billing.line1, billing.city, billing.country].filter(Boolean).join(', ')}</small></dd></div>}

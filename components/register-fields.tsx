@@ -22,7 +22,8 @@ const HINT: Record<string, string> = {
   wtc_accra_member: 'WTC Accra members join and post deals for free. US$500/year unlocks meeting details and restricted deal opportunities. A 1% success fee applies to closed deals.',
 }
 
-type CountryOption = { code: string; name: string; callingCode: string }
+type CountryOption = { code: string; name: string; callingCode: string; currencyCode: string; currencyName: string; currencySymbol: string }
+type CurrencyOption = { code: string; name: string; symbol: string }
 
 function suggestedUsername(name: string) {
   const base = name.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '.').replace(/^\.+|\.+$/g, '').slice(0, 24)
@@ -38,14 +39,19 @@ export function RegisterFields({ email, initialPlan = '', initialType = '' }: { 
   const [dob, setDob] = useState('')
   const [countries, setCountries] = useState<CountryOption[]>([])
   const [countryCode, setCountryCode] = useState('')
+  const [currencies, setCurrencies] = useState<CurrencyOption[]>([])
+  const [preferredCurrency, setPreferredCurrency] = useState('USD')
+  const [currencyTouched, setCurrencyTouched] = useState(false)
+  const [countryTouched, setCountryTouched] = useState(false)
   const [phone, setPhone] = useState('')
 
   useEffect(() => {
     let cancelled = false
-    fetch('/api/regions').then(r => r.json()).then((data: { countries?: CountryOption[] }) => {
+    fetch('/api/regions').then(r => r.json()).then((data: { countries?: CountryOption[]; currencies?: CurrencyOption[] }) => {
       if (cancelled) return
       const list = data.countries ?? []
       setCountries(list)
+      setCurrencies(data.currencies ?? [])
       if (!countryCode && list.length) {
         const localeRegion = (navigator.language.match(/-([A-Z]{2})$/i)?.[1] ?? '').toUpperCase()
         const initial = list.find(c => c.code === localeRegion) ?? list.find(c => c.code === 'GH') ?? list[0]
@@ -70,6 +76,11 @@ export function RegisterFields({ email, initialPlan = '', initialType = '' }: { 
   }, [username])
 
   const selectedCountry = useMemo(() => countries.find(c => c.code === countryCode) ?? null, [countries, countryCode])
+
+  useEffect(() => {
+    if (!selectedCountry || currencyTouched || !countryTouched) return
+    setPreferredCurrency(selectedCountry.currencyCode || 'USD')
+  }, [selectedCountry?.code, countryTouched, currencyTouched])
   const age = (() => {
     if (!dob) return ''
     const birth = new Date(`${dob}T00:00:00Z`)
@@ -128,12 +139,21 @@ export function RegisterFields({ email, initialPlan = '', initialType = '' }: { 
 
     <div className="form-grid">
       <label>Country
-        <select name="countryCode" required value={countryCode} onChange={e => setCountryCode(e.target.value)}>
+        <select name="countryCode" required value={countryCode} onChange={e => { setCountryTouched(true); setCurrencyTouched(false); setCountryCode(e.target.value) }}>
           <option value="" disabled>Select Country</option>
           {countries.map(country => <option key={country.code} value={country.code}>{country.name}{country.callingCode ? ` (${country.callingCode})` : ''}</option>)}
         </select>
       </label>
+      <label>Preferred Currency
+        <select name="preferredCurrency" value={preferredCurrency} onChange={e => { setCurrencyTouched(true); setPreferredCurrency(e.target.value) }} required>
+          <option value="USD">USD — US Dollar</option>
+          {currencies.filter(item => item.code !== 'USD').map(item => <option key={item.code} value={item.code}>{item.code} — {item.name}{item.symbol ? ` (${item.symbol})` : ''}</option>)}
+        </select>
+      </label>
+    </div>
+    <div className="form-grid">
       <label>Dashboard Language<LanguageSelect defaultValue="en" /></label>
+      <div className="field-help">Your selected country suggests its standard currency automatically. USD remains available as the platform default.</div>
     </div>
     <input type="hidden" name="country" value={selectedCountry?.name ?? ''} />
     <input type="hidden" name="phoneCountryCode" value={phoneDisplay} />

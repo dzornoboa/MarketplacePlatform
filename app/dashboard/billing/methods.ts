@@ -19,13 +19,16 @@ async function me() {
 export async function saveBillingAddress(formData: FormData) {
   const { supabase, userId } = await me()
   const billingName = s(formData, 'billingName'), line1 = s(formData, 'line1'), city = s(formData, 'city'), country = s(formData, 'country')
-  if (!billingName || !line1 || !city || !country) redirect(back('error', 'Name, address line 1, city and country are required.'))
+  const countryCode = s(formData, 'countryCode').toUpperCase()
+  const billingCurrency = (s(formData, 'billingCurrency') || 'USD').toUpperCase()
+  if (!billingName || !line1 || !city || !country || !/^[A-Z]{2}$/.test(countryCode)) redirect(back('error', 'Name, address line 1, city and a valid country are required.'))
+  if (!/^[A-Z]{3}$/.test(billingCurrency)) redirect(back('error', 'Select a valid billing currency.'))
   const email = s(formData, 'email')
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) redirect(back('error', 'Enter a valid billing email.'))
   const { error } = await supabase.from('billing_addresses').upsert({
     user_id: userId, billing_name: billingName, company: s(formData, 'company') || null, tax_id: s(formData, 'taxId') || null,
     email: email || null, phone: s(formData, 'phone') || null, line1, line2: s(formData, 'line2') || null, city,
-    region: s(formData, 'region') || null, postal_code: s(formData, 'postalCode') || null, country, updated_at: new Date().toISOString(),
+    region: s(formData, 'region') || null, postal_code: s(formData, 'postalCode') || null, country, country_code: countryCode, currency: billingCurrency, updated_at: new Date().toISOString(),
   })
   if (error) redirect(back('error', error.message))
   revalidatePath('/dashboard/billing')
