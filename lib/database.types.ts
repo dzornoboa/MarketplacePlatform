@@ -99,6 +99,12 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['audit_events']['Insert']>
         Relationships: []
       }
+      user_termination_requests: {
+        Row: { id:string; target_user:string; target_email:string|null; target_name:string|null; request_type:string; reason:string; status:string; requested_by:string; approved_by:string|null; requested_at:string; reviewed_at:string|null; executed_at:string|null }
+        Insert: { id?:string; target_user:string; target_email?:string|null; target_name?:string|null; request_type:string; reason:string; status?:string; requested_by:string; approved_by?:string|null; requested_at?:string; reviewed_at?:string|null; executed_at?:string|null }
+        Update: Partial<Database['public']['Tables']['user_termination_requests']['Insert']>
+        Relationships: []
+      }
       organizations: {
         Row: { id:string; name:string; registration_number:string|null; website:string|null; country:string|null; city:string|null; description:string|null; created_by:string; is_verified:boolean; verified_at:string|null; verified_by:string|null; created_at:string; updated_at:string }
         Insert: { id?:string; name:string; registration_number?:string|null; website?:string|null; country?:string|null; city?:string|null; description?:string|null; created_by:string; is_verified?:boolean; verified_at?:string|null; verified_by?:string|null; created_at?:string; updated_at?:string }
@@ -285,6 +291,8 @@ export type Database = {
       request_introduction: { Args: { opportunity_id: string; request_note?: string | null }; Returns: string }
       review_introduction: { Args: { introduction_id: string; decision: string; staff_note?: string | null; meeting_at?: string | null; meeting_url?: string | null }; Returns: undefined }
       get_support_participant_directory: { Args: Record<string, never>; Returns: { id: string; full_name: string }[] }
+      request_user_termination: { Args: { target_user: string; request_type: string; reason: string }; Returns: string }
+      review_user_deletion: { Args: { request_id: string; decision: string; confirmation_text?: string | null }; Returns: undefined }
     }
     Enums: {
       participant_type: 'investor'|'buyer'|'business'|'project_sponsor'|'wtc_association_member'|'wtc_accra_member'|'staff'|'institutional_partner'
