@@ -47,13 +47,16 @@ export async function signup(formData: FormData) {
   const allowedIdTypes = new Set(['passport', 'drivers_license', 'voter_id', 'residence_permit', 'national_id', 'other'])
   const birthDate = dateOfBirth ? new Date(`${dateOfBirth}T00:00:00Z`) : null
   const today = new Date()
-  const ageCutoff = new Date(Date.UTC(today.getUTCFullYear() - 13, today.getUTCMonth(), today.getUTCDate()))
+  const ageCutoff = new Date(Date.UTC(today.getUTCFullYear() - 18, today.getUTCMonth(), today.getUTCDate()))
   const oldestReasonable = new Date(Date.UTC(today.getUTCFullYear() - 120, today.getUTCMonth(), today.getUTCDate()))
-  if (!birthDate || Number.isNaN(birthDate.getTime()) || birthDate > ageCutoff) redirect(withMessage('/register', 'error', 'You must be at least 13 years old to create an account.'))
+  if (!birthDate || Number.isNaN(birthDate.getTime()) || birthDate > ageCutoff) redirect(withMessage('/register', 'error', 'You must be at least 18 years old to create an account.'))
   if (birthDate < oldestReasonable) redirect(withMessage('/register', 'error', 'Enter a valid date of birth.'))
   if (!allowedIdTypes.has(idType)) redirect(withMessage('/register', 'error', 'Select a valid identification type.'))
   if (idNumber.length < 3 || idNumber.length > 80) redirect(withMessage('/register', 'error', 'Enter a valid identification number.'))
-  const username = String(formData.get('username') ?? '').trim().toLowerCase()
+  const legalAgreementAccepted = String(formData.get('legalAgreementAccepted') ?? '') === 'yes'
+  const legalAgreementVersion = String(formData.get('legalAgreementVersion') ?? '').trim()
+  if (!legalAgreementAccepted || legalAgreementVersion !== '2026-09-29-v2') redirect(withMessage('/register', 'error', 'Read and accept the NDA, Terms and User Agreement before registration.'))
+    const username = String(formData.get('username') ?? '').trim().toLowerCase()
   if (!/^[a-z0-9][a-z0-9._-]{2,29}$/.test(username)) redirect(withMessage('/register', 'error', 'Choose a valid username using lowercase letters, numbers, dots, hyphens or underscores.'))
   const validation = validateSignupInput({ fullName, email, password, participantType })
   if (!validation.ok) redirect(withMessage('/register', 'error', Object.values(validation.errors)[0] ?? 'Check your registration details.'))
@@ -92,6 +95,8 @@ export async function signup(formData: FormData) {
     date_of_birth: dateOfBirth,
     id_type: idType,
     id_number: idNumber,
+    legal_agreement_version: legalAgreementVersion,
+    legal_agreed_at: new Date().toISOString(),
   }
   const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, participant_type: participantType, ...extra }, emailRedirectTo: `${getSiteUrl()}/auth/confirm` } })
   if (error) {
