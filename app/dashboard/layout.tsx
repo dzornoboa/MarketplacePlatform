@@ -12,6 +12,7 @@ import { RealtimeAccess } from '@/components/realtime-access'
 import { TranslationPreferenceSync } from '@/components/translation-preference-sync'
 import { ClearRegistrationDraft } from '@/components/registration-draft'
 import { MemberTopNav } from '@/components/member-top-nav'
+import { AccessPaymentPrompt } from '@/components/access-payment-prompt'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,6 +47,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       : <DashboardNav profile={profile} unreadCount={count ?? 0} adminMfaReady={adminMfaReady} adminHasFactor={adminHasFactor} hasAccess={!!state && !marketplaceLock(state).locked} planLabel={planLabel} />}
     <main className="dashboard-main">
       {expiryNotice && <div className={`expiry-bar expiry-bar-${expiryNotice.tone}`}><span>{expiryNotice.text}</span><Link className="button button-light" href="/dashboard/billing">{expiryNotice.cta}</Link></div>}
+      {memberOnly && state && <AccessPaymentPrompt participantType={state.participant_type} subscriptionStatus={state.subscription_status} hasActiveSubscription={state.has_active_subscription} />}
       {children}
     </main>
     <RealtimeAccess userId={profile.id} />
