@@ -9,9 +9,13 @@ export const dynamic = 'force-dynamic'
 
 type Props = { searchParams: Promise<Record<string,string|string[]|undefined>> }
 
-function countRows(counts: unknown) {
+function countRows(counts: unknown): number {
   if (!counts || typeof counts !== 'object' || Array.isArray(counts)) return 0
-  return Object.values(counts as Record<string, unknown>).reduce((n,v) => n + (typeof v === 'number' ? v : 0), 0)
+  let total = 0
+  for (const value of Object.values(counts as Record<string, unknown>)) {
+    if (typeof value === 'number') total += value
+  }
+  return total
 }
 
 export default async function BackupAdminPage({ searchParams }: Props) {
