@@ -37,10 +37,10 @@ export const participantTypeLabels: Record<ParticipantType, string> = {
 /* Annual membership fee per group, for copy that names a price before the
    plans are loaded. The subscription_plans table stays the source of truth. */
 export const membershipFees: Record<string, number> = {
-  investor: 1750,
-  wtc_accra_member: 3750,
-  wtc_association_member: 5750,
-  business: 8750,
+  investor: 0,
+  business: 1000,
+  wtc_accra_member: 500,
+  wtc_association_member: 1500,
 }
 export const feeFor = (type: string | null | undefined) => (type && membershipFees[type]) ?? null
 
@@ -174,6 +174,10 @@ export type AccessState = {
   can_view_opportunities: boolean
   can_post_opportunities: boolean
   has_active_subscription: boolean
+  can_view_deal_details?: boolean
+  profile_completed?: boolean
+  posting_is_free?: boolean
+  success_fee_rate?: number
   has_paid_plan?: boolean
   subscription_plan_name?: string | null
   subscription_fee?: number | null
@@ -195,32 +199,39 @@ export type MarketplaceLock =
 
 export function marketplaceLock(state: AccessState): MarketplaceLock {
   if (state.account_status === 'suspended' || state.account_status === 'disabled') {
-    return { locked: true, reason: 'Your account is not active. Contact WTC Accra support.', action: { label: 'Contact support', href: '/dashboard/support' } }
+    return { locked: true, reason: 'Your account is not active. Contact WTC Accra support.', action: { label: 'Contact Support', href: '/dashboard/support' } }
   }
   if (!state.can_view_opportunities) {
-    return { locked: true, reason: 'WTC Accra has paused marketplace browsing on your account.', action: { label: 'Contact support', href: '/dashboard/support' } }
+    return { locked: true, reason: 'WTC Accra has paused deal discovery on your account.', action: { label: 'Contact Support', href: '/dashboard/support' } }
   }
-  if (!state.has_active_subscription) {
-    if (state.subscription_status === 'expired') return { locked: true, reason: 'Your subscription has expired. Marketplace access is paused until you renew.', action: { label: 'Renew now', href: '/dashboard/billing' } }
-    if (state.subscription_status === 'awaiting_approval') return { locked: true, reason: 'Your plan is paid and awaiting WTC Accra approval.', action: { label: 'View billing', href: '/dashboard/billing' } }
-    if (state.subscription_status === 'pending') return { locked: true, reason: 'Complete the payment for your chosen plan to open the marketplace.', action: { label: 'Pay now', href: '/dashboard/billing#pay' } }
-    return { locked: true, reason: 'Opportunities are available to members with an active subscription.', action: { label: 'View plans', href: '/dashboard/billing' } }
+  if (state.can_view_deal_details) return { locked: false }
+
+  if (state.participant_type === 'investor') {
+    return { locked: true, reason: 'Investors can discover deal teasers for free. Restricted business and deal details unlock only after you request access and WTC Accra approves the connection.', action: { label: 'View Deal Teasers', href: '/opportunities' } }
   }
-  return { locked: false }
+  if ((state.participant_type === 'business' || state.participant_type === 'buyer' || state.participant_type === 'project_sponsor' || state.participant_type === 'institutional_partner') && state.verification_status !== 'verified') {
+    return { locked: true, reason: 'Complete and verify your Business profile before restricted deal details can be unlocked.', action: { label: 'Complete Verification', href: '/dashboard/verification' } }
+  }
+  if (state.participant_type === 'wtc_association_member' && state.verification_status !== 'verified') {
+    return { locked: true, reason: 'WTCA Member deal access requires WTC Accra verification before restricted details unlock.', action: { label: 'Complete Verification', href: '/dashboard/verification' } }
+  }
+  if (state.subscription_status === 'expired') return { locked: true, reason: 'Your annual deal-access plan has expired. Renew it to restore restricted deal details and networking.', action: { label: 'Renew Access', href: '/dashboard/billing' } }
+  if (state.subscription_status === 'awaiting_approval') return { locked: true, reason: 'Your annual access plan is awaiting WTC Accra approval.', action: { label: 'View Billing', href: '/dashboard/billing' } }
+  if (state.subscription_status === 'pending') return { locked: true, reason: 'Complete payment for your annual access plan to unlock restricted deal details and networking.', action: { label: 'Pay Now', href: '/dashboard/billing#pay' } }
+
+  const fee = state.participant_type === 'business' ? 'US$1,000/year'
+    : state.participant_type === 'wtc_accra_member' ? 'US$500/year'
+    : state.participant_type === 'wtc_association_member' ? 'US$1,500/year'
+    : 'an annual access plan'
+  return { locked: true, reason: `Posting deals is free. ${fee} is required only for the restricted deal details and networking features for your tier.`, action: { label: 'View Access Plan', href: '/dashboard/billing' } }
 }
 
 export function postingLock(state: AccessState): MarketplaceLock {
   if (state.account_status !== 'active') {
-    return { locked: true, reason: 'Your account is not active.', action: { label: 'Contact support', href: '/dashboard/support' } }
+    return { locked: true, reason: 'Your account is not active.', action: { label: 'Contact Support', href: '/dashboard/support' } }
   }
   if (!state.can_post_opportunities) {
-    return { locked: true, reason: 'WTC Accra has paused opportunity posting on your account.', action: { label: 'Contact support', href: '/dashboard/support' } }
-  }
-  if (!state.has_active_subscription) {
-    return { locked: true, reason: state.subscription_status === 'pending' ? 'Pay for your plan to activate your account before posting.' : 'An active plan is needed before posting.', action: { label: 'Go to billing', href: '/dashboard/billing#pay' } }
-  }
-  if (state.has_paid_plan === false) {
-    return { locked: true, reason: 'Your free plan lets you browse. Upgrade to a paid plan to post listings.', action: { label: 'Upgrade plan', href: '/dashboard/billing' } }
+    return { locked: true, reason: 'WTC Accra has paused deal posting on your account.', action: { label: 'Contact Support', href: '/dashboard/support' } }
   }
   return { locked: false }
 }

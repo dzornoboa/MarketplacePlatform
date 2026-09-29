@@ -5,7 +5,7 @@ import Link from 'next/link'
 
 type Turn = { role: 'user' | 'assistant'; text: string; links?: Array<{ href: string; title: string }>; escalate?: boolean }
 
-const SUGGESTIONS = ['How do I get verified?', 'Where do I pay for my plan?', 'How do I post a listing?', 'Why is the marketplace locked?', 'How do bids work?']
+const SUGGESTIONS = ['How do I get verified?', 'Where do I pay for my plan?', 'How do I post a listing?', 'Why is the marketplace locked?', 'How do deal requests work?']
 
 /* Floating "Need help?" button. Asks /api/assistant, renders the answer with
    links into the platform, and offers to send unanswered questions to the

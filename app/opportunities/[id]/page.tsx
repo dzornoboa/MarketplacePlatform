@@ -11,6 +11,7 @@ import { readAccessState } from '@/lib/auth/guards'
 import { humanize, labelForIntent, labelForParticipantType, marketplaceLockFor } from '@/lib/auth/access'
 import { money, date, relativeDays } from '@/lib/format'
 import { expressInterest, toggleSaved } from '@/app/dashboard/opportunities/actions'
+import { requestIntroduction } from '@/app/dashboard/introductions/actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,7 +26,7 @@ function Stars({ rating }: { rating: number }) {
      this page as the return address);
    - signed-in without marketplace access: the teaser plus exactly why the
      details are locked and what to do about it;
-   - verified, subscribed member: the full listing and the bid form. */
+   - authorised member: the full listing and the deal-request form. */
 export default async function ListingDetailPage({ params, searchParams }: Props) {
   const { id } = await params
   const query = await searchParams
@@ -81,13 +82,19 @@ export default async function ListingDetailPage({ params, searchParams }: Props)
           {lock.locked && lock.action && <Link className="button button-light" href={lock.action.href}>{lock.action.label}</Link>}
         </section>
         <section className="card">
-          <h2>What members see</h2>
+          <h2>Protected Deal Details</h2>
           <ul className="plain-list">
             <li>Capital required and minimum ticket</li>
             <li>The full description and use of funds</li>
             <li>Who posted it — organisation and participant type</li>
-            <li>A bid form. Every bid goes to WTC Accra for due diligence before the owner sees it.</li>
+            <li>Restricted networking, meeting and Deal Room access</li>
           </ul>
+          {state?.participant_type === 'investor' && <form action={requestIntroduction} className="form-stack">
+            <input type="hidden" name="opportunityId" value={id} />
+            <label>Why You Want Access<textarea name="note" rows={4} maxLength={2000} placeholder="Introduce yourself, your mandate and what you want to discuss." /></label>
+            <p className="field-help">WTC Accra will acknowledge the request and the Trade Officer, Verification Officer, Administrator and Super Administrator will share visibility of the workflow.</p>
+            <SubmitButton pendingLabel="Sending…">Request Access To This Deal</SubmitButton>
+          </form>}
         </section>
       </>}
 
@@ -129,20 +136,20 @@ export default async function ListingDetailPage({ params, searchParams }: Props)
           <div className="prose">{full.description.split(/\n{2,}/).map((p, i) => <p key={i}>{p}</p>)}</div>
         </section>
 
-        {!isOwner && <section className="card bid-card">
-          <h2>{myBid ? 'Your bid' : 'Place a bid'}</h2>
+        {!isOwner && <section className="card deal-card">
+          <h2>{myBid ? 'Your Deal Request' : 'Send A Deal Request'}</h2>
           {myBid
-            ? <p className="muted">You bid on this listing on {date(myBid.created_at)}. Status: <span className={`status-dot status-eoi-${myBid.status}`}>{humanize(myBid.status)}</span>{myBid.status === 'submitted' ? ' — with WTC Accra for due diligence.' : myBid.status === 'under_review' ? ' — cleared, now with the owner.' : ''}</p>
+            ? <p className="muted">You sent a deal request on {date(myBid.created_at)}. Status: <span className={`status-dot status-eoi-${myBid.status}`}>{humanize(myBid.status)}</span>{myBid.status === 'submitted' ? ' — with WTC Accra for due diligence.' : myBid.status === 'under_review' ? ' — cleared, now with the owner.' : ''}</p>
             : <>
-                <p className="muted">Your bid goes to WTC Accra first. The trade desk checks it, then clears it to the owner — and both of you are notified and copied. That keeps the deal on the platform.</p>
+                <p className="muted">Your deal request goes to WTC Accra first. The monitored team reviews it before it reaches the opportunity owner. If accepted, a monitored Deal Room opens for the parties and authorised WTC Accra staff.</p>
                 <form action={expressInterest} className="form-stack">
                   <input type="hidden" name="opportunityId" value={full.id} />
                   <input type="hidden" name="returnTo" value={`/opportunities/${full.id}`} />
-                  <label>Your bid<textarea name="message" rows={5} minLength={20} maxLength={3000} required placeholder="Who you are, what you are proposing, and on what terms." /></label>
-                  <SubmitButton>Submit bid for due diligence</SubmitButton>
+                  <label>Your Deal Request<textarea name="message" rows={5} minLength={20} maxLength={3000} required placeholder="Who you are, what you are proposing, and on what terms." /></label>
+                  <SubmitButton>Submit Deal Request</SubmitButton>
                 </form>
               </>}
-          <p className="field-help"><Link href="/dashboard/interests">Track all your bids →</Link></p>
+          <p className="field-help"><Link href="/dashboard/interests">Track All Your Deals →</Link></p>
         </section>}
       </>}
     </article>

@@ -45,7 +45,7 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, a
         { href: '/dashboard/opportunities', label: 'Opportunities', verifiedOnly: true },
         { href: '/dashboard/matches', label: 'Matches', verifiedOnly: true },
         { href: '/dashboard/saved', label: 'Saved', verifiedOnly: true },
-        { href: '/dashboard/interests', label: 'Expressions Of Interest', verifiedOnly: true },
+        { href: '/dashboard/interests', label: 'Deals', verifiedOnly: true },
         { href: '/dashboard/introductions', label: 'Introductions', verifiedOnly: true },
         { href: '/dashboard/deal-rooms', label: 'Deal Rooms', verifiedOnly: true },
         { href: '/dashboard/notifications', label: 'Notifications', badge: unreadCount },

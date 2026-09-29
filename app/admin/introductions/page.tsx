@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { requireCapability } from '@/lib/auth/guards'
+import { requireAnyCapability } from '@/lib/auth/guards'
 import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { SubmitButton } from '@/components/submit-button'
 import { humanize, labelForParticipantType } from '@/lib/auth/access'
@@ -15,7 +15,7 @@ const TABS = ['requested', 'approved', 'introduced', 'meeting_scheduled', 'compl
 /* The trade desk brokers introductions: approve, introduce both sides,
    schedule the meeting, mark complete or decline. */
 export default async function AdminIntroductionsPage({ searchParams }: Props) {
-  const { supabase } = await requireCapability('introductions')
+  const { supabase } = await requireAnyCapability(['introductions', 'verification'])
   const params = await searchParams
   const str = (k: string) => (typeof params[k] === 'string' ? (params[k] as string) : '')
   const error = str('error') || null, message = str('message') || null
@@ -29,25 +29,29 @@ export default async function AdminIntroductionsPage({ searchParams }: Props) {
   ])
   const oppIds = [...new Set((rows ?? []).map(r => r.opportunity_id))]
   const userIds = [...new Set((rows ?? []).flatMap(r => [r.requester_id, r.recipient_id]))]
-  const [{ data: opps }, { data: people }] = await Promise.all([
+  const actionIds = [...new Set((rows ?? []).map(r => r.last_action_by).filter((id): id is string => !!id))]
+  const [{ data: opps }, { data: people }, { data: actors }] = await Promise.all([
     oppIds.length ? supabase.from('opportunities').select('id,title,sector,country').in('id', oppIds) : Promise.resolve({ data: [] }),
     userIds.length ? supabase.from('profiles').select('id,full_name,participant_type,country').in('id', userIds) : Promise.resolve({ data: [] }),
+    actionIds.length ? supabase.from('profiles').select('id,full_name,system_role').in('id', actionIds) : Promise.resolve({ data: [] }),
   ])
   const oppById = new Map((opps ?? []).map(o => [o.id, o]))
   const personById = new Map((people ?? []).map(p => [p.id, p]))
+  const actorById = new Map((actors ?? []).map(p => [p.id, p]))
+  const stageLabel = (value: string) => value === 'requested' ? 'Processing' : value === 'approved' ? 'Processed' : value === 'introduced' ? 'Connected' : value === 'meeting_scheduled' ? 'Meeting Scheduled' : value === 'completed' ? 'Deal Verified' : 'Declined'
   const items = (rows ?? []).filter(r => !q || [oppById.get(r.opportunity_id)?.title, personById.get(r.requester_id)?.full_name, personById.get(r.recipient_id)?.full_name].some(x => (x ?? '').toLowerCase().includes(q.toLowerCase())))
 
   return <div className="page-stack">
     <RealtimeRefresh tables={["introductions"]} />
     <div>
       <p className="eyebrow">Trade desk</p>
-      <h1>Introductions</h1>
-      <p className="muted">Members ask to be introduced to a listing owner; nobody is contacted until the trade desk approves. Move each request through approve → introduce → meeting → complete.</p>
+      <h1>Match And Access Requests</h1>
+      <p className="muted">Matched users request access before a direct connection is opened. Trade Officers, Verification Officers, Administrators and Super Administrators share visibility of every request and authorised status change.</p>
     </div>
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
 
-    <nav className="queue-tabs">{counts.map(c => <a key={c.t} className={c.t === status ? 'queue-tab queue-tab-active' : 'queue-tab'} href={`/admin/introductions?status=${c.t}`}>{humanize(c.t)}<span>{c.n}</span></a>)}</nav>
+    <nav className="queue-tabs">{counts.map(c => <a key={c.t} className={c.t === status ? 'queue-tab queue-tab-active' : 'queue-tab'} href={`/admin/introductions?status=${c.t}`}>{stageLabel(c.t)}<span>{c.n}</span></a>)}</nav>
 
     <form className="filter-row card" method="get">
       <input type="hidden" name="status" value={status} />
@@ -57,7 +61,7 @@ export default async function AdminIntroductionsPage({ searchParams }: Props) {
     </form>
 
     {items.length === 0
-      ? <section className="card empty-state"><BrandCircle /><h2>Queue is clear</h2><p>No introductions with status “{humanize(status)}”.</p></section>
+      ? <section className="card empty-state"><BrandCircle /><h2>Queue is clear</h2><p>No requests with status “{stageLabel(status)}”.</p></section>
       : <div className="review-list">{items.map(item => {
           const opp = oppById.get(item.opportunity_id)
           const requester = personById.get(item.requester_id), recipient = personById.get(item.recipient_id)
@@ -70,7 +74,8 @@ export default async function AdminIntroductionsPage({ searchParams }: Props) {
               <span>{dateTime(item.created_at)}</span>
             </div>
             {item.request_note && <p>{item.request_note}</p>}
-            {item.staff_note && <p className="field-help">Trade desk note: {item.staff_note}</p>}
+            {item.staff_note && <p className="field-help">WTC Accra Note: {item.staff_note}</p>}
+            {item.last_action_by && actorById.get(item.last_action_by) && <p className="field-help">Last Authorised By <strong>{actorById.get(item.last_action_by)?.full_name}</strong> · {humanize(item.last_action_role || actorById.get(item.last_action_by)?.system_role)}{item.last_action_at ? ` · ${dateTime(item.last_action_at)}` : ''}</p>}
             {item.meeting_at && <p className="field-help">Meeting {dateTime(item.meeting_at)}{item.meeting_url ? ` · ${item.meeting_url}` : ''}</p>}
             {!['completed', 'declined'].includes(item.status) && <form action={reviewIntroduction} className="review-form">
               <input type="hidden" name="introductionId" value={item.id} />
@@ -81,10 +86,10 @@ export default async function AdminIntroductionsPage({ searchParams }: Props) {
               </div>
               <textarea name="note" rows={2} placeholder="Note shown to both parties" />
               <div className="button-row">
-                {item.status === 'requested' && <SubmitButton name="decision" value="approve" pendingLabel="Saving…">Approve</SubmitButton>}
-                {['requested', 'approved'].includes(item.status) && <SubmitButton name="decision" value="introduce" className="button button-secondary" pendingLabel="Saving…">Mark introduced</SubmitButton>}
+                {item.status === 'requested' && <SubmitButton name="decision" value="approve" pendingLabel="Saving…">Mark Processed</SubmitButton>}
+                {['requested', 'approved'].includes(item.status) && <SubmitButton name="decision" value="introduce" className="button button-secondary" pendingLabel="Saving…">Mark Connected</SubmitButton>}
                 {['approved', 'introduced', 'meeting_scheduled'].includes(item.status) && <SubmitButton name="decision" value="schedule" className="button button-outline" pendingLabel="Saving…">Schedule meeting</SubmitButton>}
-                {['introduced', 'meeting_scheduled'].includes(item.status) && <SubmitButton name="decision" value="complete" className="button button-outline" pendingLabel="Saving…">Complete</SubmitButton>}
+                {['introduced', 'meeting_scheduled'].includes(item.status) && <SubmitButton name="decision" value="complete" className="button button-outline" pendingLabel="Saving…">Mark Deal Verified</SubmitButton>}
                 <SubmitButton name="decision" value="decline" className="button button-danger" pendingLabel="Saving…">Decline</SubmitButton>
               </div>
             </form>}

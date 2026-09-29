@@ -9,7 +9,7 @@ export const PLATFORM_PAGES: PlatformPage[] = [
   { href: '/register', title: 'Create an account', audience: 'public', summary: 'Sign up as an investor, buyer, business, project sponsor, WTC member or institution.', keywords: ['register', 'sign up', 'create account', 'join'] },
   { href: '/login', title: 'Sign in', audience: 'public', summary: 'Member sign in.', keywords: ['login', 'sign in', 'log in'] },
   { href: '/forgot-password', title: 'Forgot password', audience: 'public', summary: 'Request a password reset link by email.', keywords: ['password', 'forgot', 'reset', 'locked out'] },
-  { href: '/opportunities', title: 'Live listings', audience: 'public', summary: 'Public teasers of every published opportunity. Sign in with an active plan to see figures and bid.', keywords: ['listings', 'live listings', 'deals', 'opportunities', 'marketplace', 'browse'] },
+  { href: '/opportunities', title: 'Live Deals', audience: 'public', summary: 'Public and member deal teasers. Restricted figures and identities remain protected until the participant meets the applicable access conditions.', keywords: ['listings', 'live listings', 'deals', 'opportunities', 'marketplace', 'browse'] },
   { href: '/membership', title: 'Membership and plans', audience: 'public', summary: 'Plans, prices and who each plan is for.', keywords: ['membership', 'plans', 'pricing', 'price', 'cost', 'fees'] },
   { href: '/how-it-works', title: 'How it works', audience: 'public', summary: 'Register → complete profile → upload documents → WTC Accra review → choose a plan → pay → marketplace opens.', keywords: ['how it works', 'process', 'steps', 'onboarding'] },
   { href: '/contact', title: 'Contact', audience: 'public', summary: 'Contact World Trade Centre Accra.', keywords: ['contact', 'phone', 'email', 'address', 'office'] },
@@ -20,7 +20,7 @@ export const PLATFORM_PAGES: PlatformPage[] = [
   { href: '/dashboard/opportunities/new', title: 'Post an opportunity', audience: 'member', summary: 'Create a new listing (draft) then submit it for WTC Accra review.', keywords: ['post', 'new listing', 'create listing', 'sell', 'raise capital'] },
   { href: '/dashboard/matches', title: 'Matches', audience: 'member', summary: 'Listings scored automatically against your mandate or buying requirements.', keywords: ['matches', 'match', 'recommendations', 'suggested'] },
   { href: '/dashboard/saved', title: 'Saved', audience: 'member', summary: 'Your shortlist of saved listings.', keywords: ['saved', 'shortlist', 'bookmark'] },
-  { href: '/dashboard/interests', title: 'Expressions of interest', audience: 'member', summary: 'Bids you placed and bids received on your listings. Bids go through WTC Accra due diligence before the owner sees them.', keywords: ['bid', 'bids', 'expression of interest', 'interest', 'offer', 'due diligence'] },
+  { href: '/dashboard/interests', title: 'Deals', audience: 'member', summary: 'Deal requests you sent and received. Requests are monitored by WTC Accra and move through Processing, Processed and Connected.', keywords: ['deal', 'deals', 'deal request', 'interest', 'offer', 'due diligence'] },
   { href: '/dashboard/introductions', title: 'Introductions', audience: 'member', summary: 'Introductions arranged by the WTC Accra trade desk.', keywords: ['introduction', 'introduce', 'intro'] },
   { href: '/dashboard/deal-rooms', title: 'Deal rooms', audience: 'member', summary: 'Private rooms for a deal in progress, with shared documents.', keywords: ['deal room', 'data room', 'negotiate'] },
   { href: '/dashboard/notifications', title: 'Notifications', audience: 'member', summary: 'Every decision, message and update sent to you.', keywords: ['notifications', 'alerts', 'messages'] },
@@ -38,21 +38,21 @@ export const PLATFORM_PAGES: PlatformPage[] = [
   { href: '/admin/verification', title: 'Verification queue', audience: 'staff', summary: 'Approve, request changes or reject member applications; see their documents.', keywords: ['verification queue', 'approve member', 'applications'] },
   { href: '/admin/users', title: 'Members', audience: 'admin', summary: 'Every member; open one to edit details, verify, message, set plan, send password reset, support bypass.', keywords: ['members', 'users', 'edit user', 'suspend', 'block', 'role'] },
   { href: '/admin/opportunities', title: 'Opportunity review', audience: 'staff', summary: 'Review, publish, request changes or reject listings; set the deal rating.', keywords: ['review listing', 'publish listing', 'opportunity review', 'trade desk'] },
-  { href: '/admin/bids', title: 'Bid due diligence', audience: 'staff', summary: 'Clear or reject member bids before owners see them.', keywords: ['bids queue', 'clear bid', 'due diligence'] },
+  { href: '/admin/deals', title: 'Deals', audience: 'staff', summary: 'Process or decline monitored deal requests before the owner sees them.', keywords: ['deals queue', 'deal request', 'due diligence'] },
   { href: '/admin/introductions', title: 'Introductions queue', audience: 'staff', summary: 'Approve, introduce, schedule meetings and complete member introduction requests.', keywords: ['introductions queue', 'arrange introduction', 'meeting'] },
   { href: '/admin/subscriptions', title: 'Subscriptions', audience: 'staff', summary: 'Approve restricted plans, activate, and see who is on what.', keywords: ['subscriptions', 'approve plan'] },
   { href: '/admin/payments', title: 'Payments', audience: 'staff', summary: 'Confirm bank and mobile-money payments by reference.', keywords: ['confirm payment', 'payments queue', 'finance'] },
   { href: '/admin/support', title: 'Support desk', audience: 'staff', summary: 'Reply to member requests.', keywords: ['support desk', 'tickets'] },
   { href: '/admin/emails', title: 'Email queue', audience: 'admin', summary: 'Outbound emails waiting to send.', keywords: ['email queue', 'smtp', 'emails'] },
   { href: '/admin/audit', title: 'Audit log', audience: 'admin', summary: 'Every administrative action with who did it.', keywords: ['audit', 'log', 'history', 'who changed'] },
-  { href: '/admin/assistant', title: 'AI assistant', audience: 'super_admin', summary: 'Super-admin agent that can verify, approve, confirm payments, review bids and listings, message members and report KPIs on instruction.', keywords: ['assistant', 'agent', 'ai', 'automate'] },
+  { href: '/admin/assistant', title: 'AI assistant', audience: 'super_admin', summary: 'Super-admin agent that can verify, approve, confirm payments, review deal requests and listings, message members and report KPIs on instruction.', keywords: ['assistant', 'agent', 'ai', 'automate'] },
   { href: '/editor', title: 'Editor console', audience: 'editor', summary: 'News, page content, website builder, site settings.', keywords: ['editor', 'content', 'news', 'website builder', 'edit website', 'settings'] },
   { href: '/editor/builder', title: 'Website builder', audience: 'editor', summary: 'Visual editor for the public website.', keywords: ['builder', 'edit page', 'elementor', 'hero', 'section'] },
 ]
 
 export const PLATFORM_FACTS = `
-Access model: a member must (1) complete profile and documents, (2) be verified by WTC Accra, (3) hold an active subscription plan (paid by card, mobile money or bank transfer; free "Verified Investor Basic" for investors) before they can see full listings and bid. Staff can pause browsing or posting per member.
-Bids: a bid (expression of interest) goes to WTC Accra due diligence first, then to the listing owner, who accepts or declines; both sides are notified at each step.
+Access model: joining and posting deals are free. Restricted deal details and networking are tier-based: Business US$1,000/year after completed/verified profile; WTC Accra Member US$500/year; WTCA Member US$1,500/year after verification; Investors discover teasers free and request access to protected details. A 1% success fee applies to successfully closed deals.
+Deals: a deal request is monitored by WTC Accra before the owner sees it. Match access requests remain locked until approved, then a monitored Deal Room opens.
 Listings: members create a draft, submit it for review; the trade desk publishes, requests changes or rejects. Owners can withdraw (unpublish), edit and delete.
 Plans: grouped by participant type. WTC member plans need an @wtcaccra.com email; institutional, government and DFI plans need a verified organisation and WTC Accra approval after payment. Expired plans pause marketplace access until renewed.
 Matches: listings are scored automatically against a member's mandate or buying requirements.

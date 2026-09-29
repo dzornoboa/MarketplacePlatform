@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation'
 import { requireUserProfile } from '@/lib/auth/guards'
 import { humanize, listingIntents, listingIntentLabels, listingIntentHelp } from '@/lib/auth/access'
 import { updateOpportunity } from '../../actions'
+import { dealCategories } from '@/lib/deals/categories'
 
 export const dynamic = 'force-dynamic'
 
@@ -64,7 +65,12 @@ export default async function EditOpportunityPage({ params, searchParams }: Prop
       <label>Full description<textarea name="description" rows={12} defaultValue={item.description} minLength={50} maxLength={12000} required /></label>
 
       <div className="form-grid">
-        <label>Opportunity type
+        <label>Deal Category
+          <select name="category" defaultValue={item.category ?? 'Other'} required>
+            {dealCategories.map(category => <option key={category} value={category}>{category}</option>)}
+          </select>
+        </label>
+        <label>Opportunity Type
           <select name="kind" defaultValue={item.kind} required>
             <option value="investment">Investment</option>
             <option value="trade">Trade</option>
@@ -72,8 +78,8 @@ export default async function EditOpportunityPage({ params, searchParams }: Prop
             <option value="partnership">Partnership</option>
           </select>
         </label>
-        <label>Sector<input name="sector" defaultValue={item.sector} required /></label>
       </div>
+      <label>Sector<input name="sector" defaultValue={item.sector} required /></label>
       <div className="form-grid">
         <label>Country<input name="country" defaultValue={item.country} required /></label>
         <label>City<input name="city" defaultValue={item.city ?? ''} /></label>

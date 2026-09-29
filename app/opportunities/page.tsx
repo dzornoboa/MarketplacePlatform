@@ -11,8 +11,8 @@ import { getPageBlock } from '@/lib/content/site-content'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Live listings',
-  description: 'Investment, trade, procurement and partnership opportunities from verified WTC Accra members. Sign in to see the details and bid.',
+  title: 'Live Deals',
+  description: 'Discover investment, trade, procurement and partnership deals. Restricted details and direct connections remain protected until the applicable access conditions are met.'
 }
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
@@ -28,20 +28,20 @@ function Stars({ rating }: { rating: number }) {
 export default async function PublicListingsPage({ searchParams }: Props) {
   const params = await searchParams
   const str = (k: string) => (typeof params[k] === 'string' ? (params[k] as string) : '')
-  const kind = str('kind'), intent = str('intent'), sector = str('sector'), country = str('country')
+  const kind = str('kind'), intent = str('intent'), category = str('category'), sector = str('sector'), country = str('country')
 
   // Session-aware: the function returns real titles only to signed-in users.
   const supabase = await createClient()
   const [{ data: listings }, { data: facets }] = await Promise.all([
     supabase.rpc('public_listing_teasers', {
       listing_kind: kind || null, listing_intent: intent || null,
-      listing_sector: sector || null, listing_country: country || null, max_rows: 60,
+      listing_sector: sector || null, listing_country: country || null, listing_category: category || null, max_rows: 60,
     }),
     supabase.rpc('public_listing_facets'),
   ])
-  const intro = await getPageBlock('listings', 'intro', { eyebrow: 'Private marketplace', heading: 'Live', heading_emphasis: 'listings', body: 'Opportunities posted by verified WTC Accra members and reviewed by the trade desk. Sign in to see the full details, the figures and who is behind each one — and to bid.', cta_label: 'Join the network', cta_href: '/register', secondary_cta_label: 'Member sign in', secondary_cta_href: '/login', image_url: null })
+  const intro = await getPageBlock('listings', 'intro', { eyebrow: 'Private marketplace', heading: 'Live', heading_emphasis: 'listings', body: 'Discover reviewed investment, trade, procurement and partnership deals. Deal category, sector and market information help you find relevant opportunities while restricted figures, identities and networking remain protected.', cta_label: 'Join the network', cta_href: '/register', secondary_cta_label: 'Member sign in', secondary_cta_href: '/login', image_url: null })
   const facet = (name: string) => (facets ?? []).filter(f => f.facet === name)
-  const filtered = !!(kind || intent || sector || country)
+  const filtered = !!(kind || intent || category || sector || country)
 
   return <><PublicHeader /><main>
     <section className="section">
@@ -59,9 +59,15 @@ export default async function PublicListingsPage({ searchParams }: Props) {
             {listingIntents.map(i => <option key={i} value={i}>{listingIntentLabels[i]}</option>)}
           </select>
         </label>
-        <label>Category
+        <label>Deal Category
+          <select name="category" defaultValue={category}>
+            <option value="">All Deal Categories</option>
+            {facet('category').map(f => <option key={f.value} value={f.value}>{f.value} ({f.listings})</option>)}
+          </select>
+        </label>
+        <label>Deal Type
           <select name="kind" defaultValue={kind}>
-            <option value="">All categories</option>
+            <option value="">All Deal Types</option>
             {facet('kind').map(f => <option key={f.value} value={f.value}>{humanize(f.value)} ({f.listings})</option>)}
           </select>
         </label>
@@ -84,8 +90,8 @@ export default async function PublicListingsPage({ searchParams }: Props) {
       {(listings ?? []).length === 0
         ? <section className="card empty-state">
             <BrandCircle />
-            <h2>{filtered ? 'No listings match those filters' : 'No live listings yet'}</h2>
-            <p>{filtered ? 'Try widening the filters.' : 'Listings appear here as WTC Accra reviews and publishes them.'}</p>
+            <h2>{filtered ? 'No listings match those filters' : 'No Live Deals Yet'}</h2>
+            <p>{filtered ? 'Try widening the filters.' : 'Deals appear here as WTC Accra reviews and publishes them.'}</p>
           </section>
         : <div className="article-grid">{(listings ?? []).map(item => <article className="card teaser-card" key={item.id}>
             <div className="feed-meta">
@@ -93,7 +99,7 @@ export default async function PublicListingsPage({ searchParams }: Props) {
               <Stars rating={item.importance} />
             </div>
             <h3 className={item.title_hidden ? 'teaser-title-hidden' : undefined}><Link href={`/opportunities/${item.id}`}>{item.title}</Link></h3>
-            <p className="muted">{humanize(item.kind)} · {item.sector} · {item.country}{item.region ? ` · ${item.region}` : ''}</p>
+            <p className="muted">{item.category} · {humanize(item.kind)} · {item.sector} · {item.country}{item.region ? ` · ${item.region}` : ''}</p>
             <p>{item.teaser}</p>
             {item.tags.length > 0 && <div className="trust-row">{item.tags.slice(0, 4).map(t => <span key={t}>{t}</span>)}</div>}
             <div className="teaser-foot">

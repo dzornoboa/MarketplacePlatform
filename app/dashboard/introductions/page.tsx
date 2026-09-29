@@ -9,12 +9,20 @@ import { requestIntroduction } from './actions'
 export const dynamic = 'force-dynamic'
 
 const STAGE_HELP: Record<string, string> = {
-  requested: 'WTC Accra is reviewing the request before making contact.',
-  approved: 'Approved by the trade desk. An introduction is being arranged.',
-  introduced: 'Both parties have been introduced by WTC Accra.',
-  meeting_scheduled: 'A meeting has been scheduled.',
-  completed: 'The introduction is complete.',
-  declined: 'The trade desk did not proceed with this introduction.',
+  requested: 'Processing — WTC Accra is reviewing the access request before any direct connection opens.',
+  approved: 'Processed — WTC Accra approved the request and the monitored Deal Room is available.',
+  introduced: 'Connected — the approved counterparties can continue inside the monitored Deal Room.',
+  meeting_scheduled: 'Meeting Scheduled — meeting details have been added by WTC Accra.',
+  completed: 'Deal Verified — WTC Accra marked the monitored workflow complete.',
+  declined: 'Declined — WTC Accra did not proceed with this access request.',
+}
+const STAGE_LABEL: Record<string, string> = {
+  requested: 'Processing',
+  approved: 'Processed',
+  introduced: 'Connected',
+  meeting_scheduled: 'Meeting Scheduled',
+  completed: 'Deal Verified',
+  declined: 'Declined',
 }
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
@@ -32,17 +40,23 @@ export default async function IntroductionsPage({ searchParams }: Props) {
     ? await supabase.from('opportunities').select('id,title,sector,country').in('id', oppIds)
     : { data: [] }
   const oppById = new Map((opportunities ?? []).map(o => [o.id, o]))
-  // Listings this member can ask about: published, not their own (RLS hides them without marketplace access).
-  const { data: candidates } = await supabase.from('opportunities').select('id,title,sector,country').eq('status', 'published').neq('owner_user_id', profile.id).order('published_at', { ascending: false }).limit(100)
+  // Match-access requests must also work for investors whose deal details are intentionally hidden.
+  const { data: teaserRows } = await supabase.rpc('public_listing_teasers', { max_rows: 100 })
+  const candidates = (teaserRows ?? []).filter(row => row.id && !row.title_hidden)
   const peopleIds = [...new Set((introductions ?? []).flatMap(i => [i.requester_id, i.recipient_id]))].filter(id => id !== profile.id)
-  const { data: people } = peopleIds.length ? await supabase.from('profiles').select('id,full_name').in('id', peopleIds) : { data: [] }
+  const actionIds = [...new Set((introductions ?? []).map(i => i.last_action_by).filter((id): id is string => !!id))]
+  const [{ data: people }, { data: actors }] = await Promise.all([
+    peopleIds.length ? supabase.from('profiles').select('id,full_name').in('id', peopleIds) : Promise.resolve({ data: [] }),
+    actionIds.length ? supabase.from('profiles').select('id,full_name,system_role').in('id', actionIds) : Promise.resolve({ data: [] }),
+  ])
   const nameById = new Map((people ?? []).map(x => [x.id, x.full_name]))
+  const actorById = new Map((actors ?? []).map(x => [x.id, x]))
 
   return <div className="page-stack">
     <div>
       <p className="eyebrow">Deal flow</p>
-      <h1>Introductions</h1>
-      <p className="muted">WTC Accra brokers introductions between verified counterparties. The trade desk reviews each request before either side is contacted.</p>
+      <h1>Match Access Requests</h1>
+      <p className="muted">Matched users do not connect directly. Send an access request, track its status here, and continue in a monitored Deal Room only after WTC Accra approves the connection.</p>
     </div>
 
     <RealtimeRefresh tables={["introductions"]} />
@@ -50,26 +64,26 @@ export default async function IntroductionsPage({ searchParams }: Props) {
     {message && <div className="alert alert-success">{message}</div>}
 
     <section className="card">
-      <h2>Request an introduction</h2>
+      <h2>Request Match Access</h2>
       {(candidates ?? []).length === 0
-        ? <p className="muted">Introductions are requested from live listings. Subscribe to browse listings, then ask for an introduction here.</p>
+        ? <p className="muted">No eligible live deal teasers are available right now.</p>
         : <form action={requestIntroduction} className="form-stack">
             <label>Listing
               <select name="opportunityId" defaultValue={preselect} required>
-                <option value="" disabled>Choose a listing</option>
+                <option value="" disabled>Choose A Deal</option>
                 {(candidates ?? []).map(o => <option key={o.id} value={o.id}>{o.title} · {o.sector} · {o.country}</option>)}
               </select>
             </label>
-            <label>Why you want to be introduced<textarea name="note" rows={3} maxLength={2000} placeholder="Who you are, what you can offer, and what you would like to discuss." /></label>
-            <div><SubmitButton pendingLabel="Sending…">Request introduction</SubmitButton></div>
+            <label>Why You Want Access<textarea name="note" rows={3} maxLength={2000} placeholder="Who you are, what you can offer, and what you would like to discuss." /></label>
+            <div><SubmitButton pendingLabel="Sending…">Request Access</SubmitButton></div>
           </form>}
     </section>
 
     {(introductions ?? []).length === 0
       ? <section className="card empty-state">
           <BrandCircle />
-          <h2>No introductions yet</h2>
-          <p>Request an introduction from an opportunity you are interested in, and the WTC Accra trade desk will take it from there.</p>
+          <h2>No Access Requests Yet</h2>
+          <p>Request access from a matched deal or live deal teaser and WTC Accra will manage the connection.</p>
         </section>
       : <div className="opportunity-list">{(introductions ?? []).map(item => {
           const opportunity = oppById.get(item.opportunity_id)
@@ -77,15 +91,16 @@ export default async function IntroductionsPage({ searchParams }: Props) {
           return <article className="card opportunity-card" key={item.id}>
             <div className="opportunity-head">
               <div>
-                <span className={`status-dot status-intro-${item.status}`}>{humanize(item.status)}</span>
+                <span className={`status-dot status-intro-${item.status}`}>{STAGE_LABEL[item.status] ?? humanize(item.status)}</span>
                 <h3>{opportunity?.title ?? 'Opportunity'}</h3>
-                <p className="muted">{outbound ? `You asked to be introduced to ${nameById.get(item.recipient_id) ?? 'the listing owner'}` : `${nameById.get(item.requester_id) ?? 'A member'} asked to be introduced to you`} · {dateTime(item.created_at)}</p>
+                <p className="muted">{outbound ? `You Requested Access To ${nameById.get(item.recipient_id) ?? 'the listing owner'}` : `${nameById.get(item.requester_id) ?? 'A member'} Requested Access To Your Deal`} · {dateTime(item.created_at)}</p>
               </div>
             </div>
             {opportunity && <p className="muted">{opportunity.sector} · {opportunity.country}</p>}
             {item.request_note && <p>{item.request_note}</p>}
             <p className="field-help">{STAGE_HELP[item.status] ?? ''}</p>
-            {item.staff_note && <p className="field-help">Trade desk note: {item.staff_note}</p>}
+            {item.staff_note && <p className="field-help">WTC Accra Note: {item.staff_note}</p>}
+            {item.last_action_by && actorById.get(item.last_action_by) && <p className="field-help">Last Updated By <strong>{actorById.get(item.last_action_by)?.full_name}</strong> · {humanize(item.last_action_role || actorById.get(item.last_action_by)?.system_role)}{item.last_action_at ? ` · ${dateTime(item.last_action_at)}` : ''}</p>}
             {item.meeting_at && <dl className="detail-grid detail-grid-two">
               <div><dt>Meeting</dt><dd>{dateTime(item.meeting_at)}</dd></div>
               {item.meeting_url && <div><dt>Joining link</dt><dd><a className="arrow-link" href={item.meeting_url} rel="noopener noreferrer" target="_blank">Open meeting →</a></dd></div>}

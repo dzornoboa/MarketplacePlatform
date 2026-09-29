@@ -34,9 +34,9 @@ export default async function FeedPage({ searchParams }: Props) {
 
   const sortKey = (str('sort') in SORTS ? str('sort') : 'recent') as keyof typeof SORTS
   const sort = SORTS[sortKey]
-  const sector = str('sector'), country = str('country'), region = str('region')
+  const category = str('category'), sector = str('sector'), country = str('country'), region = str('region')
   const intent = str('intent'), kind = str('kind'), followed = str('followed') === '1'
-  const filtersApplied = !!(sector || country || region || intent || kind || followed)
+  const filtersApplied = !!(category || sector || country || region || intent || kind || followed)
 
   const state = await readAccessState(supabase)
   const lock = state
@@ -49,6 +49,7 @@ export default async function FeedPage({ searchParams }: Props) {
     .eq('status', 'published').order('published_at', { ascending: false }).limit(6)
 
   let listingQuery = supabase.from('opportunities').select('*').eq('status', 'published').limit(60)
+  if (category) listingQuery = listingQuery.eq('category', category)
   if (sector) listingQuery = listingQuery.eq('sector', sector)
   if (country) listingQuery = listingQuery.eq('country', country)
   if (region) listingQuery = listingQuery.eq('region', region)
@@ -79,14 +80,14 @@ export default async function FeedPage({ searchParams }: Props) {
     <div>
       <p className="eyebrow">Your network</p>
       <h1>Home</h1>
-      <p className="muted">News from WTC Accra, and live listings from verified members across the network.</p>
+      <p className="muted">News from WTC Accra and live deals from verified members across the network.</p>
     </div>
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
 
     {lock.locked && <section className="restriction-banner">
       <div>
-        <strong>Member listings are hidden</strong>
+        <strong>Restricted Deal Details Are Locked</strong>
         <p>{lock.reason} Until then you can still read WTC Accra news below.</p>
       </div>
       {lock.action && <Link className="button button-light" href={lock.action.href}>{lock.action.label}</Link>}
@@ -104,7 +105,7 @@ export default async function FeedPage({ searchParams }: Props) {
     </section>}
 
     {!lock.locked && <section>
-      <div className="listing-head"><h2>Live listings</h2><span className="muted">{visible.length} shown</span></div>
+      <div className="listing-head"><h2>Live Deals</h2><span className="muted">{visible.length} shown</span></div>
 
       <form className="filter-row card" method="get">
         <label>Sort
@@ -118,9 +119,15 @@ export default async function FeedPage({ searchParams }: Props) {
             {listingIntents.map(i => <option key={i} value={i}>{listingIntentLabels[i]}</option>)}
           </select>
         </label>
-        <label>Category
+        <label>Deal Category
+          <select name="category" defaultValue={category}>
+            <option value="">All Deal Categories</option>
+            {facet('category').map(value => <option key={value} value={value}>{value}</option>)}
+          </select>
+        </label>
+        <label>Deal Type
           <select name="kind" defaultValue={kind}>
-            <option value="">All categories</option>
+            <option value="">All Deal Types</option>
             <option value="investment">Investment</option>
             <option value="trade">Trade</option>
             <option value="procurement">Procurement</option>
@@ -153,8 +160,8 @@ export default async function FeedPage({ searchParams }: Props) {
       {visible.length === 0
         ? <section className="card empty-state">
             <BrandCircle />
-            <h2>{filtersApplied ? 'Nothing matches those filters' : 'No listings from other members yet'}</h2>
-            <p>{followed ? 'You may not be following anyone with a live listing yet.' : filtersApplied ? 'Try widening the filters.' : 'Your own listings do not appear here. As WTC Accra verifies more members and publishes their listings, they will show up in this feed.'}</p>
+            <h2>{filtersApplied ? 'Nothing matches those filters' : 'No Deals From Other Members Yet'}</h2>
+            <p>{followed ? 'You may not be following anyone with a live listing yet.' : filtersApplied ? 'Try widening the filters.' : 'Your own deals do not appear here. As WTC Accra verifies more members and publishes deals, they will show up in this feed.'}</p>
           </section>
         : <div className="opportunity-list">{visible.map(item => {
             const owner = ownerById.get(item.owner_user_id)
@@ -170,7 +177,7 @@ export default async function FeedPage({ searchParams }: Props) {
                   <p className="muted avatar-stack">
                     {owner && <Avatar src={owner.avatar_url} name={owner.full_name} size={22} />}
                     {owner ? <>{owner.organisation ?? owner.full_name}<VerifiedCheck verified={owner.is_verified} size={14} /> · {labelForParticipantType(owner.participant_type)} · </> : ''}
-                    {item.sector} · {item.city ? `${item.city}, ` : ''}{item.country}
+                    {item.category ? `${item.category} · ` : ''}{item.sector} · {item.city ? `${item.city}, ` : ''}{item.country}
                     {item.region ? ` · ${item.region}` : ''}
                     {item.deadline ? ` · ${relativeDays(item.deadline)}` : ''}
                   </p>
@@ -192,7 +199,7 @@ export default async function FeedPage({ searchParams }: Props) {
                   </button>
                 </form>
                 <details className="eoi-block connect-block">
-                  <summary>Connect about this listing</summary>
+                  <summary>Request Connection About This Deal</summary>
                   <form action={requestConnection} className="form-stack">
                     <input type="hidden" name="addressee" value={item.owner_user_id} />
                     <input type="hidden" name="opportunityId" value={item.id} />
@@ -207,7 +214,7 @@ export default async function FeedPage({ searchParams }: Props) {
                     </label>
                     <label>Message<textarea name="note" rows={3} maxLength={2000} placeholder="Introduce yourself and say what you are proposing." /></label>
                     <p className="field-help">WTC Accra is copied on every request, with the deal summary and the process. Keep the transaction on the platform.</p>
-                    <SubmitButton>Send request</SubmitButton>
+                    <SubmitButton>Send Request</SubmitButton>
                   </form>
                 </details>
               </div>

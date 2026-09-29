@@ -21,8 +21,8 @@ export default async function DashboardPage() {
     supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(5),
     supabase.from('subscriptions').select('plan_code,ends_at').eq('status', 'active').limit(1).maybeSingle(),
   ])
-  // Deal-flow KPIs: the member's listings, bids placed and received, matches and connections.
-  const [{ data: myOpps }, { data: myBids }, { data: recvBids }, { data: myMatches }, { data: myConns }, { data: mySaved }] = await Promise.all([
+  // Deal-flow KPIs: the member's listings, deals placed and received, matches and connections.
+  const [{ data: myOpps }, { data: myDeals }, { data: recvDeals }, { data: myMatches }, { data: myConns }, { data: mySaved }] = await Promise.all([
     supabase.from('opportunities').select('id,status,capital_required').eq('owner_user_id', profile.id),
     supabase.from('expressions_of_interest').select('status').eq('applicant_id', profile.id),
     supabase.from('expressions_of_interest').select('status,opportunity_id').neq('applicant_id', profile.id),
@@ -31,9 +31,9 @@ export default async function DashboardPage() {
     supabase.from('saved_opportunities').select('opportunity_id'),
   ])
   const tally = (rows: Array<{ status: string }> | null) => { const o: Record<string, number> = {}; for (const r of rows ?? []) o[r.status] = (o[r.status] ?? 0) + 1; return o }
-  const oppT = tally(myOpps), bidT = tally(myBids), recvT = tally(recvBids), matchT = tally(myMatches), connT = tally(myConns)
+  const oppT = tally(myOpps), dealT = tally(myDeals), recvT = tally(recvDeals), matchT = tally(myMatches), connT = tally(myConns)
   const capitalSought = (myOpps ?? []).filter(o => o.status === 'published').reduce((sum, o) => sum + Number(o.capital_required ?? 0), 0)
-  const hasDealActivity = (myOpps ?? []).length + (myBids ?? []).length + (recvBids ?? []).length + (myMatches ?? []).length > 0
+  const hasDealActivity = (myOpps ?? []).length + (myDeals ?? []).length + (recvDeals ?? []).length + (myMatches ?? []).length > 0
 
   const adminRole = isAdminRole(profile.system_role)
   const adminMfaReady = adminRole && claims.aal === 'aal2'
@@ -101,7 +101,7 @@ export default async function DashboardPage() {
           <section className="member-mini-card">
             <strong>Quick Access</strong>
             <Link href="/dashboard/opportunities">Your Listings <span>{myListings ?? 0}</span></Link>
-            <Link href="/dashboard/interests">Expressions Of Interest <span>{(myBids ?? []).length}</span></Link>
+            <Link href="/dashboard/interests">Deals <span>{(myDeals ?? []).length}</span></Link>
             <Link href="/dashboard/deal-rooms">Deal Rooms</Link>
             <Link href="/dashboard/reports">Reports</Link>
           </section>
@@ -259,14 +259,14 @@ export default async function DashboardPage() {
       <h2>Your deal flow</h2>
       <div className="dashboard-grid deal-kpis">
         <article className="metric-card"><span>Listings</span><strong>{(myOpps ?? []).length}</strong><p>{oppT.published ?? 0} live · {money(capitalSought)} sought</p></article>
-        <article className="metric-card"><span>Bids received</span><strong>{(recvBids ?? []).length}</strong><p>{recvT.under_review ?? 0} to answer · {recvT.accepted ?? 0} accepted</p></article>
-        <article className="metric-card"><span>Bids placed</span><strong>{(myBids ?? []).length}</strong><p>{bidT.submitted ?? 0} in due diligence · {bidT.accepted ?? 0} accepted</p></article>
+        <article className="metric-card"><span>Deals received</span><strong>{(recvDeals ?? []).length}</strong><p>{recvT.under_review ?? 0} to answer · {recvT.accepted ?? 0} accepted</p></article>
+        <article className="metric-card"><span>Deals placed</span><strong>{(myDeals ?? []).length}</strong><p>{dealT.submitted ?? 0} in due diligence · {dealT.accepted ?? 0} accepted</p></article>
         <article className="metric-card"><span>Matches</span><strong>{(myMatches ?? []).length}</strong><p>{matchT.shortlisted ?? 0} shortlisted · {(mySaved ?? []).length} saved</p></article>
         <article className="metric-card"><span>Connections</span><strong>{connT.accepted ?? 0}</strong><p>{connT.pending ?? 0} pending</p></article>
       </div>
       <div className="insight-grid">
         {(myOpps ?? []).length > 0 && <BarChart title="Your listings by status" data={Object.entries(oppT).map(([k, v]) => ({ label: humanize(k), value: v }))} height={120} />}
-        {((myBids ?? []).length + (recvBids ?? []).length) > 0 && <BarChart title="Bids by stage (placed + received)" data={Object.entries(tally([...(myBids ?? []), ...(recvBids ?? [])])).map(([k, v]) => ({ label: humanize(k), value: v }))} height={120} />}
+        {((myDeals ?? []).length + (recvDeals ?? []).length) > 0 && <BarChart title="Deals by stage (placed + received)" data={Object.entries(tally([...(myDeals ?? []), ...(recvDeals ?? [])])).map(([k, v]) => ({ label: humanize(k), value: v }))} height={120} />}
       </div>
     </section>}
 

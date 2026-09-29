@@ -30,7 +30,7 @@ export default async function AdminReportsPage({ searchParams }: Props) {
     <div>
       <p className="eyebrow">Reports</p>
       <h1>Platform reports</h1>
-      <p className="muted">Members, plans, payments, listings, bids and verification — filter, sort and export.</p>
+      <p className="muted">Members, plans, payments, deals, deal requests and verification — filter, sort and export.</p>
     </div>
     <nav className="queue-tabs">{ADMIN_REPORTS.map(k => <a key={k} className={k === kind ? 'queue-tab queue-tab-active' : 'queue-tab'} href={`/admin/reports?kind=${k}`}>{reportLabel(k)}</a>)}</nav>
     <form className="report-filters" method="get" action="/admin/reports">

@@ -30,7 +30,7 @@ export default async function DealRoomsPage() {
     <div>
       <p className="eyebrow">Deal execution</p>
       <h1>Deal rooms</h1>
-      <p className="muted">A private space per transaction, opened automatically when a listing owner accepts a bid (or by the WTC Accra trade desk). Documents shared here are visible only to room members.</p>
+      <p className="muted">A private monitored space for each connected deal. A Deal Room opens after an approved connection or accepted deal request, with authorised WTC Accra monitoring roles permanently copied into the discussion.</p>
     </div>
 
     {(rooms ?? []).length === 0

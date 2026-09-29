@@ -4,8 +4,8 @@ export type Database = {
   public: {
     Tables: {
       profiles: {
-        Row: { id:string; full_name:string; username:string|null; phone:string|null; phone_country_code:string|null; job_title:string|null; country:string|null; country_code:string|null; city:string|null; date_of_birth:string|null; id_type:string|null; id_number:string|null; requested_participant_type:Database['public']['Enums']['participant_type']|null; participant_type:Database['public']['Enums']['participant_type']|null; verification_status:Database['public']['Enums']['verification_status']; system_role:Database['public']['Enums']['system_role']; wtca_membership_number:string|null; wtca_chapter:string|null; profile_completed:boolean; account_status:Database['public']['Enums']['account_status']; password_change_required:boolean; can_view_opportunities:boolean; can_post_opportunities:boolean; requested_plan_code:string|null; support_bypass_until:string|null; support_bypass_reason:string|null; avatar_url:string|null; verified_at:string|null; verified_by:string|null; created_at:string; updated_at:string }
-        Insert: { id:string; full_name?:string; username?:string|null; phone?:string|null; phone_country_code?:string|null; job_title?:string|null; country?:string|null; country_code?:string|null; city?:string|null; date_of_birth?:string|null; id_type?:string|null; id_number?:string|null; requested_participant_type?:Database['public']['Enums']['participant_type']|null; participant_type?:Database['public']['Enums']['participant_type']|null; verification_status?:Database['public']['Enums']['verification_status']; system_role?:Database['public']['Enums']['system_role']; wtca_membership_number?:string|null; wtca_chapter?:string|null; profile_completed?:boolean; account_status?:Database['public']['Enums']['account_status']; password_change_required?:boolean; can_view_opportunities?:boolean; can_post_opportunities?:boolean; requested_plan_code?:string|null; support_bypass_until?:string|null; support_bypass_reason?:string|null; avatar_url?:string|null; verified_at?:string|null; verified_by?:string|null; created_at?:string; updated_at?:string }
+        Row: { id:string; full_name:string; username:string|null; phone:string|null; phone_country_code:string|null; job_title:string|null; country:string|null; country_code:string|null; city:string|null; date_of_birth:string|null; id_type:string|null; id_number:string|null; requested_participant_type:Database['public']['Enums']['participant_type']|null; participant_type:Database['public']['Enums']['participant_type']|null; verification_status:Database['public']['Enums']['verification_status']; system_role:Database['public']['Enums']['system_role']; wtca_membership_number:string|null; wtca_chapter:string|null; profile_completed:boolean; account_status:Database['public']['Enums']['account_status']; password_change_required:boolean; can_view_opportunities:boolean; can_post_opportunities:boolean; requested_plan_code:string|null; support_bypass_until:string|null; support_bypass_reason:string|null; avatar_url:string|null; legal_agreement_version:string|null; legal_agreed_at:string|null; verified_at:string|null; verified_by:string|null; created_at:string; updated_at:string }
+        Insert: { id:string; full_name?:string; username?:string|null; phone?:string|null; phone_country_code?:string|null; job_title?:string|null; country?:string|null; country_code?:string|null; city?:string|null; date_of_birth?:string|null; id_type?:string|null; id_number?:string|null; requested_participant_type?:Database['public']['Enums']['participant_type']|null; participant_type?:Database['public']['Enums']['participant_type']|null; verification_status?:Database['public']['Enums']['verification_status']; system_role?:Database['public']['Enums']['system_role']; wtca_membership_number?:string|null; wtca_chapter?:string|null; profile_completed?:boolean; account_status?:Database['public']['Enums']['account_status']; password_change_required?:boolean; can_view_opportunities?:boolean; can_post_opportunities?:boolean; requested_plan_code?:string|null; support_bypass_until?:string|null; support_bypass_reason?:string|null; avatar_url?:string|null; legal_agreement_version?:string|null; legal_agreed_at?:string|null; verified_at?:string|null; verified_by?:string|null; created_at?:string; updated_at?:string }
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>
         Relationships: []
       }
@@ -22,14 +22,14 @@ export type Database = {
         Relationships: []
       }
       opportunities: {
-        Row: { id:string; owner_user_id:string; owner_organization_id:string|null; title:string; summary:string; description:string; sector:string; country:string; city:string|null; kind:Database['public']['Enums']['opportunity_kind']; intent:Database['public']['Enums']['listing_intent']; region:string|null; importance:number; capital_required:number|null; minimum_ticket:number|null; currency:string; deadline:string|null; tags:string[]; status:Database['public']['Enums']['opportunity_status']; is_featured:boolean; review_note:string|null; submitted_at:string|null; published_at:string|null; reviewed_at:string|null; reviewed_by:string|null; created_at:string; updated_at:string }
-        Insert: { id?:string; owner_user_id:string; owner_organization_id?:string|null; title:string; summary:string; description:string; sector:string; country:string; city?:string|null; kind:Database['public']['Enums']['opportunity_kind']; intent?:Database['public']['Enums']['listing_intent']; region?:string|null; importance?:number; capital_required?:number|null; minimum_ticket?:number|null; currency?:string; deadline?:string|null; tags?:string[]; status?:Database['public']['Enums']['opportunity_status']; is_featured?:boolean; review_note?:string|null; submitted_at?:string|null; published_at?:string|null; reviewed_at?:string|null; reviewed_by?:string|null; created_at?:string; updated_at?:string }
+        Row: { id:string; owner_user_id:string; owner_organization_id:string|null; title:string; summary:string; description:string; category:string|null; sector:string; country:string; city:string|null; kind:Database['public']['Enums']['opportunity_kind']; intent:Database['public']['Enums']['listing_intent']; region:string|null; importance:number; capital_required:number|null; minimum_ticket:number|null; currency:string; deadline:string|null; tags:string[]; status:Database['public']['Enums']['opportunity_status']; is_featured:boolean; review_note:string|null; submitted_at:string|null; published_at:string|null; reviewed_at:string|null; reviewed_by:string|null; created_at:string; updated_at:string }
+        Insert: { id?:string; owner_user_id:string; owner_organization_id?:string|null; title:string; summary:string; description:string; category?:string|null; sector:string; country:string; city?:string|null; kind:Database['public']['Enums']['opportunity_kind']; intent?:Database['public']['Enums']['listing_intent']; region?:string|null; importance?:number; capital_required?:number|null; minimum_ticket?:number|null; currency?:string; deadline?:string|null; tags?:string[]; status?:Database['public']['Enums']['opportunity_status']; is_featured?:boolean; review_note?:string|null; submitted_at?:string|null; published_at?:string|null; reviewed_at?:string|null; reviewed_by?:string|null; created_at?:string; updated_at?:string }
         Update: Partial<Database['public']['Tables']['opportunities']['Insert']>
         Relationships: []
       }
       expressions_of_interest: {
-        Row: { id:string; opportunity_id:string; applicant_id:string; message:string; status:Database['public']['Enums']['eoi_status']; owner_note:string|null; created_at:string; updated_at:string }
-        Insert: { id?:string; opportunity_id:string; applicant_id:string; message:string; status?:Database['public']['Enums']['eoi_status']; owner_note?:string|null; created_at?:string; updated_at?:string }
+        Row: { id:string; opportunity_id:string; applicant_id:string; message:string; status:Database['public']['Enums']['eoi_status']; owner_note:string|null; last_action_by:string|null; last_action_role:string|null; last_action_at:string|null; created_at:string; updated_at:string }
+        Insert: { id?:string; opportunity_id:string; applicant_id:string; message:string; status?:Database['public']['Enums']['eoi_status']; owner_note?:string|null; last_action_by?:string|null; last_action_role?:string|null; last_action_at?:string|null; created_at?:string; updated_at?:string }
         Update: Partial<Database['public']['Tables']['expressions_of_interest']['Insert']>
         Relationships: []
       }
@@ -40,8 +40,8 @@ export type Database = {
         Relationships: []
       }
       subscription_plans: {
-        Row: { code:string; name:string; description:string|null; price_usd:number; billing_interval:string; target_participant_types:string[]; active:boolean; created_at:string; tier:number; requires_approval:boolean; allowed_email_domains:string[]; requires_verified_organisation:boolean; eligibility_note:string|null }
-        Insert: { code:string; name:string; description?:string|null; price_usd?:number; billing_interval?:string; target_participant_types?:string[]; active?:boolean; created_at?:string; tier?:number; requires_approval?:boolean; allowed_email_domains?:string[]; requires_verified_organisation?:boolean; eligibility_note?:string|null }
+        Row: { code:string; name:string; description:string|null; price_usd:number; billing_interval:string; target_participant_types:string[]; active:boolean; created_at:string; tier:number; requires_approval:boolean; allowed_email_domains:string[]; requires_verified_organisation:boolean; eligibility_note:string|null; success_fee_rate:number }
+        Insert: { code:string; name:string; description?:string|null; price_usd?:number; billing_interval?:string; target_participant_types?:string[]; active?:boolean; created_at?:string; tier?:number; requires_approval?:boolean; allowed_email_domains?:string[]; requires_verified_organisation?:boolean; eligibility_note?:string|null; success_fee_rate?:number }
         Update: Partial<Database['public']['Tables']['subscription_plans']['Insert']>
         Relationships: []
       }
@@ -112,8 +112,8 @@ export type Database = {
         Relationships: []
       }
       introductions: {
-        Row: { id:string; opportunity_id:string; eoi_id:string|null; requester_id:string; recipient_id:string; status:Database['public']['Enums']['introduction_status']; request_note:string|null; staff_note:string|null; meeting_at:string|null; meeting_url:string|null; introduced_at:string|null; managed_by:string|null; created_at:string; updated_at:string }
-        Insert: { id?:string; opportunity_id:string; eoi_id?:string|null; requester_id:string; recipient_id:string; status?:Database['public']['Enums']['introduction_status']; request_note?:string|null; staff_note?:string|null; meeting_at?:string|null; meeting_url?:string|null; introduced_at?:string|null; managed_by?:string|null; created_at?:string; updated_at?:string }
+        Row: { id:string; opportunity_id:string; eoi_id:string|null; requester_id:string; recipient_id:string; status:Database['public']['Enums']['introduction_status']; request_note:string|null; staff_note:string|null; meeting_at:string|null; meeting_url:string|null; introduced_at:string|null; managed_by:string|null; last_action_by:string|null; last_action_role:string|null; last_action_at:string|null; created_at:string; updated_at:string }
+        Insert: { id?:string; opportunity_id:string; eoi_id?:string|null; requester_id:string; recipient_id:string; status?:Database['public']['Enums']['introduction_status']; request_note?:string|null; staff_note?:string|null; meeting_at?:string|null; meeting_url?:string|null; introduced_at?:string|null; managed_by?:string|null; last_action_by?:string|null; last_action_role?:string|null; last_action_at?:string|null; created_at?:string; updated_at?:string }
         Update: Partial<Database['public']['Tables']['introductions']['Insert']>
         Relationships: []
       }
@@ -148,8 +148,8 @@ export type Database = {
         Relationships: []
       }
       deal_rooms: {
-        Row: { id:string; opportunity_id:string; created_by:string; status:Database['public']['Enums']['deal_room_status']; created_at:string; updated_at:string }
-        Insert: { id?:string; opportunity_id:string; created_by:string; status?:Database['public']['Enums']['deal_room_status']; created_at?:string; updated_at?:string }
+        Row: { id:string; opportunity_id:string; created_by:string; status:Database['public']['Enums']['deal_room_status']; deal_value:number|null; deal_currency:string|null; success_fee_rate:number; success_fee_amount:number|null; closed_at:string|null; closed_by:string|null; close_note:string|null; created_at:string; updated_at:string }
+        Insert: { id?:string; opportunity_id:string; created_by:string; status?:Database['public']['Enums']['deal_room_status']; deal_value?:number|null; deal_currency?:string|null; success_fee_rate?:number; success_fee_amount?:number|null; closed_at?:string|null; closed_by?:string|null; close_note?:string|null; created_at?:string; updated_at?:string }
         Update: Partial<Database['public']['Tables']['deal_rooms']['Insert']>
         Relationships: []
       }
@@ -160,8 +160,8 @@ export type Database = {
         Relationships: []
       }
       connections: {
-        Row: { id:string; requester_id:string; addressee_id:string; opportunity_id:string|null; intent:Database['public']['Enums']['connection_intent']; status:Database['public']['Enums']['connection_status']; message:string|null; response_note:string|null; responded_at:string|null; created_at:string; updated_at:string }
-        Insert: { id?:string; requester_id:string; addressee_id:string; opportunity_id?:string|null; intent?:Database['public']['Enums']['connection_intent']; status?:Database['public']['Enums']['connection_status']; message?:string|null; response_note?:string|null; responded_at?:string|null; created_at?:string; updated_at?:string }
+        Row: { id:string; requester_id:string; addressee_id:string; opportunity_id:string|null; intent:Database['public']['Enums']['connection_intent']; status:Database['public']['Enums']['connection_status']; message:string|null; response_note:string|null; responded_at:string|null; last_action_by:string|null; last_action_role:string|null; last_action_at:string|null; created_at:string; updated_at:string }
+        Insert: { id?:string; requester_id:string; addressee_id:string; opportunity_id?:string|null; intent?:Database['public']['Enums']['connection_intent']; status?:Database['public']['Enums']['connection_status']; message?:string|null; response_note?:string|null; responded_at?:string|null; last_action_by?:string|null; last_action_role?:string|null; last_action_at?:string|null; created_at?:string; updated_at?:string }
         Update: Partial<Database['public']['Tables']['connections']['Insert']>
         Relationships: []
       }
@@ -247,7 +247,7 @@ export type Database = {
       request_membership: { Args: { membership_type_code: string }; Returns: string }
       complete_initial_password_change: { Args: { target_user: string }; Returns: undefined }
       get_platform_report_metrics: { Args: Record<string, never>; Returns: Json }
-      public_listing_teasers: { Args: { listing_kind?: string | null; listing_intent?: string | null; listing_sector?: string | null; listing_country?: string | null; max_rows?: number }; Returns: { id: string; title: string; kind: string; intent: string; sector: string; country: string; region: string | null; importance: number; teaser: string; tags: string[]; deadline: string | null; published_at: string | null; title_hidden: boolean }[] }
+      public_listing_teasers: { Args: { listing_kind?: string | null; listing_intent?: string | null; listing_sector?: string | null; listing_country?: string | null; listing_category?: string | null; max_rows?: number }; Returns: { id: string; title: string; kind: string; intent: string; category: string; sector: string; country: string; region: string | null; importance: number; teaser: string; tags: string[]; deadline: string | null; published_at: string | null; title_hidden: boolean }[] }
       public_listing_facets: { Args: Record<string, never>; Returns: { facet: string; value: string; listings: number }[] }
       withdraw_opportunity: { Args: { opportunity_id: string }; Returns: undefined }
       complete_test_payment: { Args: { payment_id: string }; Returns: undefined }
@@ -262,6 +262,7 @@ export type Database = {
       member_email: { Args: { target_user: string }; Returns: string | null }
       refresh_my_matches: { Args: Record<string, never>; Returns: number }
       post_deal_room_message: { Args: { room: string; message_body: string }; Returns: string }
+      close_deal_room: { Args: { room_id: string; closed_value: number; closed_currency?: string; note?: string | null }; Returns: undefined }
       withdraw_bid: { Args: { bid_id: string }; Returns: undefined }
       set_primary_payment_method: { Args: { method_id: string }; Returns: undefined }
       review_bid: { Args: { bid_id: string; decision: string; review_note?: string | null }; Returns: undefined }

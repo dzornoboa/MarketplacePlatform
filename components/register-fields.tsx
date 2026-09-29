@@ -16,10 +16,10 @@ const ID_TYPES = [
 ] as const
 
 const HINT: Record<string, string> = {
-  investor: 'Individuals, funds and institutions deploying capital. Investment mandate, curated deal flow and managed introductions. US$1,750 a year.',
-  business: 'Companies raising capital, sourcing suppliers or finding buyers and partners. Post opportunities, receive bids and open deal rooms. US$8,750 a year.',
-  wtc_association_member: 'Members of the World Trade Centers Association network. WTC Accra confirms membership during verification. US$5,750 a year.',
-  wtc_accra_member: 'Members of World Trade Centre Accra. WTC Accra confirms membership during verification. US$3,750 a year.',
+  investor: 'Investors join and post deals for free. Deal and business details stay protected until access is requested and approved. A 1% success fee applies to successfully closed deals.',
+  business: 'Businesses join and post deals for free. US$1,000/year unlocks restricted deal details and networking after the profile is completed and verified. A 1% success fee applies to successful requested deals.',
+  wtc_association_member: 'WTCA members join and post deals for free. US$1,500/year unlocks investors, opportunities and restricted deal details after verification. A 1% success fee applies to closed deals.',
+  wtc_accra_member: 'WTC Accra members join and post deals for free. US$500/year unlocks meeting details and restricted deal opportunities. A 1% success fee applies to closed deals.',
 }
 
 type PlanOption = { code: string; name: string; price_usd: number; billing_interval: string; target_participant_types: string[]; description: string | null }
@@ -147,9 +147,10 @@ export function RegisterFields({ email, plans = [], initialPlan = '', initialTyp
     <p className="field-help">The international calling code follows your selected country automatically. Your number is saved in international format.</p>
 
     <div className="form-grid">
-      <label>Date Of Birth<input name="dateOfBirth" type="date" autoComplete="bday" required value={dob} onChange={e => setDob(e.target.value)} /></label>
+      <label>Date Of Birth<input name="dateOfBirth" type="date" autoComplete="bday" required max={new Date(Date.UTC(new Date().getUTCFullYear() - 18, new Date().getUTCMonth(), new Date().getUTCDate())).toISOString().slice(0,10)} value={dob} onChange={e => setDob(e.target.value)} /></label>
       <label>Age<input value={age} readOnly aria-label="Age calculated from date of birth" /></label>
     </div>
+    {dob && Number(age) < 18 ? <div className="alert alert-error">Registration is only available to users aged 18 or older. You cannot continue with account creation.</div> : <>
     <div className="form-grid">
       <label>Identification Type
         <select name="idType" required defaultValue="">
@@ -159,7 +160,7 @@ export function RegisterFields({ email, plans = [], initialPlan = '', initialTyp
       </label>
       <label>Identification Number<input name="idNumber" autoComplete="off" required minLength={3} maxLength={80} placeholder="Number On The Selected ID" /></label>
     </div>
-    <p className="field-help">National ID means the official government-issued identity card for your country. Passport and other accepted government IDs are also supported worldwide. You must be at least 13 years old.</p>
+    <p className="field-help">National ID means the official government-issued identity card for your country. Passport and other accepted government IDs are also supported worldwide. You must be at least 18 years old. Registration is blocked immediately for anyone under 18.</p>
 
     {type && eligible.length > 0 && <div className="form-stack plan-pick">
       <label>Plan
@@ -168,10 +169,11 @@ export function RegisterFields({ email, plans = [], initialPlan = '', initialTyp
           {eligible.map(pl => <option key={pl.code} value={pl.code}>{pl.name} — {Number(pl.price_usd) === 0 ? 'Free' : `US${Number(pl.price_usd).toLocaleString()}/${pl.billing_interval}`}</option>)}
         </select>
       </label>
-      {chosen && <p className="field-help">{chosen.description ? chosen.description + ' ' : ''}{Number(chosen.price_usd) === 0 ? 'Free plan: browse the marketplace at once; upgrade to a paid plan to post listings.' : 'You pay after confirming your email; your account activates once payment is received.'}</p>}
+      {chosen && <p className="field-help">{chosen.description ? chosen.description + ' ' : ''}{Number(chosen.price_usd) === 0 ? 'Joining and posting deals are free. Restricted deal details remain protected and require an approved access request.' : 'Joining and posting deals are free. This annual access plan unlocks the restricted detail/networking features defined for your tier once the required verification conditions are met.'} A 1% success fee applies to successfully closed deals.</p>}
     </div>}
 
     <label>Password<input name="password" type="password" autoComplete="new-password" minLength={8} required /></label>
     <p className="field-help">Use at least 8 characters with upper and lowercase letters and a number. Passwords are never stored in your registration draft.</p>
+    </>}
   </>
 }
