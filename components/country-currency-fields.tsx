@@ -48,6 +48,7 @@ export function CountryCurrencyFields({
   const [code, setCode] = useState(initialCountryCode ?? '')
   const [currency, setCurrency] = useState((initialCurrency || 'USD').toUpperCase())
   const [currencyTouched, setCurrencyTouched] = useState(false)
+  const [countryTouched, setCountryTouched] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -69,9 +70,9 @@ export function CountryCurrencyFields({
   const selected = useMemo(() => countries.find(c => c.code === code) ?? null, [countries, code])
 
   useEffect(() => {
-    if (!selected || !includeCurrency || !autoMatchCurrency || currencyTouched) return
+    if (!selected || !includeCurrency || !autoMatchCurrency || currencyTouched || !countryTouched) return
     setCurrency(selected.currencyCode || 'USD')
-  }, [selected?.code])
+  }, [selected?.code, countryTouched, currencyTouched, includeCurrency, autoMatchCurrency])
 
   return <>
     <label>{countryLabel}
