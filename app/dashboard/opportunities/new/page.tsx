@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
 import { postingLockFor, listingIntents, listingIntentLabels, listingIntentHelp } from '@/lib/auth/access'
 import { createOpportunity } from '../actions'
+import { dealCategories } from '@/lib/deals/categories'
 
 export const dynamic = 'force-dynamic'
 
@@ -49,7 +50,13 @@ export default async function NewOpportunityPage({ searchParams }: Props) {
       <label>Summary<textarea name="summary" rows={3} minLength={20} maxLength={700} required placeholder="One paragraph a reader can scan in the listing feed." /></label>
       <label>Full description<textarea name="description" rows={10} minLength={50} maxLength={12000} required placeholder="The opportunity, the counterparty profile you are looking for, use of funds, traction, and terms." /></label>
       <div className="form-grid">
-        <label>Opportunity type
+        <label>Deal Category
+          <select name="category" defaultValue="" required>
+            <option value="" disabled>Select A Category</option>
+            {dealCategories.map(category => <option key={category} value={category}>{category}</option>)}
+          </select>
+        </label>
+        <label>Opportunity Type
           <select name="kind" defaultValue="" required>
             <option value="" disabled>Select a type</option>
             <option value="investment">Investment</option>
@@ -58,8 +65,8 @@ export default async function NewOpportunityPage({ searchParams }: Props) {
             <option value="partnership">Partnership</option>
           </select>
         </label>
-        <label>Sector<input name="sector" required placeholder="Agribusiness" /></label>
       </div>
+      <label>Sector<input name="sector" required placeholder="Agribusiness" /></label>
       <div className="form-grid">
         <label>Country<input name="country" required defaultValue="Ghana" /></label>
         <label>City<input name="city" placeholder="Accra" /></label>
@@ -73,7 +80,7 @@ export default async function NewOpportunityPage({ searchParams }: Props) {
         <label>Deadline<input name="deadline" type="date" /></label>
       </div>
       <label>Tags<input name="tags" placeholder="processing, export, expansion" /></label>
-      <p className="field-help">Comma separated, up to 12 tags.</p>
+      <p className="field-help">Comma separated, up to 12 tags. The selected category is automatically added as a searchable system tag.</p>
       <div className="button-row">
         <SubmitButton>Save draft</SubmitButton>
         <Link className="button button-outline" href="/dashboard/opportunities">Cancel</Link>
