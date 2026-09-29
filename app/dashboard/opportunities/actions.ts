@@ -224,7 +224,7 @@ export async function withdrawDeal(formData: FormData) {
   const id = String(formData.get('eoiId') ?? '')
   if (!id) redirect(to('/dashboard/interests', 'error', 'Deal request not found.'))
   const supabase = await createClient()
-  const { error } = await supabase.rpc('withdraw_bid', { bid_id: id })
+  const { error } = await supabase.rpc('withdraw_deal_request', { deal_id: id })
   if (error) redirect(to('/dashboard/interests', 'error', error.message))
   revalidatePath('/dashboard/interests')
   redirect(to('/dashboard/interests', 'message', 'Deal request withdrawn.'))
