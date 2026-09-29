@@ -150,6 +150,7 @@ export function RegisterFields({ email, plans = [], initialPlan = '', initialTyp
       <label>Date Of Birth<input name="dateOfBirth" type="date" autoComplete="bday" required max={new Date(Date.UTC(new Date().getUTCFullYear() - 18, new Date().getUTCMonth(), new Date().getUTCDate())).toISOString().slice(0,10)} value={dob} onChange={e => setDob(e.target.value)} /></label>
       <label>Age<input value={age} readOnly aria-label="Age calculated from date of birth" /></label>
     </div>
+    {dob && Number(age) < 18 ? <div className="alert alert-error">Registration is only available to users aged 18 or older. You cannot continue with account creation.</div> : <>
     <div className="form-grid">
       <label>Identification Type
         <select name="idType" required defaultValue="">
@@ -171,8 +172,8 @@ export function RegisterFields({ email, plans = [], initialPlan = '', initialTyp
       {chosen && <p className="field-help">{chosen.description ? chosen.description + ' ' : ''}{Number(chosen.price_usd) === 0 ? 'Joining and posting deals are free. Restricted deal details remain protected and require an approved access request.' : 'Joining and posting deals are free. This annual access plan unlocks the restricted detail/networking features defined for your tier once the required verification conditions are met.'} A 1% success fee applies to successfully closed deals.</p>}
     </div>}
 
-    {dob && Number(age) < 18 && <div className="alert alert-error">Registration is only available to users aged 18 or older.</div>}
-    <label>Password<input name="password" type="password" autoComplete="new-password" minLength={8} required disabled={!!dob && Number(age) < 18} /></label>
+    <label>Password<input name="password" type="password" autoComplete="new-password" minLength={8} required /></label>
     <p className="field-help">Use at least 8 characters with upper and lowercase letters and a number. Passwords are never stored in your registration draft.</p>
+    </>}
   </>
 }
