@@ -77,8 +77,8 @@ export async function submitOpportunity(formData: FormData) {
   redirect(to('/dashboard/opportunities', 'message', 'Submitted for WTC Accra review.'))
 }
 
-/* A bid. It is created as 'submitted', which the owner cannot see: WTC Accra
-   reviews it first (see review_bid) and only a cleared bid reaches the owner. */
+/* A deal. It is created as 'submitted', which the owner cannot see: WTC Accra
+   reviews it first (see review_deal) and only a cleared deal reaches the owner. */
 export async function expressInterest(formData: FormData) {
   const opportunityId = String(formData.get('opportunityId') ?? '')
   const message = String(formData.get('message') ?? '').trim()
@@ -87,14 +87,14 @@ export async function expressInterest(formData: FormData) {
   const { data: claimsData } = await supabase.auth.getClaims()
   const userId = claimsData?.claims?.sub
   if (!userId) redirect('/login')
-  if (message.length < 20 || message.length > 3000) redirect(to(returnTo, 'error', 'Your bid must be between 20 and 3000 characters.'))
+  if (message.length < 20 || message.length > 3000) redirect(to(returnTo, 'error', 'Your deal must be between 20 and 3000 characters.'))
   const { error } = await supabase.from('expressions_of_interest').insert({
     opportunity_id: opportunityId, applicant_id: String(userId), message, status: 'submitted',
   })
   if (error) redirect(to(returnTo, 'error', error.message))
   revalidatePath('/dashboard/interests')
   revalidatePath(returnTo)
-  redirect(to(returnTo, 'message', 'Bid submitted. WTC Accra will review it and clear it to the owner; you will be notified at each step.'))
+  redirect(to(returnTo, 'message', 'Deal submitted. WTC Accra will review it and clear it to the owner; you will be notified at each step.'))
 }
 
 export async function respondToInterest(formData: FormData) {
@@ -210,13 +210,13 @@ export async function deleteOpportunity(formData: FormData) {
   redirect(to('/dashboard/opportunities', 'message', 'Listing deleted.'))
 }
 
-/* A bidder pulls a bid that has not been decided yet (submitted or with the owner). */
-export async function withdrawBid(formData: FormData) {
+/* A participant pulls a deal that has not been decided yet (submitted or with the owner). */
+export async function withdrawDeal(formData: FormData) {
   const id = String(formData.get('eoiId') ?? '')
-  if (!id) redirect(to('/dashboard/interests', 'error', 'Bid not found.'))
+  if (!id) redirect(to('/dashboard/interests', 'error', 'Deal not found.'))
   const supabase = await createClient()
-  const { error } = await supabase.rpc('withdraw_bid', { bid_id: id })
+  const { error } = await supabase.rpc('withdraw_deal', { deal_id: id })
   if (error) redirect(to('/dashboard/interests', 'error', error.message))
   revalidatePath('/dashboard/interests')
-  redirect(to('/dashboard/interests', 'message', 'Bid withdrawn.'))
+  redirect(to('/dashboard/interests', 'message', 'Deal withdrawn.'))
 }
