@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { dealCategories, categoryTag } from '@/lib/deals/categories'
+import { convertCurrency } from '@/lib/fx/server'
 
 function to(path: string, key: 'error' | 'message', message: string) {
   return `${path}${path.includes('?') ? '&' : '?'}${key}=${encodeURIComponent(message)}`
@@ -33,6 +34,7 @@ export async function createOpportunity(formData: FormData) {
   const category = String(formData.get('category') ?? '').trim()
   const sector = String(formData.get('sector') ?? '').trim()
   const country = String(formData.get('country') ?? '').trim()
+  const countryCode = String(formData.get('countryCode') ?? '').trim().toUpperCase()
   const city = String(formData.get('city') ?? '').trim()
   const kind = String(formData.get('kind') ?? '')
   const intent = String(formData.get('intent') ?? '')
@@ -45,19 +47,29 @@ export async function createOpportunity(formData: FormData) {
   if (summary.length < 20 || summary.length > 700) redirect(to('/dashboard/opportunities/new', 'error', 'Summary must be between 20 and 700 characters.'))
   if (description.length < 50) redirect(to('/dashboard/opportunities/new', 'error', 'Description must be at least 50 characters.'))
   if (!(dealCategories as readonly string[]).includes(category)) redirect(to('/dashboard/opportunities/new', 'error', 'Select a valid deal category.'))
-  if (!sector || !country) redirect(to('/dashboard/opportunities/new', 'error', 'Sector and country are required.'))
+  if (!sector || !country || !/^[A-Z]{2}$/.test(countryCode)) redirect(to('/dashboard/opportunities/new', 'error', 'Select a valid country.'))
   if (!KINDS.has(kind)) redirect(to('/dashboard/opportunities/new', 'error', 'Select an opportunity type.'))
   if (!INTENTS.has(intent)) redirect(to('/dashboard/opportunities/new', 'error', 'Select what you are posting as.'))
   if (!/^[A-Z]{3}$/.test(currency)) redirect(to('/dashboard/opportunities/new', 'error', 'Currency must be a 3-letter code such as USD or GHS.'))
 
+  const capitalRequired = optionalNumber(formData.get('capitalRequired'))
+  const minimumTicket = optionalNumber(formData.get('minimumTicket'))
+  const capitalUsd = await convertCurrency(capitalRequired, currency, 'USD')
+  const ticketUsd = await convertCurrency(minimumTicket, currency, 'USD')
+  const fxRate = capitalUsd?.rate ?? ticketUsd?.rate ?? (currency === 'USD' ? 1 : null)
+
   const { data, error } = await supabase.from('opportunities').insert({
     owner_user_id: String(userId),
-    title, summary, description, category, sector, country,
+    title, summary, description, category, sector, country, country_code: countryCode,
     city: city || null,
     kind: kind as 'investment' | 'trade' | 'procurement' | 'partnership',
     intent: intent as 'seeking_investment',
-    capital_required: optionalNumber(formData.get('capitalRequired')),
-    minimum_ticket: optionalNumber(formData.get('minimumTicket')),
+    capital_required: capitalRequired,
+    minimum_ticket: minimumTicket,
+    capital_required_usd: capitalUsd?.converted ?? (currency === 'USD' ? capitalRequired : null),
+    minimum_ticket_usd: ticketUsd?.converted ?? (currency === 'USD' ? minimumTicket : null),
+    fx_rate_to_usd: fxRate,
+    fx_rate_at: fxRate ? new Date().toISOString() : null,
     currency,
     deadline: deadline || null,
     tags,
@@ -158,6 +170,7 @@ export async function updateOpportunity(formData: FormData) {
   const category = String(formData.get('category') ?? '').trim()
   const sector = String(formData.get('sector') ?? '').trim()
   const country = String(formData.get('country') ?? '').trim()
+  const countryCode = String(formData.get('countryCode') ?? '').trim().toUpperCase()
   const kind = String(formData.get('kind') ?? '')
   const intent = String(formData.get('intent') ?? '')
   const currency = String(formData.get('currency') ?? 'USD').trim().toUpperCase()
@@ -167,22 +180,31 @@ export async function updateOpportunity(formData: FormData) {
   if (summary.length < 20 || summary.length > 700) redirect(to(target, 'error', 'Summary must be between 20 and 700 characters.'))
   if (description.length < 50) redirect(to(target, 'error', 'Description must be at least 50 characters.'))
   if (!(dealCategories as readonly string[]).includes(category)) redirect(to(target, 'error', 'Select a valid deal category.'))
-  if (!sector || !country) redirect(to(target, 'error', 'Sector and country are required.'))
+  if (!sector || !country || !/^[A-Z]{2}$/.test(countryCode)) redirect(to(target, 'error', 'Select a valid country.'))
   if (!KINDS.has(kind)) redirect(to(target, 'error', 'Select an opportunity type.'))
   if (!INTENTS.has(intent)) redirect(to(target, 'error', 'Select what you are posting as.'))
   if (!/^[A-Z]{3}$/.test(currency)) redirect(to(target, 'error', 'Currency must be a 3-letter code such as USD or GHS.'))
 
   const supabase = await createClient()
+  const capitalRequired = optionalNumber(formData.get('capitalRequired'))
+  const minimumTicket = optionalNumber(formData.get('minimumTicket'))
+  const capitalUsd = await convertCurrency(capitalRequired, currency, 'USD')
+  const ticketUsd = await convertCurrency(minimumTicket, currency, 'USD')
+  const fxRate = capitalUsd?.rate ?? ticketUsd?.rate ?? (currency === 'USD' ? 1 : null)
   const userTags = String(formData.get('tags') ?? '').split(',').map(t => t.trim()).filter(Boolean)
   const tags = [...new Set([`category:${categoryTag(category)}`, ...userTags])].slice(0, 12)
   const { error } = await supabase.from('opportunities').update({
-    title, summary, description, category, sector, country,
+    title, summary, description, category, sector, country, country_code: countryCode,
     city: String(formData.get('city') ?? '').trim() || null,
     region: String(formData.get('region') ?? '').trim() || null,
     kind: kind as 'investment',
     intent: intent as 'seeking_investment',
-    capital_required: optionalNumber(formData.get('capitalRequired')),
-    minimum_ticket: optionalNumber(formData.get('minimumTicket')),
+    capital_required: capitalRequired,
+    minimum_ticket: minimumTicket,
+    capital_required_usd: capitalUsd?.converted ?? (currency === 'USD' ? capitalRequired : null),
+    minimum_ticket_usd: ticketUsd?.converted ?? (currency === 'USD' ? minimumTicket : null),
+    fx_rate_to_usd: fxRate,
+    fx_rate_at: fxRate ? new Date().toISOString() : null,
     currency,
     deadline: deadline || null,
     tags,
