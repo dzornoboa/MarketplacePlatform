@@ -1231,3 +1231,8 @@ h1,h2,h3,h4,
 .auth-links a{
   text-transform:capitalize;
 }
+
+
+.billing-consent{border:1px solid var(--line-strong);border-radius:var(--radius);padding:14px 16px;background:#f8fafc;display:flex;flex-direction:column;gap:8px}
+.consent-check{display:grid!important;grid-template-columns:auto 1fr;align-items:start;gap:10px!important;font-size:13px!important;letter-spacing:0!important;text-transform:none!important;color:var(--ink)!important;font-weight:600!important}
+.consent-check input[type=checkbox]{width:18px!important;height:18px!important;margin-top:2px;accent-color:var(--wtc-navy);padding:0!important}
