@@ -12,7 +12,7 @@ export default async function NotificationsPage({ searchParams }: Props) {
   const params = await searchParams
   const error = typeof params.error === 'string' ? params.error : null
   const message = typeof params.message === 'string' ? params.message : null
-  const { data: notifications } = await supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(100)
+  const { data: notifications } = await supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(1000)
   const unread = (notifications ?? []).filter(n => !n.read_at).length
 
   return <div className="page-stack narrow-content">
