@@ -3,6 +3,8 @@ import { humanize } from '@/lib/auth/access'
 import { money, date } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
 import { updateMatchStatus } from './actions'
+import { requestIntroduction } from '../introductions/actions'
+import { SubmitButton } from '@/components/submit-button'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,7 +33,7 @@ export default async function MatchesPage({ searchParams }: Props) {
     <div>
       <p className="eyebrow">Curated for you</p>
       <h1>Matches</h1>
-      <p className="muted">Published opportunities scored automatically against your investment mandate or buying requirements (sector, geography and ticket size), plus any the WTC Accra trade desk adds by hand. Update your mandate to refine them.</p>
+      <p className="muted">Published opportunities scored automatically against your investment mandate or buying requirements (sector, geography and ticket size), plus any the WTC Accra trade desk adds by hand. Direct connection stays locked until you request access and WTC Accra approves it.</p>
     </div>
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
@@ -66,12 +68,18 @@ export default async function MatchesPage({ searchParams }: Props) {
               <div><dt>Capital required</dt><dd>{money(opportunity.capital_required, opportunity.currency)}</dd></div>
               <div><dt>Deadline</dt><dd>{date(opportunity.deadline)}</dd></div>
             </dl>}
-            <form action={updateMatchStatus} className="button-row">
-              <input type="hidden" name="matchId" value={match.id} />
-              {match.status !== 'shortlisted' && <button className="button button-primary" name="status" value="shortlisted">Shortlist</button>}
-              <button className="button button-outline" name="status" value="contacted">Mark contacted</button>
-              <button className="button button-danger" name="status" value="dismissed">Dismiss</button>
-            </form>
+            <div className="button-row">
+              <form action={requestIntroduction}>
+                <input type="hidden" name="opportunityId" value={match.opportunity_id} />
+                <input type="hidden" name="note" value={match.rationale ? `Matched by WTC Accra: ${match.rationale}` : 'I would like WTC Accra to unlock this matched connection.'} />
+                <SubmitButton pendingLabel="Requesting…">Request Match Access</SubmitButton>
+              </form>
+              <form action={updateMatchStatus}>
+                <input type="hidden" name="matchId" value={match.id} />
+                {match.status !== 'shortlisted' && <button className="button button-outline" name="status" value="shortlisted">Shortlist</button>}
+                <button className="button button-danger" name="status" value="dismissed">Dismiss</button>
+              </form>
+            </div>
           </article>
         })}</div>}
 
