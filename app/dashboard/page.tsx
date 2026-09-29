@@ -192,14 +192,12 @@ export default async function DashboardPage() {
             {(notifications ?? []).length === 0 ? <p className="muted">Your verification, deal and network updates will appear here.</p> : <div className="member-activity-list">{(notifications ?? []).slice(0, 4).map(n => <Link key={n.id} href={n.href || '/dashboard/notifications'}><strong>{n.title}</strong><span>{n.body || 'Open notification'}</span></Link>)}</div>}
           </section>
 
-          <section className="member-right-card member-progress-card">
+          {outstandingSteps.length > 0 && <section className="member-right-card member-progress-card">
             <h2>Profile And Access</h2>
             <div className="member-progress-meter"><span style={{ width: `${Math.round((steps.filter(step => step.done).length / steps.length) * 100)}%` }} /></div>
             <p>{steps.filter(step => step.done).length} Of {steps.length} Setup Steps Complete</p>
-            {outstandingSteps.length === 0
-              ? <span className="member-progress-complete">✓ Setup Complete</span>
-              : outstandingSteps.slice(0, 2).map(step => <Link key={step.label} href={step.href}>○ {step.label}</Link>)}
-          </section>
+            {outstandingSteps.slice(0, 2).map(step => <Link key={step.label} href={step.href}>○ {step.label}</Link>)}
+          </section>}
         </aside>
       </div>
     </div>
@@ -277,19 +275,17 @@ export default async function DashboardPage() {
       </div>
     </section>}
 
-    <section className="card">
-      <h2>Getting to full access</h2>
-      <p className="muted">A subscription opens the marketplace. The verified check is awarded by WTC Accra after reviewing your documents and tells other members you are a verified source.</p>
-      {outstandingSteps.length === 0
-        ? <div className="alert alert-success">✓ Membership Setup Complete. Your completed steps have been cleared from this list.</div>
-        : <ol className="checklist">
-            {outstandingSteps.map(step => <li key={step.label}>
-              <span aria-hidden="true">○</span>
-              <Link href={step.href}>{step.label}</Link>
-              <em>Outstanding</em>
-            </li>)}
-          </ol>}
-    </section>
+    {outstandingSteps.length > 0 && <section className="card">
+      <h2>Getting To Full Access</h2>
+      <p className="muted">Complete the remaining items below to unlock the features that still require action.</p>
+      <ol className="checklist">
+        {outstandingSteps.map(step => <li key={step.label}>
+          <span aria-hidden="true">○</span>
+          <Link href={step.href}>{step.label}</Link>
+          <em>Outstanding</em>
+        </li>)}
+      </ol>
+    </section>}
 
     <section className="split-grid">
       <div className="card">
