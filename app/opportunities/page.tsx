@@ -38,7 +38,7 @@ export default async function PublicListingsPage({ searchParams }: Props) {
     readAccessState(supabase),
     supabase.rpc('public_listing_teasers', {
       listing_kind: kind || null, listing_intent: intent || null,
-      listing_sector: sector || null, listing_country: country || null, listing_category: category || null, max_rows: 60,
+      listing_sector: sector || null, listing_country: country || null, listing_category: category || null, max_rows: 200,
     }),
     supabase.rpc('public_listing_facets'),
   ])
@@ -54,7 +54,7 @@ export default async function PublicListingsPage({ searchParams }: Props) {
         {intro.eyebrow && <p className="eyebrow">{intro.eyebrow}</p>}
         <h2>{intro.heading} {intro.heading_emphasis && <strong>{intro.heading_emphasis}</strong>}</h2>
         {intro.body && <p className="lede">{intro.body}</p>}
-        <SessionCta memberHref="/dashboard/feed" memberLabel="Open your feed" primaryLabel={intro.cta_label ?? undefined} primaryHref={intro.cta_href ?? undefined} secondaryLabel={intro.secondary_cta_label ?? undefined} secondaryHref={intro.secondary_cta_href ?? undefined} />
+        <SessionCta memberHref="/dashboard/opportunities" memberLabel="Open Listings" primaryLabel={intro.cta_label ?? undefined} primaryHref={intro.cta_href ?? undefined} secondaryLabel={intro.secondary_cta_label ?? undefined} secondaryHref={intro.secondary_cta_href ?? undefined} />
       </div>
 
       {!signedIn
