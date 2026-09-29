@@ -10,6 +10,7 @@ import { DashboardNav } from '@/components/dashboard-nav'
 import { isAdminRole } from '@/lib/auth/access'
 import { RealtimeAccess } from '@/components/realtime-access'
 import { TranslationPreferenceSync } from '@/components/translation-preference-sync'
+import { ClearRegistrationDraft } from '@/components/registration-draft'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,6 +45,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     </main>
     <RealtimeAccess userId={profile.id} />
     <TranslationPreferenceSync language={preferences?.language ?? 'en'} enabled={preferences?.auto_translate ?? false} />
+    <ClearRegistrationDraft />
     <Suspense fallback={null}><FlashNotice /></Suspense>
   </div>
 }
