@@ -21,7 +21,7 @@ export default async function EditorNewsPage({ searchParams }: Props) {
   const category = typeof params.category === 'string' ? params.category : ''
   const sort = typeof params.sort === 'string' && ['updated', 'newest', 'oldest', 'title'].includes(params.sort) ? params.sort : 'updated'
 
-  let query = supabase.from('content_posts').select('*').limit(200)
+  let query = supabase.from('content_posts').select('*').limit(1000)
   if (status) query = query.eq('status', status as 'draft')
   if (category) query = query.eq('category', category)
   if (q) query = query.or(`title.ilike.%${q}%,slug.ilike.%${q}%`)
