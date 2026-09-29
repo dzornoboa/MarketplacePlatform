@@ -184,6 +184,7 @@ export const CHROME_FALLBACK: SiteChrome = {
     { label: 'Member Sign In', href: '/login' },
   ],
   legal: [
+    { label: 'Terms & NDA', href: '/terms' },
     { label: 'Privacy Policy', href: '/privacy' },
     { label: 'Copyright & DMCA', href: '/copyright' },
   ],
