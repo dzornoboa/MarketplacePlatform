@@ -11,7 +11,7 @@ const STATUS_OPTIONS: Record<string, readonly string[]> = {
   subscriptions: ['active', 'pending', 'awaiting_approval', 'expired', 'cancelled'],
   payments: ['pending', 'paid', 'failed', 'refunded'],
   listings: ['draft', 'submitted', 'changes_requested', 'published', 'withdrawn', 'closed'],
-  bids: ['submitted', 'under_review', 'cleared', 'accepted', 'declined', 'withdrawn'],
+  deals: ['submitted', 'under_review', 'accepted', 'declined', 'withdrawn'],
   verification: verificationStatuses,
 }
 
