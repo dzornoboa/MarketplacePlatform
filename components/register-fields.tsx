@@ -55,7 +55,7 @@ export function RegisterFields({ email, plans = [], initialPlan = '', initialTyp
       }
     }).catch(() => {})
     return () => { cancelled = true }
-  }, [countryCode])
+  }, [])
 
   useEffect(() => {
     if (!username) { setUsernameState('idle'); return }
