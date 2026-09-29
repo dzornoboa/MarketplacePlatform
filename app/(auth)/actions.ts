@@ -41,6 +41,18 @@ export async function signup(formData: FormData) {
   const email = String(formData.get('email') ?? '').trim()
   const password = String(formData.get('password') ?? '')
   const participantType = String(formData.get('participantType') ?? '')
+  const dateOfBirth = String(formData.get('dateOfBirth') ?? '').trim()
+  const idType = String(formData.get('idType') ?? '').trim()
+  const idNumber = String(formData.get('idNumber') ?? '').trim()
+  const allowedIdTypes = new Set(['ghana_card', 'passport', 'drivers_license', 'voter_id', 'residence_permit', 'national_id', 'other'])
+  const birthDate = dateOfBirth ? new Date(`${dateOfBirth}T00:00:00Z`) : null
+  const today = new Date()
+  const ageCutoff = new Date(Date.UTC(today.getUTCFullYear() - 13, today.getUTCMonth(), today.getUTCDate()))
+  const oldestReasonable = new Date(Date.UTC(today.getUTCFullYear() - 120, today.getUTCMonth(), today.getUTCDate()))
+  if (!birthDate || Number.isNaN(birthDate.getTime()) || birthDate > ageCutoff) redirect(withMessage('/register', 'error', 'You must be at least 13 years old to create an account.'))
+  if (birthDate < oldestReasonable) redirect(withMessage('/register', 'error', 'Enter a valid date of birth.'))
+  if (!allowedIdTypes.has(idType)) redirect(withMessage('/register', 'error', 'Select a valid identification type.'))
+  if (idNumber.length < 3 || idNumber.length > 80) redirect(withMessage('/register', 'error', 'Enter a valid identification number.'))
   const validation = validateSignupInput({ fullName, email, password, participantType })
   if (!validation.ok) redirect(withMessage('/register', 'error', Object.values(validation.errors)[0] ?? 'Check your registration details.'))
   if (!(await allow('signup', 5, 3600))) redirect(withMessage('/register', 'error', 'Too many registrations from this connection. Try again later.'))
@@ -60,6 +72,9 @@ export async function signup(formData: FormData) {
     phone: String(formData.get('phone') ?? '').trim() || null,
     country: String(formData.get('country') ?? '').trim() || null,
     plan_code: String(formData.get('planCode') ?? '').trim() || null,
+    date_of_birth: dateOfBirth,
+    id_type: idType,
+    id_number: idNumber,
   }
   const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, participant_type: participantType, ...extra }, emailRedirectTo: `${getSiteUrl()}/auth/confirm` } })
   if (error) redirect(withMessage('/register', 'error', error.message))
