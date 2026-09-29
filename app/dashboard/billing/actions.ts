@@ -122,6 +122,9 @@ export async function completeTestPayment(formData: FormData) {
     revalidatePath('/dashboard/billing')
     redirect(back('message', 'Checkout cancelled. You can start again whenever you are ready.'))
   }
+  if (String(formData.get('billingAgreement') ?? '') !== 'accepted') {
+    redirect(back('error', 'Confirm the billing terms before completing payment.'))
+  }
   const { error } = await supabase.rpc('complete_test_payment', { payment_id: paymentId })
   if (error) redirect(back('error', error.message))
   revalidatePath('/dashboard/billing'); revalidatePath('/dashboard'); revalidatePath('/admin/payments'); revalidatePath('/admin/subscriptions')

@@ -2,20 +2,22 @@ import { createClient as createSupabaseClient, type SupabaseClient } from '@supa
 import nodemailer from 'nodemailer'
 import webpush from 'web-push'
 import type { Database } from '@/lib/database.types'
-import { getSupabasePublicConfig } from '@/lib/supabase/config'
+import { getSupabasePublicConfig, getSiteUrl } from '@/lib/supabase/config'
+import { marketingUnsubscribeUrl } from '@/lib/email/unsubscribe'
 
 const BATCH_SIZE = 25
 
 /* Queued bodies are plain text; wrap them in the WTC Accra shell so members
    receive a branded message with the contact line on every email. */
-function brandedHtml(subject: string, body: string): string {
+function brandedHtml(subject: string, body: string, unsubscribeUrl?: string | null): string {
   const esc = (v: string) => v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
   const paragraphs = body.split(/\n{2,}/).map(part => `<p style="margin:0 0 14px;line-height:1.55">${esc(part).replace(/\n/g, "<br />")}</p>`).join("")
   return `<div style="font-family:Segoe UI,Arial,sans-serif;font-size:15px;color:#1d2733;max-width:560px;margin:0 auto;padding:24px">
     <p style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#E4580A;font-weight:800;margin:0 0 6px">World Trade Centre Accra</p>
     <h1 style="font-size:19px;color:#154074;margin:0 0 16px">${esc(subject)}</h1>
     ${paragraphs}
-    <p style="margin:22px 0 0;font-size:12.5px;color:#5b6470;border-top:1px solid #e3e7ec;padding-top:12px">World Trade Centre Accra · +233 302 631 437 · membership@wtcaccra.com</p>
+    <p style="margin:22px 0 0;font-size:12.5px;color:#5b6470;border-top:1px solid #e3e7ec;padding-top:12px">World Trade Centre Accra · 22 Independence Avenue, Accra, Ghana · +233 302 631 437 · membership@wtcaccra.com</p>
+    ${unsubscribeUrl ? `<p style="margin:8px 0 0;font-size:12.5px;color:#5b6470">This is a marketing message. <a href="${esc(unsubscribeUrl)}" style="color:#154074;text-decoration:underline">Unsubscribe from marketing emails</a>.</p>` : ''}
   </div>`
 }
 
@@ -56,7 +58,19 @@ export async function drainEmails(admin: SupabaseClient<Database>) {
   let sent = 0
   for (const row of rows ?? []) {
     try {
-      await mailer.sendMail({ from, to: row.to_email, replyTo, subject: row.subject, text: row.body, html: brandedHtml(row.subject, row.body) })
+      const marketing = /^(marketing|waitlist|newsletter|campaign)/i.test(row.kind)
+      const unsubscribeUrl = marketing && row.to_user_id
+        ? marketingUnsubscribeUrl(getSiteUrl(), row.to_user_id, row.to_email)
+        : null
+      if (marketing && !unsubscribeUrl) throw new Error('Marketing email blocked: configure EMAIL_UNSUBSCRIBE_SECRET and associate the message with a user before sending.')
+      const postal = 'World Trade Centre Accra, 22 Independence Avenue, Accra, Ghana'
+      const textFooter = `\n\n—\n${postal}\n+233 302 631 437 · membership@wtcaccra.com${unsubscribeUrl ? `\nUnsubscribe from marketing emails: ${unsubscribeUrl}` : ''}`
+      await mailer.sendMail({
+        from, to: row.to_email, replyTo, subject: row.subject,
+        text: row.body + textFooter,
+        html: brandedHtml(row.subject, row.body, unsubscribeUrl),
+        ...(unsubscribeUrl ? { headers: { 'List-Unsubscribe': `<${unsubscribeUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } } : {}),
+      })
       await admin.from('outbound_emails').update({ status: 'sent', sent_at: new Date().toISOString(), error: null }).eq('id', row.id)
       sent += 1
     } catch (error) {
