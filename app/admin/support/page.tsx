@@ -22,7 +22,7 @@ export default async function AdminSupportPage({ searchParams }: Props) {
   const priority = typeof params.priority === 'string' ? params.priority : ''
   const sort = typeof params.sort === 'string' && ['oldest', 'newest', 'priority'].includes(params.sort) ? params.sort : 'oldest'
 
-  let query = supabase.from('support_requests').select('*').eq('status', status as 'open').limit(200)
+  let query = supabase.from('support_requests').select('*').eq('status', status as 'open').limit(1000)
   if (q) query = query.ilike('subject', `%${q}%`)
   if (priority) query = query.eq('priority', priority)
   query = sort === 'priority' ? query.order('priority').order('created_at') : query.order('created_at', { ascending: sort === 'oldest' })
