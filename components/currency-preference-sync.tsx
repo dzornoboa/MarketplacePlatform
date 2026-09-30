@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 const ORIGINAL = new WeakMap<Text, string>()
 const USD_RE = /(?:US\$|USD\s*|\$)\s*([0-9][0-9,]*(?:\.[0-9]+)?)/g

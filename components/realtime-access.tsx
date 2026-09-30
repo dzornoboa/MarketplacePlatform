@@ -34,6 +34,11 @@ export function RealtimeAccess({ userId }: { userId: string }) {
           setBanner('Your marketplace access was updated by WTC Accra.')
         } else if (next.account_status !== previous?.account_status) {
           setBanner(`Account status updated to ${String(next.account_status)}.`)
+        } else if (next.preferred_currency && next.preferred_currency !== previous?.preferred_currency) {
+          const currency = String(next.preferred_currency).toUpperCase()
+          localStorage.setItem('wtc-currency', currency)
+          window.dispatchEvent(new CustomEvent('wtc-currency-change', { detail: { currency } }))
+          setBanner(`Preferred currency updated to ${currency}.`)
         }
         scheduleRefresh()
       })

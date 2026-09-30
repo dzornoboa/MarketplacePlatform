@@ -1,12 +1,16 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { languageOptions } from '@/components/language-select'
 
 export function QuickLanguageSwitcher({ initialLanguage = 'en' }: { initialLanguage?: string }) {
   const [value, setValue] = useState((initialLanguage || 'en').toLowerCase())
   const [open, setOpen] = useState(false)
   const options = useMemo(() => languageOptions(typeof navigator === 'undefined' ? 'en' : navigator.language), [])
+
+  useEffect(() => {
+    setValue((initialLanguage || 'en').toLowerCase())
+  }, [initialLanguage])
 
   async function change(next: string) {
     setValue(next)

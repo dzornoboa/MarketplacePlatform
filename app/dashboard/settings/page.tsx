@@ -69,8 +69,8 @@ export default async function SettingsPage({ searchParams }: Props) {
         <label>Locale<input name="locale" defaultValue={preferences?.locale ?? 'en'} required /></label>
       </div>
       <div className="form-grid">
-        <label>Dashboard Language<LanguageSelect defaultValue={preferences?.language ?? 'en'} /></label>
-        <label>Preferred Currency<CurrencySelect defaultValue={profile.preferred_currency ?? 'USD'} /></label>
+        <label>Dashboard Language<LanguageSelect defaultValue={preferences?.language ?? 'en'} persist /></label>
+        <label>Preferred Currency<CurrencySelect defaultValue={profile.preferred_currency ?? 'USD'} persist /></label>
       </div>
       <label className="switch preference-row">
         <input type="checkbox" name="autoTranslate" defaultChecked={preferences?.auto_translate ?? false} />

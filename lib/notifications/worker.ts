@@ -86,7 +86,7 @@ export async function drainEmails(admin: SupabaseClient<Database>) {
    VAPID keys aren't configured yet; a subscription rejected as gone
    (404/410) is removed so it isn't retried forever. */
 export async function drainPushes(admin: SupabaseClient<Database>) {
-  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || process.env.VAPID_PUBLIC_KEY
   const privateKey = process.env.VAPID_PRIVATE_KEY
   if (!publicKey || !privateKey) return { attempted: 0, sent: 0, note: 'VAPID keys not set — left queued' }
   webpush.setVapidDetails(process.env.VAPID_SUBJECT || 'mailto:membership@wtcaccra.com', publicKey, privateKey)
