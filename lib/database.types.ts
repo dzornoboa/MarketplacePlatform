@@ -301,6 +301,7 @@ export type Database = {
       revoke_wtc_accra_membership_id: { Args: { membership_code: string; reason?: string | null }; Returns: undefined }
       wtc_membership_id_valid_for_signup: { Args: { membership_code: string; member_email: string }; Returns: boolean }
       review_connection_request: { Args: { connection_id: string; decision: string; review_note?: string | null }; Returns: undefined }
+      withdraw_introduction: { Args: { introduction_id: string }; Returns: undefined }
       withdraw_bid: { Args: { bid_id: string }; Returns: undefined }
       withdraw_deal_request: { Args: { deal_id: string }; Returns: undefined }
       set_primary_payment_method: { Args: { method_id: string }; Returns: undefined }
@@ -350,7 +351,7 @@ export type Database = {
       content_status: 'draft'|'published'|'archived'
       support_status: 'open'|'in_progress'|'resolved'|'closed'
       organization_role: 'owner'|'admin'|'member'
-      introduction_status: 'requested'|'approved'|'introduced'|'meeting_scheduled'|'completed'|'declined'
+      introduction_status: 'requested'|'approved'|'introduced'|'meeting_scheduled'|'completed'|'declined'|'withdrawn'
       match_status: 'suggested'|'shortlisted'|'contacted'|'dismissed'
       document_access_scope: 'private'|'verified'|'granted'
       deal_room_status: 'active'|'closed'
