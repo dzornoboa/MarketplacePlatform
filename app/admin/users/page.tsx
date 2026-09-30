@@ -21,6 +21,8 @@ export default async function AdminUsersPage({ searchParams }: Props) {
   const search = typeof params.q === 'string' ? params.q.trim() : ''
 
   let query = supabase.from('profiles').select('*').order('created_at', { ascending: false }).limit(1000)
+  if (me.system_role === 'admin') query = query.neq('system_role', 'super_admin')
+  else if (me.system_role !== 'super_admin') query = query.eq('system_role', 'user')
   if (filter) query = query.eq('verification_status', filter as 'verified')
   if (search) query = query.ilike('full_name', `%${search}%`)
   const { data: profiles } = await query
