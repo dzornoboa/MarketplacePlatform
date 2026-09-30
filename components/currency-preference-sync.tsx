@@ -7,7 +7,7 @@ const SELECTOR = 'h1,h2,h3,h4,p,span,strong,small,label,button,a,summary,dt,dd,t
 const USD_RE = /(?:US\$|USD\s*)\s*([0-9][0-9,]*(?:\.[0-9]+)?)/g
 
 function shouldConvert(el: HTMLElement) {
-  if (el.closest('[data-no-currency],input,textarea,select,option,script,style,code,pre')) return false
+  if (el.closest('[data-no-currency],input,textarea,script,style,code,pre')) return false
   if (el.children.length > 0) return false
   const text = el.textContent ?? ''
   return USD_RE.test(text)
