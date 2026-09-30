@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { safeNextPath } from '@/lib/auth/redirects'
 import { validateEmail, validatePassword, validateSignupInput } from '@/lib/auth/validation'
 import { getSiteUrl } from '@/lib/supabase/config'
-import { allow } from '@/lib/security/throttle'
+import { allow, checkAllowed, resetLimit } from '@/lib/security/throttle'
 import { checkEmailAddress } from '@/lib/email/verify-address'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -20,11 +20,29 @@ export async function login(formData: FormData) {
   const password = String(formData.get('password') ?? '')
   const next = safeNextPath(String(formData.get('next') ?? '/dashboard'))
   if (validateEmail(email) || !password) redirect(withMessage('/login', 'error', 'Enter a valid email address and password.'))
-  // 10 attempts per 15 minutes per address+IP, 60 per IP: slows credential stuffing without locking real users out.
-  if (!(await allow('login', 10, 900, email)) || !(await allow('login_ip', 60, 900))) redirect(withMessage('/login', 'error', 'Too many sign-in attempts. Wait 15 minutes and try again.'))
+  // Only failed password attempts consume the limiter. The old implementation
+  // counted every sign-in, including successful ones, which could lock legitimate
+  // members out. A limiter infrastructure fault now falls back to Supabase Auth
+  // instead of being presented as a false "too many attempts" error.
+  const [accountAllowed, ipAllowed] = await Promise.all([
+    checkAllowed('login', 10, 900, email),
+    checkAllowed('login_ip', 120, 900),
+  ])
+  if (accountAllowed === false || ipAllowed === false) {
+    redirect(withMessage('/login', 'error', 'Too many failed sign-in attempts. Wait 15 minutes and try again, or reset your password.'))
+  }
+
   const supabase = await createClient()
   const { error } = await supabase.auth.signInWithPassword({ email, password })
-  if (error) redirect(withMessage('/login', 'error', 'Invalid email or password.'))
+  if (error) {
+    await Promise.allSettled([
+      allow('login', 10, 900, email),
+      allow('login_ip', 120, 900),
+    ])
+    redirect(withMessage('/login', 'error', 'Invalid email or password.'))
+  }
+
+  await Promise.allSettled([resetLimit('login', email), resetLimit('login_ip')])
   revalidatePath('/', 'layout')
 
   /* An account with an enrolled authenticator is only at aal1 after the
@@ -69,21 +87,33 @@ export async function signup(formData: FormData) {
   const COMPANY_TYPES = new Set(['business', 'wtc_association_member', 'wtc_accra_member'])
   const organisationName = String(formData.get('organisationName') ?? '').trim()
   if (COMPANY_TYPES.has(participantType) && organisationName.length < 2) redirect(withMessage('/register', 'error', 'Enter your organisation name.'))
-  const wtcAccraMembershipId = String(formData.get('wtcAccraMembershipId') ?? '').trim().toUpperCase()
-  if (participantType === 'wtc_accra_member') {
-    if (!/^WTCA[0-9]{10}$/.test(wtcAccraMembershipId)) redirect(withMessage('/register', 'error', 'Enter the WTC Accra Membership ID issued to your email address.'))
-    let validMembershipId = false
+  const membershipAccessId = String(formData.get('membershipAccessId') ?? formData.get('wtcAccraMembershipId') ?? '').trim().toUpperCase()
+  if (participantType === 'wtc_accra_member' || participantType === 'wtc_association_member') {
+    const expectedPattern = participantType === 'wtc_accra_member' ? /^WTCA[0-9]{10}$/ : /^WTCAM[0-9]{10}$/
+    const label = participantType === 'wtc_accra_member' ? 'WTC Accra Membership ID' : 'WTCA Member ID'
+    if (!expectedPattern.test(membershipAccessId)) {
+      redirect(withMessage('/register', 'error', `Enter a valid ${label} issued and activated by WTC Accra. Membership access IDs are provided through wtcaccra.com.`))
+    }
+
+    let membershipState = ''
     try {
       const admin = createAdminClient()
-      const { data, error: membershipIdError } = await admin.rpc('wtc_membership_id_valid_for_signup', {
-        membership_code: wtcAccraMembershipId,
+      const { data, error: membershipIdError } = await admin.rpc('membership_id_signup_state', {
+        membership_code: membershipAccessId,
         member_email: email,
+        participant: participantType,
       })
-      validMembershipId = !membershipIdError && data === true
+      if (membershipIdError) throw membershipIdError
+      membershipState = typeof data === 'object' && data ? String((data as { state?: unknown }).state ?? '') : ''
     } catch {
       redirect(withMessage('/register', 'error', 'Membership ID validation is temporarily unavailable. Please try again shortly.'))
     }
-    if (!validMembershipId) redirect(withMessage('/register', 'error', 'That Membership ID is invalid, already used, revoked, or assigned to a different email address. Contact WTC Accra if you need a Membership ID.'))
+    if (membershipState === 'linked_account') {
+      redirect(withMessage('/login', 'message', 'This Membership ID is already linked to an account. Sign in instead.'))
+    }
+    if (membershipState !== 'valid') {
+      redirect(withMessage('/register', 'error', `That ${label} is not valid for this email or has not been activated. Enter the ID issued to you by WTC Accra through wtcaccra.com.`))
+    }
   }
   const country = String(formData.get('country') ?? '').trim()
   const countryCode = String(formData.get('countryCode') ?? '').trim().toUpperCase()
@@ -101,7 +131,8 @@ export async function signup(formData: FormData) {
   const extra = {
     organisation_name: organisationName || null,
     wtca_membership_number: String(formData.get('wtcaMembershipNumber') ?? '').trim() || null,
-    wtc_accra_membership_id: wtcAccraMembershipId || null,
+    membership_access_id: membershipAccessId || null,
+    wtc_accra_membership_id: participantType === 'wtc_accra_member' ? membershipAccessId || null : null,
     wtca_chapter: String(formData.get('wtcaChapter') ?? '').trim() || null,
     phone,
     country,

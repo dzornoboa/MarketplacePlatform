@@ -195,6 +195,24 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['staff_capability_catalog']['Insert']>
         Relationships: []
       }
+      membership_access_ids: {
+        Row: { id:string; code:string; membership_type_code:string; status:string; assigned_email:string|null; assigned_user_id:string|null; generated_by:string; assigned_by:string|null; note:string|null; created_at:string; assigned_at:string|null; used_at:string|null; revoked_at:string|null; updated_at:string }
+        Insert: { id?:string; code:string; membership_type_code:string; status?:string; assigned_email?:string|null; assigned_user_id?:string|null; generated_by:string; assigned_by?:string|null; note?:string|null; created_at?:string; assigned_at?:string|null; used_at?:string|null; revoked_at?:string|null; updated_at?:string }
+        Update: Partial<Database['public']['Tables']['membership_access_ids']['Insert']>
+        Relationships: []
+      }
+      membership_import_batches: {
+        Row: { id:string; membership_type_code:string; file_name:string; uploaded_by:string; row_count:number; ready_count:number; activated_count:number; created_at:string; updated_at:string }
+        Insert: { id?:string; membership_type_code:string; file_name:string; uploaded_by:string; row_count?:number; ready_count?:number; activated_count?:number; created_at?:string; updated_at?:string }
+        Update: Partial<Database['public']['Tables']['membership_import_batches']['Insert']>
+        Relationships: []
+      }
+      membership_import_rows: {
+        Row: { id:string; batch_id:string; row_number:number; membership_type_code:string; full_name:string; email:string; organisation_name:string|null; phone:string|null; country:string|null; country_code:string|null; city:string|null; job_title:string|null; wtca_chapter:string|null; date_of_birth:string|null; id_type:string|null; id_number:string|null; preferred_currency:string|null; membership_access_id:string|null; member_code:string|null; user_id:string|null; status:string; validation_error:string|null; activation_error:string|null; raw_data:Json; created_at:string; activated_at:string|null; updated_at:string }
+        Insert: Partial<Database['public']['Tables']['membership_import_rows']['Row']> & { batch_id:string; row_number:number; membership_type_code:string }
+        Update: Partial<Database['public']['Tables']['membership_import_rows']['Row']>
+        Relationships: []
+      }
       wtc_accra_membership_ids: {
         Row: { id:string; code:string; status:string; assigned_email:string|null; assigned_user_id:string|null; generated_by:string; assigned_by:string|null; note:string|null; created_at:string; assigned_at:string|null; used_at:string|null; revoked_at:string|null; updated_at:string }
         Insert: { id?:string; code:string; status?:string; assigned_email?:string|null; assigned_user_id?:string|null; generated_by:string; assigned_by?:string|null; note?:string|null; created_at?:string; assigned_at?:string|null; used_at?:string|null; revoked_at?:string|null; updated_at?:string }
@@ -303,6 +321,14 @@ export type Database = {
       my_staff_capabilities: { Args: Record<string, never>; Returns: string[] }
       set_delegated_capabilities: { Args: { target_user: string; capabilities: string[]; grant_expires_at?: string | null }; Returns: undefined }
       generate_wtc_accra_membership_id: { Args: { assigned_email?: string | null; note?: string | null }; Returns: string }
+      generate_membership_access_id: { Args: { member_type: string; assigned_email?: string | null; note?: string | null }; Returns: string }
+      assign_membership_access_id: { Args: { membership_code: string; member_email: string }; Returns: undefined }
+      revoke_membership_access_id: { Args: { membership_code: string; reason?: string | null }; Returns: undefined }
+      membership_id_signup_state: { Args: { membership_code: string; member_email: string; participant: string }; Returns: Json }
+      stage_membership_import: { Args: { member_type: string; source_file_name: string; rows_json: Json }; Returns: string }
+      activate_membership_import_row: { Args: { import_row_id: string }; Returns: Json }
+      complete_membership_import_activation: { Args: { import_row_id: string; target_user: string }; Returns: undefined }
+      mark_membership_import_error: { Args: { import_row_id: string; error_text: string }; Returns: undefined }
       assign_wtc_accra_membership_id: { Args: { membership_code: string; member_email: string }; Returns: undefined }
       revoke_wtc_accra_membership_id: { Args: { membership_code: string; reason?: string | null }; Returns: undefined }
       wtc_membership_id_valid_for_signup: { Args: { membership_code: string; member_email: string }; Returns: boolean }
@@ -323,6 +349,8 @@ export type Database = {
       member_emails: { Args: Record<string, never>; Returns: { id: string; email: string }[] }
       payment_readiness: { Args: { target?: string | null }; Returns: Json }
       throttle: { Args: { bucket: string; max_hits: number; window_seconds: number; subject_hint?: string | null }; Returns: boolean }
+      throttle_check: { Args: { bucket: string; max_hits: number; window_seconds: number; subject_hint?: string | null }; Returns: boolean }
+      throttle_reset: { Args: { bucket: string; subject_hint?: string | null }; Returns: undefined }
       username_available: { Args: { candidate: string }; Returns: boolean }
       session_bootstrap: { Args: Record<string, never>; Returns: Json }
       registration_resume_state: { Args: { lookup_email: string }; Returns: Json }

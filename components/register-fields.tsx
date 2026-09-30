@@ -18,8 +18,8 @@ const ID_TYPES = [
 const HINT: Record<string, string> = {
   investor: 'Investors join and post deals for free. Deal and business details stay protected until access is requested and approved. A 1% success fee applies to successfully closed deals.',
   business: 'Businesses join and post deals for free. US$1,000/year unlocks restricted deal details and networking after the profile is completed and verified. A 1% success fee applies to successful requested deals.',
-  wtc_association_member: 'WTCA members join and post deals for free. US$1,500/year unlocks investors, opportunities and restricted deal details after verification. A 1% success fee applies to closed deals.',
-  wtc_accra_member: 'WTC Accra members join and post deals for free. US$500/year unlocks meeting details and restricted deal opportunities. A 1% success fee applies to closed deals.',
+  wtc_association_member: 'World Trade Centers Association members require an activated WTCAM Member ID issued to their email address. They join and post deals for free; US$1,500/year unlocks investors, opportunities and restricted deal details after verification. A 1% success fee applies to closed deals.',
+  wtc_accra_member: 'WTC Accra members require an activated WTCA Membership ID issued to their email address. They join and post deals for free; US$500/year unlocks meeting details and restricted deal opportunities. A 1% success fee applies to closed deals.',
 }
 
 type CountryOption = { code: string; name: string; callingCode: string; currencyCode: string; currencyName: string; currencySymbol: string }
@@ -136,13 +136,19 @@ export function RegisterFields({ email, initialPlan = '', initialType = '' }: { 
     {company && <label>Organisation Name<input name="organisationName" required placeholder="Registered Name" /></label>}
     {wtcAccra && <div className="form-stack membership-id-gate">
       <label>WTC Accra Membership ID
-        <input name="wtcAccraMembershipId" required pattern="WTCA[0-9]{10}" placeholder="WTCA4567679989" autoComplete="off" />
+        <input name="membershipAccessId" required pattern="WTCA[0-9]{10}" placeholder="WTCA4567679989" autoComplete="off" />
       </label>
-      <p className="field-help">WTC Accra Member accounts require a unique Membership ID issued to your email address by WTC Accra. If you do not have one, contact WTC Accra before continuing registration.</p>
+      <p className="field-help">This ID must have been generated and activated by WTC Accra for the same email address. Random or unactivated IDs cannot create an account. Membership IDs are issued through WTC Accra at wtcaccra.com.</p>
     </div>}
-    {wtcaNetwork && <div className="form-grid">
-      <label>WTCA Membership Number<input name="wtcaMembershipNumber" placeholder="If You Have One" /></label>
-      <label>WTC Chapter<input name="wtcaChapter" placeholder="e.g. WTC Accra" /></label>
+    {wtcaNetwork && <div className="form-stack membership-id-gate">
+      <label>WTCA Member ID
+        <input name="membershipAccessId" required pattern="WTCAM[0-9]{10}" placeholder="WTCAM7856574110" autoComplete="off" />
+      </label>
+      <p className="field-help">World Trade Centers Association Member accounts require a WTCAM Membership ID issued and activated by WTC Accra for this email address.</p>
+      <div className="form-grid">
+        <label>Existing WTCA / WTC Membership Number<input name="wtcaMembershipNumber" placeholder="Optional Existing Number" /></label>
+        <label>WTC Chapter<input name="wtcaChapter" placeholder="e.g. WTC Accra" /></label>
+      </div>
     </div>}
 
     <div className="form-grid">
