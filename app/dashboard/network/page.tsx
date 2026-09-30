@@ -56,7 +56,7 @@ export default async function NetworkPage({ searchParams }: Props) {
     : { data: [] }
   const personById = new Map((counterparts ?? []).map(p => [p.id, p]))
 
-  const incoming = (connections ?? []).filter(c => c.addressee_id === profile.id && c.status === 'pending')
+  const incoming = (connections ?? []).filter(c => c.addressee_id === profile.id && c.status === 'pending' && c.staff_approved_at)
   const outgoing = (connections ?? []).filter(c => c.requester_id === profile.id && c.status === 'pending')
   const accepted = (connections ?? []).filter(c => c.status === 'accepted')
 
@@ -105,13 +105,13 @@ export default async function NetworkPage({ searchParams }: Props) {
               const person = personById.get(otherId)
               return <div key={item.id}>
                 <strong>{person?.full_name ?? 'Member'}</strong>
-                <span>{humanize(item.intent)}</span>
+                <span>{item.staff_approved_at ? 'Approved · Awaiting Recipient' : 'Processing · WTC Accra Review'} · {humanize(item.intent)}</span>
                 <p className="muted">{person ? labelForParticipantType(person.participant_type) : ''} · connected {dateTime(item.responded_at ?? item.created_at)}</p>
               </div>
             })}</div>}
       </div>
       <div className="card">
-        <h2>Awaiting a reply ({outgoing.length})</h2>
+        <h2>Requests You Sent ({outgoing.length})</h2>
         {outgoing.length === 0
           ? <p className="muted">No pending requests.</p>
           : <div className="history-list">{outgoing.map(item => {
