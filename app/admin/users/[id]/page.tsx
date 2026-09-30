@@ -6,7 +6,7 @@ import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { notFound } from 'next/navigation'
 import { requireCapability } from '@/lib/auth/guards'
 import { requiredDocuments, purposeLabel } from '@/lib/kyc'
-import { humanize, labelForParticipantType, systemRoleLabels, systemRoles, accountStatuses, selectableParticipantTypes, participantTypeLabels, staffCapabilities } from '@/lib/auth/access'
+import { humanize, labelForParticipantType, systemRoleLabels, systemRoles, accountStatuses, selectableParticipantTypes, participantTypeLabels } from '@/lib/auth/access'
 import { date, dateTime, money } from '@/lib/format'
 import { SubmitButton } from '@/components/submit-button'
 import { CountryCurrencyFields } from '@/components/country-currency-fields'
@@ -32,7 +32,7 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
   const bypassActive = !!person.support_bypass_until && new Date(person.support_bypass_until) > new Date()
   const self = person.id === me.id
 
-  const [{ data: requests }, { data: docs }, { data: subs }, { data: payments }, { data: orgLinks }, { data: plans }, { data: notes }, { data: listings }, { data: bids }, { data: memberships }, { data: billingRow }, { data: delegatedRows }] = await Promise.all([
+  const [{ data: requests }, { data: docs }, { data: subs }, { data: payments }, { data: orgLinks }, { data: plans }, { data: notes }, { data: listings }, { data: bids }, { data: memberships }, { data: billingRow }, { data: delegatedRows }, { data: capabilityCatalog }] = await Promise.all([
     supabase.from('verification_requests').select('*').eq('user_id', id).order('submitted_at', { ascending: false }),
     supabase.from('document_records').select('id,file_name,purpose,created_at,opportunity_id').eq('owner_user_id', id).order('created_at', { ascending: false }),
     supabase.from('subscriptions').select('*').eq('user_id', id).order('created_at', { ascending: false }),
@@ -45,6 +45,7 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
     supabase.from('memberships').select('*').eq('user_id', id).order('created_at', { ascending: false }),
     supabase.from('billing_addresses').select('user_id').eq('user_id', id).maybeSingle(),
     me.system_role === 'super_admin' ? supabase.from('staff_capability_grants').select('capability,active,expires_at').eq('user_id',id) : Promise.resolve({ data: [] }),
+    me.system_role === 'super_admin' ? supabase.from('staff_capability_catalog').select('capability,label,description,active,sort_order').eq('active',true).order('sort_order') : Promise.resolve({ data: [] }),
   ])
   const billingOnFile = !!billingRow
   const orgIds = (orgLinks ?? []).map(o => o.organization_id)
@@ -215,9 +216,9 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
         <p className="field-help">Grant only the modules this person needs without changing their primary role. Delegated staff-console access requires MFA. The Super Administrator can change or remove these grants at any time.</p>
         <input type="hidden" name="userId" value={person.id} />
         <div className="capability-grid">
-          {staffCapabilities.map(capability => <label className="check-row" key={capability}>
-            <input type="checkbox" name="capability" value={capability} defaultChecked={delegated.has(capability)} />
-            <span>{humanize(capability)}</span>
+          {(capabilityCatalog ?? []).map(capability => <label className="check-row" key={capability.capability}>
+            <input type="checkbox" name="capability" value={capability.capability} defaultChecked={delegated.has(capability.capability)} />
+            <span><strong>{capability.label}</strong>{capability.description ? <small>{capability.description}</small> : null}</span>
           </label>)}
         </div>
         <label>Optional Expiry<input name="expiresAt" type="datetime-local" /></label>
