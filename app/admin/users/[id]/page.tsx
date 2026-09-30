@@ -230,11 +230,11 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
         <SubmitButton className="button button-outline" pendingLabel="Saving…">Save Delegated Access</SubmitButton>
       </form>}
 
-      {me.system_role === 'super_admin' && <form action={updateStaffRole} className="card review-form">
+      {['admin','super_admin'].includes(me.system_role) && person.system_role !== 'super_admin' && <form action={updateStaffRole} className="card review-form">
         <h3>System Role</h3>
         <input type="hidden" name="userId" value={person.id} /><input type="hidden" name="returnTo" value="detail" />
-        <select name="systemRole" defaultValue={person.system_role}>{systemRoles.map(r => <option key={r} value={r}>{systemRoleLabels[r]}</option>)}</select>
-        <p className="field-help">Assigning a staff role marks this account as WTC Accra Staff and activates WTC Accra membership. The assigned role controls which console sections are available. Administrator and Super Administrator routes also require MFA.</p>
+        <select name="systemRole" defaultValue={person.system_role}>{systemRoles.filter(r => me.system_role === 'super_admin' || r !== 'super_admin').map(r => <option key={r} value={r}>{systemRoleLabels[r]}</option>)}</select>
+        <p className="field-help">{me.system_role === 'super_admin' ? 'Super Administrators can assign every system role.' : 'Administrators can assign all roles except Super Administrator.'} Internal staff roles are hidden from the public member network; only the member plan/profile is shown when applicable. MFA remains required for privileged consoles.</p>
         <SubmitButton className="button button-outline" pendingLabel="Saving…">Update Role</SubmitButton>
       </form>}
     </div>}

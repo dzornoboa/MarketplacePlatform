@@ -46,6 +46,16 @@ export function RealtimeAccess({ userId }: { userId: string }) {
         setBanner('Your subscription was updated.')
         scheduleRefresh()
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_preferences', filter: `user_id=eq.${userId}` }, payload => {
+        const next = payload.new as { language?: string; auto_translate?: boolean }
+        if (next.language) {
+          localStorage.setItem('wtc-language', next.language)
+          localStorage.setItem('wtc-auto-translate', next.auto_translate ? '1' : '0')
+          window.dispatchEvent(new Event('wtc-language-change'))
+          setBanner(`Dashboard language updated to ${next.language.toUpperCase()}.`)
+        }
+        scheduleRefresh()
+      })
       .subscribe()
 
     return () => {

@@ -49,7 +49,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   return <div className={memberExperience ? 'dashboard-shell member-dashboard-shell' : 'dashboard-shell'}>
     {memberExperience
-      ? <MemberTopNav profile={profile} unreadCount={count ?? 0} hasStaffConsole={hasStaffConsole} hasAccess={!!state && !marketplaceLock(state).locked} />
+      ? <MemberTopNav profile={profile} unreadCount={count ?? 0} hasStaffConsole={hasStaffConsole} hasAccess={!!state && !marketplaceLock(state).locked} planLabel={planLabel} />
       : <DashboardNav profile={profile} unreadCount={count ?? 0} adminMfaReady={adminMfaReady} adminHasFactor={adminHasFactor} hasAccess={!!state && !marketplaceLock(state).locked} planLabel={planLabel} />}
     <main className="dashboard-main">
       {expiryNotice && <div className={`expiry-bar expiry-bar-${expiryNotice.tone}`}><span>{expiryNotice.text}</span><Link className="button button-light" href="/dashboard/billing">{expiryNotice.cta}</Link></div>}

@@ -21,11 +21,16 @@ export function PushNotificationToggle() {
   const [status, setStatus] = useState<Status>('checking')
   const [error, setError] = useState<string | null>(null)
 
+  const [publicKey, setPublicKey] = useState<string | null>(null)
+
   useEffect(() => {
     let cancelled = false
     async function check() {
-      if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) { setStatus('unconfigured'); return }
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) { setStatus('unsupported'); return }
+      const config = await fetch('/api/push/config', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null) as { configured?: boolean; publicKey?: string | null } | null
+      if (cancelled) return
+      if (!config?.configured || !config.publicKey) { setStatus('unconfigured'); return }
+      setPublicKey(config.publicKey)
       if (isIosSafariNotInstalled()) { setStatus('ios-not-installed'); return }
       if (Notification.permission === 'denied') { setStatus('denied'); return }
       try {
@@ -41,12 +46,17 @@ export function PushNotificationToggle() {
   async function enable() {
     setError(null); setStatus('working')
     try {
-      const key = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-      if (!key) throw new Error('Push is not configured on this deployment yet.')
+      let vapidKey = publicKey
+      if (!vapidKey) {
+        const config = await fetch('/api/push/config', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null) as { configured?: boolean; publicKey?: string | null } | null
+        if (!config?.configured || !config.publicKey) throw new Error('Push notifications are not configured on this deployment.')
+        vapidKey = config.publicKey
+        setPublicKey(config.publicKey)
+      }
       const reg = await navigator.serviceWorker.ready
       const permission = await Notification.requestPermission()
       if (permission !== 'granted') { setStatus(permission === 'denied' ? 'denied' : 'off'); return }
-      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(key) })
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(vapidKey) })
       const res = await fetch('/api/push/subscribe', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(sub.toJSON()) })
       if (!res.ok) throw new Error((await res.json().catch(() => null))?.error || 'Could not save this device.')
       setStatus('on')
@@ -88,7 +98,7 @@ export function PushNotificationToggle() {
     <p className="muted">Get an alert on your phone the moment something happens — a new match, a reply, or a listing you follow going live.</p>
     {error && <div className="alert alert-error">{error}</div>}
     {status === 'checking' && <p className="field-help">Checking this device…</p>}
-    {status === 'unconfigured' && <div className="alert alert-error">Push is not configured on this deployment yet. A new deployment is required after the VAPID keys are added.</div>}
+    {status === 'unconfigured' && <div className="alert alert-error">Push notifications are not configured for this deployment. WTC Accra administrators have been asked to check the VAPID environment configuration.</div>}
     {status === 'unsupported' && <p className="field-help">This browser doesn&rsquo;t support push notifications.</p>}
     {status === 'ios-not-installed' && <p className="field-help">On iPhone, tap Share → &ldquo;Add to Home Screen&rdquo; first, then open WTC Accra Hub from your home screen to turn this on.</p>}
     {status === 'denied' && <p className="field-help">Notifications are blocked for this site in your browser settings. Allow them there, then reload this page.</p>}

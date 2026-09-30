@@ -2,16 +2,9 @@
 
 import { useEffect } from 'react'
 
-const ORIGINAL = 'data-wtc-original-currency'
-const SELECTOR = 'h1,h2,h3,h4,p,span,strong,small,label,button,a,summary,dt,dd,th,td,li,.button,.field-help,.muted,.eyebrow'
-const USD_RE = /(?:US\$|USD\s*)\s*([0-9][0-9,]*(?:\.[0-9]+)?)/g
-
-function shouldConvert(el: HTMLElement) {
-  if (el.closest('[data-no-currency],input,textarea,script,style,code,pre')) return false
-  if (el.children.length > 0) return false
-  const text = el.textContent ?? ''
-  return USD_RE.test(text)
-}
+const ORIGINAL = new WeakMap<Text, string>()
+const USD_RE = /(?:US\$|USD\s*|\$)\s*([0-9][0-9,]*(?:\.[0-9]+)?)/g
+const EXCLUDED = '[data-no-currency],input,textarea,script,style,code,pre'
 
 function format(amount: number, currency: string) {
   try {
@@ -26,25 +19,46 @@ function format(amount: number, currency: string) {
   }
 }
 
+function currencyTextNodes() {
+  const out: Text[] = []
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+  let current = walker.nextNode()
+  while (current) {
+    const node = current as Text
+    const parent = node.parentElement
+    USD_RE.lastIndex = 0
+    if (parent && !parent.closest(EXCLUDED) && USD_RE.test(ORIGINAL.get(node) ?? node.data)) out.push(node)
+    current = walker.nextNode()
+  }
+  return out
+}
+
+function restore(nodes = currencyTextNodes()) {
+  nodes.forEach(node => {
+    const original = ORIGINAL.get(node)
+    if (original !== undefined) node.data = original
+  })
+}
+
 async function convertVisibleUsd(targetCurrency: string) {
+  const nodes = currencyTextNodes()
+  restore(nodes)
   if (!targetCurrency || targetCurrency === 'USD') return
+
   const response = await fetch(`/api/fx?from=USD&to=${encodeURIComponent(targetCurrency)}&amount=1`, { cache: 'no-store' })
   if (!response.ok) return
   const quote = await response.json() as { rate?: number }
   const rate = Number(quote.rate)
   if (!Number.isFinite(rate) || rate <= 0) return
 
-  document.querySelectorAll<HTMLElement>(SELECTOR).forEach(el => {
+  nodes.forEach(node => {
+    const original = ORIGINAL.get(node) ?? node.data
+    if (!ORIGINAL.has(node)) ORIGINAL.set(node, original)
     USD_RE.lastIndex = 0
-    if (!shouldConvert(el)) return
-    const current = el.textContent ?? ''
-    if (!el.hasAttribute(ORIGINAL)) el.setAttribute(ORIGINAL, current)
-    USD_RE.lastIndex = 0
-    el.textContent = current.replace(USD_RE, (_match, raw: string) => {
+    node.data = original.replace(USD_RE, (match, raw: string) => {
       const usd = Number(String(raw).replaceAll(',', ''))
-      return Number.isFinite(usd) ? format(usd * rate, targetCurrency) : _match
+      return Number.isFinite(usd) ? format(usd * rate, targetCurrency) : match
     })
-    el.setAttribute('data-wtc-display-currency', targetCurrency)
   })
 }
 
@@ -52,21 +66,24 @@ export function CurrencyPreferenceSync({ currency = 'USD' }: { currency?: string
   useEffect(() => {
     const next = (currency || 'USD').toUpperCase()
     localStorage.setItem('wtc-currency', next)
+    window.dispatchEvent(new CustomEvent('wtc-currency-change', { detail: { currency: next } }))
+
     let timer: ReturnType<typeof setTimeout> | null = null
-    const run = () => {
-      if (next === 'USD') return
-      void convertVisibleUsd(next)
-    }
+    const run = () => { void convertVisibleUsd(next) }
     run()
+
     const observer = new MutationObserver(() => {
       if (timer) clearTimeout(timer)
       timer = setTimeout(run, 300)
     })
-    observer.observe(document.body, { childList: true, subtree: true, characterData: true })
+    observer.observe(document.body, { childList: true, subtree: true })
+
     return () => {
       observer.disconnect()
       if (timer) clearTimeout(timer)
+      restore()
     }
   }, [currency])
+
   return null
 }
