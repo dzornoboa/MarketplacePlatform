@@ -114,7 +114,7 @@ export async function parseMembershipImport(file: File): Promise<MembershipImpor
   if (!name.endsWith('.xlsx')) throw new Error('Use an .xlsx Excel workbook or .csv file.')
 
   const workbook = new ExcelJS.Workbook()
-  await workbook.xlsx.load(buffer)
+  await workbook.xlsx.load(buffer as any)
   const sheet = workbook.worksheets[0]
   if (!sheet) throw new Error('The workbook has no worksheet.')
 
