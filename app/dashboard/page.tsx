@@ -54,6 +54,7 @@ export default async function DashboardPage() {
     { done: verified, label: 'Earn The WTC Accra Verified Check', href: '/dashboard/verification' },
   ]
   const outstandingSteps = steps.filter(step => !step.done)
+  const setupComplete = profileReady && billingReady && accessReady && verified
 
   const memberExperience = profile.system_role === 'user'
   if (memberExperience) {
