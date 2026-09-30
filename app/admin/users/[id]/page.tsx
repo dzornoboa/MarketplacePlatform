@@ -49,7 +49,7 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
     supabase.from('billing_addresses').select('user_id').eq('user_id', id).maybeSingle(),
     me.system_role === 'super_admin' ? supabase.from('staff_capability_grants').select('capability,active,expires_at').eq('user_id',id) : Promise.resolve({ data: [] }),
     me.system_role === 'super_admin' ? supabase.from('staff_capability_catalog').select('capability,label,description,active,sort_order').eq('active',true).order('sort_order') : Promise.resolve({ data: [] }),
-    supabase.from('user_preferences').select('language,auto_translate').eq('user_id',id).maybeSingle(),
+    supabase.rpc('admin_member_display_preferences', { target_user: id }),
   ])
   const billingOnFile = !!billingRow
   const orgIds = (orgLinks ?? []).map(o => o.organization_id)
@@ -264,8 +264,8 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
       </div>
       <label>City<input name="city" defaultValue={person.city ?? ''} /></label>
       <div className="form-grid">
-        <label>Dashboard Language<LanguageSelect name="dashboardLanguage" defaultValue={targetPreferences?.language ?? 'en'} autoTranslate={false} useStored={false} /></label>
-        <label className="switch preference-row"><input type="checkbox" name="autoTranslate" defaultChecked={targetPreferences?.auto_translate ?? true} /><span><strong>Automatic Translation</strong><small>Apply the selected language automatically on the member dashboard.</small></span></label>
+        <label>Dashboard Language<LanguageSelect name="dashboardLanguage" defaultValue={(targetPreferences as { language?: string } | null)?.language ?? 'en'} autoTranslate={false} useStored={false} /></label>
+        <label className="switch preference-row"><input type="checkbox" name="autoTranslate" defaultChecked={(targetPreferences as { auto_translate?: boolean } | null)?.auto_translate ?? true} /><span><strong>Automatic Translation</strong><small>Apply the selected language automatically on the member dashboard.</small></span></label>
       </div>
       <div className="form-grid">
         <label>WTCA membership no.<input name="wtcaNumber" defaultValue={person.wtca_membership_number ?? ''} /></label>
