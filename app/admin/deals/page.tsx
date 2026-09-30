@@ -5,7 +5,7 @@ import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { humanize, labelForParticipantType } from '@/lib/auth/access'
 import { money, dateTime } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
-import { reviewDeal } from './actions'
+import { reviewDeal, reviewConnectionRequest } from './actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,6 +25,7 @@ export default async function AdminDealsPage({ searchParams }: Props) {
   const error = typeof params.error === 'string' ? params.error : null
   const message = typeof params.message === 'string' ? params.message : null
   const status = typeof params.status === 'string' && QUEUES.some(q => q.key === params.status) ? params.status : 'submitted'
+  const section = typeof params.section === 'string' ? params.section : 'deals'
   const q = typeof params.q === 'string' ? params.q.trim() : ''
   const sort = typeof params.sort === 'string' && ['newest', 'oldest'].includes(params.sort) ? params.sort : 'oldest'
 
@@ -52,6 +53,22 @@ export default async function AdminDealsPage({ searchParams }: Props) {
     || (oppById.get(row.opportunity_id)?.title ?? '').toLowerCase().includes(needle)
     || (applicantById.get(row.applicant_id)?.full_name ?? '').toLowerCase().includes(needle))
 
+  const { data: connectionQueue } = await supabase.from('connections')
+    .select('id,requester_id,addressee_id,opportunity_id,intent,message,status,staff_approved_at,created_at')
+    .eq('status','pending')
+    .is('staff_approved_at',null)
+    .order('created_at',{ascending:true})
+    .limit(1000)
+
+  const connectionPeopleIds = [...new Set((connectionQueue ?? []).flatMap(row => [row.requester_id,row.addressee_id]))]
+  const connectionOppIds = [...new Set((connectionQueue ?? []).map(row => row.opportunity_id).filter((id): id is string => !!id))]
+  const [{ data: connectionPeople }, { data: connectionOpps }] = await Promise.all([
+    connectionPeopleIds.length ? supabase.from('profiles').select('id,full_name,participant_type,country,verification_status').in('id',connectionPeopleIds) : Promise.resolve({data:[]}),
+    connectionOppIds.length ? supabase.from('opportunities').select('id,title,sector,country').in('id',connectionOppIds) : Promise.resolve({data:[]}),
+  ])
+  const connectionPersonById = new Map((connectionPeople ?? []).map(person => [person.id,person]))
+  const connectionOppById = new Map((connectionOpps ?? []).map(opp => [opp.id,opp]))
+
   const counts = await Promise.all(QUEUES.map(async tab => ({
     ...tab,
     count: (await supabase.from('expressions_of_interest').select('*', { count: 'exact', head: true }).eq('status', tab.key)).count ?? 0,
@@ -67,6 +84,47 @@ export default async function AdminDealsPage({ searchParams }: Props) {
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
 
+    <nav className="queue-tabs">
+      <a className={section === 'deals' ? 'queue-tab queue-tab-active' : 'queue-tab'} href="/admin/deals">Deal Requests</a>
+      <a className={section === 'connections' ? 'queue-tab queue-tab-active' : 'queue-tab'} href="/admin/deals?section=connections">Connection Approvals<span>{(connectionQueue ?? []).length}</span></a>
+    </nav>
+
+    {section === 'connections' && <section className="page-stack">
+      {(connectionQueue ?? []).length === 0
+        ? <section className="card empty-state"><BrandCircle /><h2>Connection Queue Is Clear</h2><p>No member-to-member connection requests are waiting for WTC Accra approval.</p></section>
+        : <div className="review-list">{(connectionQueue ?? []).map(request => {
+            const from = connectionPersonById.get(request.requester_id)
+            const to = connectionPersonById.get(request.addressee_id)
+            const opp = request.opportunity_id ? connectionOppById.get(request.opportunity_id) : null
+            return <article className="card review-card" key={request.id}>
+              <div className="review-head">
+                <div>
+                  <h2>{from?.full_name ?? 'Member'} → {to?.full_name ?? 'Member'}</h2>
+                  <p>{humanize(request.intent)} request{opp ? ` · ${opp.title}` : ' · General connection'}</p>
+                </div>
+                <span>{dateTime(request.created_at)}</span>
+              </div>
+              <dl className="detail-grid">
+                <div><dt>Requester</dt><dd>{from?.full_name ?? '—'} · {labelForParticipantType(from?.participant_type)}</dd></div>
+                <div><dt>Recipient</dt><dd>{to?.full_name ?? '—'} · {labelForParticipantType(to?.participant_type)}</dd></div>
+                <div><dt>Requester Verification</dt><dd>{humanize(from?.verification_status)}</dd></div>
+                <div><dt>Recipient Verification</dt><dd>{humanize(to?.verification_status)}</dd></div>
+              </dl>
+              {opp && <p className="muted">{opp.sector} · {opp.country}</p>}
+              {request.message && <p className="prose">{request.message}</p>}
+              <form action={reviewConnectionRequest} className="review-form">
+                <input type="hidden" name="connectionId" value={request.id} />
+                <label>Review Note<textarea name="reviewNote" rows={2} placeholder="Optional audit note" /></label>
+                <div className="button-row">
+                  <button className="button button-primary" name="decision" value="approve">Approve Connection Request</button>
+                  <button className="button button-danger" name="decision" value="decline">Decline</button>
+                </div>
+              </form>
+            </article>
+          })}</div>}
+    </section>}
+
+    {section === 'deals' && <>
     <nav className="queue-tabs">
       {counts.map(tab => <a key={tab.key} className={tab.key === status ? 'queue-tab queue-tab-active' : 'queue-tab'} href={`/admin/deals?status=${tab.key}`}>{tab.label}<span>{tab.count}</span></a>)}
     </nav>
@@ -112,5 +170,6 @@ export default async function AdminDealsPage({ searchParams }: Props) {
             </form>}
           </article>
         })}</div>}
+    </>}
   </div>
 }
