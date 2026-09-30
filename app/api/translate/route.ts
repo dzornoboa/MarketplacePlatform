@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { allow } from '@/lib/security/throttle'
 import Anthropic from '@anthropic-ai/sdk'
+import { createClient } from '@/lib/supabase/server'
 
 const allowedLanguage = /^[a-z]{2,3}(?:-[A-Z]{2})?$/
 
 export async function POST(request: NextRequest) {
-  if (!(await allow('translate', 20, 600))) return NextResponse.json({ error: 'Too many translation requests. Try again shortly.' }, { status: 429 })
+  const supabase = await createClient()
+  const { data: claimsData } = await supabase.auth.getClaims()
+  if (!claimsData?.claims?.sub) return NextResponse.json({ error: 'Sign in required.' }, { status: 401 })
+  if (!(await allow('translate', 30, 600))) return NextResponse.json({ error: 'Too many translation requests. Try again shortly.' }, { status: 429 })
   const body = await request.json().catch(() => null) as { texts?: unknown; targetLanguage?: unknown } | null
   const targetLanguage = typeof body?.targetLanguage === 'string' ? body.targetLanguage : ''
   const texts = Array.isArray(body?.texts) ? body!.texts.filter((x): x is string => typeof x === 'string').slice(0, 80) : []
