@@ -189,6 +189,12 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['staff_capability_grants']['Insert']>
         Relationships: []
       }
+      staff_capability_catalog: {
+        Row: { capability:string; label:string; description:string|null; active:boolean; sort_order:number; default_roles:string[]; created_at:string; updated_at:string }
+        Insert: { capability:string; label:string; description?:string|null; active?:boolean; sort_order?:number; default_roles?:string[]; created_at?:string; updated_at?:string }
+        Update: Partial<Database['public']['Tables']['staff_capability_catalog']['Insert']>
+        Relationships: []
+      }
       wtc_accra_membership_ids: {
         Row: { id:string; code:string; status:string; assigned_email:string|null; assigned_user_id:string|null; generated_by:string; assigned_by:string|null; note:string|null; created_at:string; assigned_at:string|null; used_at:string|null; revoked_at:string|null; updated_at:string }
         Insert: { id?:string; code:string; status?:string; assigned_email?:string|null; assigned_user_id?:string|null; generated_by:string; assigned_by?:string|null; note?:string|null; created_at?:string; assigned_at?:string|null; used_at?:string|null; revoked_at?:string|null; updated_at?:string }
@@ -322,6 +328,7 @@ export type Database = {
       registration_resume_state: { Args: { lookup_email: string }; Returns: Json }
       listing_owner_cards: { Args: { owner_ids: string[] }; Returns: { id: string; full_name: string; participant_type: string | null; country: string | null; organisation: string | null; avatar_url: string | null; job_title: string | null; is_verified: boolean }[] }
       request_introduction: { Args: { opportunity_id: string; request_note?: string | null }; Returns: string }
+      submit_deal_request: { Args: { opportunity_id: string; request_message: string }; Returns: string }
       review_introduction: { Args: { introduction_id: string; decision: string; staff_note?: string | null; meeting_at?: string | null; meeting_url?: string | null }; Returns: undefined }
       get_support_participant_directory: { Args: Record<string, never>; Returns: { id: string; full_name: string }[] }
       request_user_termination: { Args: { target_user: string; request_type: string; reason: string }; Returns: string }
