@@ -54,6 +54,12 @@ export function RealtimeAccess({ userId }: { userId: string }) {
     }
   }, [router, userId])
 
+  useEffect(() => {
+    if (!banner) return
+    const timer = window.setTimeout(() => setBanner(null), 7000)
+    return () => window.clearTimeout(timer)
+  }, [banner])
+
   if (!banner) return null
   return <div className="realtime-toast" role="status" aria-live="polite">
     <span>{banner}</span>

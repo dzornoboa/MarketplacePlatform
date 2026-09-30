@@ -68,6 +68,15 @@ export async function signup(formData: FormData) {
   const COMPANY_TYPES = new Set(['business', 'wtc_association_member', 'wtc_accra_member'])
   const organisationName = String(formData.get('organisationName') ?? '').trim()
   if (COMPANY_TYPES.has(participantType) && organisationName.length < 2) redirect(withMessage('/register', 'error', 'Enter your organisation name.'))
+  const wtcAccraMembershipId = String(formData.get('wtcAccraMembershipId') ?? '').trim().toUpperCase()
+  if (participantType === 'wtc_accra_member') {
+    if (!/^WTCA[0-9]{10}$/.test(wtcAccraMembershipId)) redirect(withMessage('/register', 'error', 'Enter the WTC Accra Membership ID issued to your email address.'))
+    const { data: validMembershipId, error: membershipIdError } = await supabase.rpc('wtc_membership_id_valid_for_signup', {
+      membership_code: wtcAccraMembershipId,
+      member_email: email,
+    })
+    if (membershipIdError || !validMembershipId) redirect(withMessage('/register', 'error', 'That Membership ID is invalid, already used, revoked, or assigned to a different email address. Contact WTC Accra if you need a Membership ID.'))
+  }
   const country = String(formData.get('country') ?? '').trim()
   const countryCode = String(formData.get('countryCode') ?? '').trim().toUpperCase()
   const phoneCountryCode = String(formData.get('phoneCountryCode') ?? '').trim()
@@ -84,6 +93,7 @@ export async function signup(formData: FormData) {
   const extra = {
     organisation_name: organisationName || null,
     wtca_membership_number: String(formData.get('wtcaMembershipNumber') ?? '').trim() || null,
+    wtc_accra_membership_id: wtcAccraMembershipId || null,
     wtca_chapter: String(formData.get('wtcaChapter') ?? '').trim() || null,
     phone,
     country,

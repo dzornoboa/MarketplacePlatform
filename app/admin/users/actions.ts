@@ -58,6 +58,25 @@ export async function updateStaffRole(formData: FormData) {
   redirect(back('message', `Role updated to ${newRole.replaceAll('_', ' ')}.`, target(formData)))
 }
 
+
+export async function setDelegatedCapabilities(formData: FormData) {
+  const targetUser = String(formData.get('userId') ?? '')
+  const expires = String(formData.get('expiresAt') ?? '').trim()
+  const capabilities = formData.getAll('capability').map(value => String(value))
+  if (!targetUser) redirect(back('error', 'User not found.'))
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('set_delegated_capabilities', {
+    target_user: targetUser,
+    capabilities,
+    grant_expires_at: expires ? new Date(expires).toISOString() : null,
+  })
+  if (error) redirect(back('error', error.message, targetUser))
+  revalidatePath('/admin/users')
+  revalidatePath(`/admin/users/${targetUser}`)
+  revalidatePath('/admin')
+  redirect(back('message', capabilities.length ? 'Delegated capabilities updated. MFA is required before the delegated user can use the staff console.' : 'All delegated capabilities removed.', targetUser))
+}
+
 /* Verify, un-verify or ask for changes after the initial review. */
 export async function setVerificationStatus(formData: FormData) {
   const targetUser = String(formData.get('userId') ?? '')

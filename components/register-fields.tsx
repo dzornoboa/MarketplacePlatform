@@ -95,6 +95,8 @@ export function RegisterFields({ email, initialPlan = '', initialType = '' }: { 
   const pickType = (t: string) => setType(t)
   const company = COMPANY_TYPES.has(type)
   const wtc = WTC_TYPES.has(type)
+  const wtcAccra = type === 'wtc_accra_member'
+  const wtcaNetwork = type === 'wtc_association_member'
 
   const onName = (value: string) => {
     setFullName(value)
@@ -132,7 +134,13 @@ export function RegisterFields({ email, initialPlan = '', initialType = '' }: { 
     </label>
     {type && <p className="field-help">{HINT[type]}</p>}
     {company && <label>Organisation Name<input name="organisationName" required placeholder="Registered Name" /></label>}
-    {wtc && <div className="form-grid">
+    {wtcAccra && <div className="form-stack membership-id-gate">
+      <label>WTC Accra Membership ID
+        <input name="wtcAccraMembershipId" required pattern="WTCA[0-9]{10}" placeholder="WTCA4567679989" autoComplete="off" />
+      </label>
+      <p className="field-help">WTC Accra Member accounts require a unique Membership ID issued to your email address by WTC Accra. If you do not have one, contact WTC Accra before continuing registration.</p>
+    </div>}
+    {wtcaNetwork && <div className="form-grid">
       <label>WTCA Membership Number<input name="wtcaMembershipNumber" placeholder="If You Have One" /></label>
       <label>WTC Chapter<input name="wtcaChapter" placeholder="e.g. WTC Accra" /></label>
     </div>}

@@ -4,7 +4,7 @@ import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
 import { marketplaceLockFor, postingLockFor, humanize, labelForIntent } from '@/lib/auth/access'
 import { money, date, relativeDays } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
-import { submitOpportunity, expressInterest, toggleSaved, withdrawOpportunity, deleteOpportunity } from './actions'
+import { submitOpportunity, expressInterest, toggleSaved, withdrawOpportunity, deleteOpportunity, withdrawDeal } from './actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,11 +36,13 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
   const [{ data: published }, { data: mine }, { data: sentInterests }, { data: savedRows }] = await Promise.all([
     browseLock.locked ? Promise.resolve({ data: [] }) : query,
     supabase.from('opportunities').select('*').eq('owner_user_id', profile.id).order(mineSort === 'title' ? 'title' : mineSort === 'status' ? 'status' : 'updated_at', { ascending: mineSort !== 'updated' }),
-    supabase.from('expressions_of_interest').select('opportunity_id').eq('applicant_id', profile.id),
+    supabase.from('expressions_of_interest').select('id,opportunity_id,status').eq('applicant_id', profile.id),
     supabase.from('saved_opportunities').select('opportunity_id'),
   ])
-  const alreadyApplied = new Set((sentInterests ?? []).map(e => e.opportunity_id))
+  const interestByOpportunity = new Map((sentInterests ?? []).map(e => [e.opportunity_id, e]))
   const savedIds = new Set((savedRows ?? []).map(r => r.opportunity_id))
+  const requestLabel = (status: string) => status === 'submitted' ? 'Processing' : status === 'under_review' ? 'Processed' : status === 'accepted' ? 'Connected' : status === 'declined' ? 'Declined' : 'Withdrawn'
+  const displayTags = (tags: string[]) => tags.map(tag => tag.replace(/^category:/i,'').replaceAll('-', ' ')).filter(Boolean).join(', ')
   const sectors = [...new Set((published ?? []).map(o => o.sector))].sort()
 
   return <div className="page-stack">
@@ -154,20 +156,31 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
                 </div>
               </div>
               <p>{item.summary}</p>
-              {item.tags.length > 0 && <div className="trust-row">{item.tags.map(tag => <span key={tag}>{tag}</span>)}</div>}
+              {item.tags.length > 0 && <p className="compact-tags"><strong>Tags:</strong> {displayTags(item.tags)}</p>}
               {!own && <form action={toggleSaved} className="save-row">
                 <input type="hidden" name="opportunityId" value={item.id} />
                 <input type="hidden" name="saved" value={savedIds.has(item.id) ? '1' : '0'} />
                 <button className={savedIds.has(item.id) ? 'save-toggle save-toggle-on' : 'save-toggle'} type="submit">{savedIds.has(item.id) ? '★ Saved to shortlist' : '☆ Save to shortlist'}</button>
               </form>}
-              {!own && <details className="eoi-block">
-                <summary>{alreadyApplied.has(item.id) ? 'Interest already sent — send another note' : 'Express interest'}</summary>
-                <form action={expressInterest} className="form-stack">
-                  <input type="hidden" name="opportunityId" value={item.id} />
-                  <label>Message to the owner<textarea name="message" rows={4} minLength={20} maxLength={3000} required placeholder="Introduce yourself and explain the fit." /></label>
-                  <SubmitButton>Send expression of interest</SubmitButton>
-                </form>
-              </details>}
+              {!own && (() => {
+                const request = interestByOpportunity.get(item.id)
+                if (request) return <div className="request-state-row">
+                  <span className={`status-dot status-eoi-${request.status}`}>{requestLabel(request.status)}</span>
+                  {(request.status === 'submitted' || request.status === 'under_review') && <form action={withdrawDeal}>
+                    <input type="hidden" name="eoiId" value={request.id} />
+                    <SubmitButton className="button button-outline" pendingLabel="Withdrawing…">Withdraw Request</SubmitButton>
+                  </form>}
+                  <Link className="arrow-link" href="/dashboard/interests">Track Deal →</Link>
+                </div>
+                return <details className="eoi-block">
+                  <summary>Express Interest</summary>
+                  <form action={expressInterest} className="form-stack">
+                    <input type="hidden" name="opportunityId" value={item.id} />
+                    <label>Message To The Owner<textarea name="message" rows={4} minLength={20} maxLength={3000} required placeholder="Introduce yourself and explain the fit." /></label>
+                    <SubmitButton>Send Deal Request</SubmitButton>
+                  </form>
+                </details>
+              })()}
               <p className="field-help">Published {date(item.published_at)}{own ? ' · this is how members see your listing' : ''}</p>
             </article>) })}</div>}
     </section>}

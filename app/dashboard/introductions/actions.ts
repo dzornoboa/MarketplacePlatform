@@ -19,3 +19,15 @@ export async function requestIntroduction(formData: FormData) {
   revalidatePath('/dashboard/introductions')
   redirect(back('message', 'Access request received. WTC Accra will review it, notify the monitored team and update the status here.'))
 }
+
+
+export async function withdrawIntroduction(formData: FormData) {
+  const introductionId = String(formData.get('introductionId') ?? '').trim()
+  if (!introductionId) redirect(back('error','Access request not found.'))
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('withdraw_introduction', { introduction_id: introductionId })
+  if (error) redirect(back('error',error.message))
+  revalidatePath('/dashboard/introductions')
+  revalidatePath('/admin/introductions')
+  redirect(back('message','Access request withdrawn.'))
+}

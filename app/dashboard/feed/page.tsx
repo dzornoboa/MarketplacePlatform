@@ -6,7 +6,8 @@ import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
 import { marketplaceLockFor, humanize, labelForIntent, labelForParticipantType, listingIntents, listingIntentLabels } from '@/lib/auth/access'
 import { money, date, relativeDays } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
-import { requestConnection, toggleFollow } from './actions'
+import { requestConnection, respondToConnection, toggleFollow } from './actions'
+import { toggleSaved } from '../opportunities/actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -57,13 +58,18 @@ export default async function FeedPage({ searchParams }: Props) {
   if (intent) listingQuery = listingQuery.eq('intent', intent as 'seeking_investment')
   listingQuery = listingQuery.order(sort.column, { ascending: sort.ascending, nullsFirst: false })
 
-  const [{ data: news }, { data: listings }, { data: followRows }] = await Promise.all([
+  const [{ data: news }, { data: listings }, { data: followRows }, { data: savedRows }, { data: outgoingConnections }] = await Promise.all([
     newsPromise,
     lock.locked ? Promise.resolve({ data: [] }) : listingQuery,
     supabase.from('follows').select('following_id').eq('follower_id', profile.id),
+    supabase.from('saved_opportunities').select('opportunity_id').eq('user_id', profile.id),
+    supabase.from('connections').select('id,addressee_id,opportunity_id,status,staff_approved_at').eq('requester_id', profile.id),
   ])
 
   const followingIds = new Set((followRows ?? []).map(f => f.following_id))
+  const savedIds = new Set((savedRows ?? []).map(row => row.opportunity_id))
+  const connectionByDeal = new Map((outgoingConnections ?? []).filter(row => row.opportunity_id).map(row => [`${row.opportunity_id}:${row.addressee_id}`, row]))
+  const displayTags = (tags: string[]) => tags.map(tag => tag.replace(/^category:/i,'').replaceAll('-', ' ')).filter(Boolean).join(', ')
   let visible = (listings ?? []).filter(o => o.owner_user_id !== profile.id)
   if (followed) visible = visible.filter(o => followingIds.has(o.owner_user_id))
 
@@ -188,9 +194,17 @@ export default async function FeedPage({ searchParams }: Props) {
                 </div>
               </div>
               <p>{item.summary}</p>
-              {item.tags.length > 0 && <div className="trust-row">{item.tags.map(tag => <span key={tag}>{tag}</span>)}</div>}
+              {item.tags.length > 0 && <p className="compact-tags"><strong>Tags:</strong> {displayTags(item.tags)}</p>}
 
               <div className="feed-actions">
+                <form action={toggleSaved}>
+                  <input type="hidden" name="opportunityId" value={item.id} />
+                  <input type="hidden" name="saved" value={savedIds.has(item.id) ? '1' : '0'} />
+                  <input type="hidden" name="returnTo" value="/dashboard/feed" />
+                  <button className={savedIds.has(item.id) ? 'save-toggle save-toggle-on' : 'save-toggle'} type="submit">
+                    {savedIds.has(item.id) ? '★ Saved' : '☆ Save'}
+                  </button>
+                </form>
                 <form action={toggleFollow}>
                   <input type="hidden" name="target" value={item.owner_user_id} />
                   <input type="hidden" name="returnTo" value="/dashboard/feed" />
@@ -198,25 +212,37 @@ export default async function FeedPage({ searchParams }: Props) {
                     {following ? '✓ Following' : '+ Follow'}
                   </button>
                 </form>
-                <details className="eoi-block connect-block">
-                  <summary>Request Connection About This Deal</summary>
-                  <form action={requestConnection} className="form-stack">
-                    <input type="hidden" name="addressee" value={item.owner_user_id} />
-                    <input type="hidden" name="opportunityId" value={item.id} />
-                    <input type="hidden" name="returnTo" value="/dashboard/feed" />
-                    <label>Request type
-                      <select name="intent" defaultValue={item.intent === 'seeking_investment' ? 'invest' : 'connect'}>
-                        <option value="invest">I want to invest</option>
-                        <option value="buy">I want to buy</option>
-                        <option value="partner">I want to partner</option>
-                        <option value="connect">Just connect</option>
-                      </select>
-                    </label>
-                    <label>Message<textarea name="note" rows={3} maxLength={2000} placeholder="Introduce yourself and say what you are proposing." /></label>
-                    <p className="field-help">WTC Accra is copied on every request, with the deal summary and the process. Keep the transaction on the platform.</p>
-                    <SubmitButton>Send Request</SubmitButton>
-                  </form>
-                </details>
+                {(() => {
+                  const request = connectionByDeal.get(`${item.id}:${item.owner_user_id}`)
+                  if (request?.status === 'accepted') return <span className="status-dot status-verified">Connected</span>
+                  if (request?.status === 'pending') return <div className="request-state-row">
+                    <span className="status-dot status-pending">{request.staff_approved_at ? 'Approved · Awaiting Recipient' : 'Processing · WTC Accra Review'}</span>
+                    <form action={respondToConnection}>
+                      <input type="hidden" name="connectionId" value={request.id} />
+                      <input type="hidden" name="returnTo" value="/dashboard/feed" />
+                      <button className="link-button link-button-danger" name="decision" value="withdraw">Withdraw Request</button>
+                    </form>
+                  </div>
+                  return <details className="eoi-block connect-block">
+                    <summary>Request Connection About This Deal</summary>
+                    <form action={requestConnection} className="form-stack">
+                      <input type="hidden" name="addressee" value={item.owner_user_id} />
+                      <input type="hidden" name="opportunityId" value={item.id} />
+                      <input type="hidden" name="returnTo" value="/dashboard/feed" />
+                      <label>Request Type
+                        <select name="intent" defaultValue={item.intent === 'seeking_investment' ? 'invest' : 'connect'}>
+                          <option value="invest">I Want To Invest</option>
+                          <option value="buy">I Want To Buy</option>
+                          <option value="partner">I Want To Partner</option>
+                          <option value="connect">Just Connect</option>
+                        </select>
+                      </label>
+                      <label>Message<textarea name="note" rows={3} maxLength={2000} placeholder="Introduce yourself and say what you are proposing." /></label>
+                      <p className="field-help">This does not connect you directly. WTC Accra must approve the request before it is released to the other member.</p>
+                      <SubmitButton>Send Request</SubmitButton>
+                    </form>
+                  </details>
+                })()}
               </div>
             </article>
           })}</div>}

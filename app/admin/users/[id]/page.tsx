@@ -6,11 +6,11 @@ import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { notFound } from 'next/navigation'
 import { requireCapability } from '@/lib/auth/guards'
 import { requiredDocuments, purposeLabel } from '@/lib/kyc'
-import { humanize, labelForParticipantType, systemRoleLabels, systemRoles, accountStatuses, selectableParticipantTypes, participantTypeLabels } from '@/lib/auth/access'
+import { humanize, labelForParticipantType, systemRoleLabels, systemRoles, accountStatuses, selectableParticipantTypes, participantTypeLabels, staffCapabilities } from '@/lib/auth/access'
 import { date, dateTime, money } from '@/lib/format'
 import { SubmitButton } from '@/components/submit-button'
 import { CountryCurrencyFields } from '@/components/country-currency-fields'
-import { updateMarketplaceAccess, updateAccountStatus, updateStaffRole, setVerificationStatus, messageMember, setMemberSubscription, setSupportBypass, sendPasswordReset, adminUpdateProfile, requestUserServiceAction } from '../actions'
+import { updateMarketplaceAccess, updateAccountStatus, updateStaffRole, setVerificationStatus, messageMember, setMemberSubscription, setSupportBypass, sendPasswordReset, adminUpdateProfile, requestUserServiceAction, setDelegatedCapabilities } from '../actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,7 +32,7 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
   const bypassActive = !!person.support_bypass_until && new Date(person.support_bypass_until) > new Date()
   const self = person.id === me.id
 
-  const [{ data: requests }, { data: docs }, { data: subs }, { data: payments }, { data: orgLinks }, { data: plans }, { data: notes }, { data: listings }, { data: bids }, { data: memberships }, { data: billingRow }] = await Promise.all([
+  const [{ data: requests }, { data: docs }, { data: subs }, { data: payments }, { data: orgLinks }, { data: plans }, { data: notes }, { data: listings }, { data: bids }, { data: memberships }, { data: billingRow }, { data: delegatedRows }] = await Promise.all([
     supabase.from('verification_requests').select('*').eq('user_id', id).order('submitted_at', { ascending: false }),
     supabase.from('document_records').select('id,file_name,purpose,created_at,opportunity_id').eq('owner_user_id', id).order('created_at', { ascending: false }),
     supabase.from('subscriptions').select('*').eq('user_id', id).order('created_at', { ascending: false }),
@@ -44,12 +44,14 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
     supabase.from('expressions_of_interest').select('id,opportunity_id,status,created_at').eq('applicant_id', id).order('created_at', { ascending: false }),
     supabase.from('memberships').select('*').eq('user_id', id).order('created_at', { ascending: false }),
     supabase.from('billing_addresses').select('user_id').eq('user_id', id).maybeSingle(),
+    me.system_role === 'super_admin' ? supabase.from('staff_capability_grants').select('capability,active,expires_at').eq('user_id',id) : Promise.resolve({ data: [] }),
   ])
   const billingOnFile = !!billingRow
   const orgIds = (orgLinks ?? []).map(o => o.organization_id)
   const { data: orgs } = orgIds.length ? await supabase.from('organizations').select('*').in('id', orgIds) : { data: [] }
   const current = (subs ?? []).find(s => s.status === 'active') ?? (subs ?? []).find(s => s.status === 'pending')
   const company = ['business', 'wtc_association_member', 'wtc_accra_member'].includes(person.participant_type ?? person.requested_participant_type ?? '')
+  const delegated = new Set((delegatedRows ?? []).filter(row => row.active && (!row.expires_at || new Date(row.expires_at) > new Date())).map(row => row.capability))
 
   return <div className="page-stack">
     <RealtimeRefresh tables={["profiles","subscriptions","payments","verification_requests"]} />
@@ -207,6 +209,20 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
         <textarea name="reason" rows={3} minLength={5} required placeholder="Reason for termination or deletion" />
         <SubmitButton className="button button-danger" pendingLabel="Submitting…">Submit Service Action</SubmitButton>
       </form>
+
+      {me.system_role === 'super_admin' && <form action={setDelegatedCapabilities} className="card review-form">
+        <h3>Delegated Modules And Functions</h3>
+        <p className="field-help">Grant only the modules this person needs without changing their primary role. Delegated staff-console access requires MFA. The Super Administrator can change or remove these grants at any time.</p>
+        <input type="hidden" name="userId" value={person.id} />
+        <div className="capability-grid">
+          {staffCapabilities.map(capability => <label className="check-row" key={capability}>
+            <input type="checkbox" name="capability" value={capability} defaultChecked={delegated.has(capability)} />
+            <span>{humanize(capability)}</span>
+          </label>)}
+        </div>
+        <label>Optional Expiry<input name="expiresAt" type="datetime-local" /></label>
+        <SubmitButton className="button button-outline" pendingLabel="Saving…">Save Delegated Access</SubmitButton>
+      </form>}
 
       {me.system_role === 'super_admin' && <form action={updateStaffRole} className="card review-form">
         <h3>System Role</h3>

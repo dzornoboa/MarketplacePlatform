@@ -14,7 +14,7 @@ function initials(name: string) {
 
 function fitText(text: string, max = 62) {
   const clean = text.replace(/\s+/g, ' ').trim()
-  return clean.length > max ? clean.slice(0, max - 1) + '…' : clean
+  return clean.length > max ? clean.slice(0, max - 3) + '...' : clean
 }
 
 async function embedRemoteImage(pdf: PDFDocument, url: string | null | undefined, allowedHosts: Set<string>) {
@@ -92,13 +92,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ user
 
   const role = labelForParticipantType(member.participant_type)
   const location = [member.city, member.country].filter(Boolean).join(', ')
-  page.drawText(fitText(role + (location ? ' · ' + location : ''), 58), { x: 210, y: 562, size: 10.5, font: regular, color: muted })
+  page.drawText(fitText(role + (location ? ' - ' + location : ''), 58), { x: 210, y: 562, size: 10.5, font: regular, color: muted })
 
   page.drawText('YOU ARE VERIFIED ON WTC ACCRA HUB', { x: 72, y: 515, size: 15, font: bold, color: orange })
   page.drawText('Connect with me on WTC Accra Hub to explore trusted trade, investment', { x: 72, y: 486, size: 11.5, font: regular, color: ink })
   page.drawText('and partnership opportunities through the World Trade Centre Accra network.', { x: 72, y: 468, size: 11.5, font: regular, color: ink })
 
-  const profileUrl = `${origin}/member/${encodeURIComponent(member.username)}`
+  const publicBase = (process.env.NEXT_PUBLIC_MEMBER_PROFILE_BASE_URL || 'https://wtcaccra.com').replace(/\/$/, '')
+  const profileUrl = `${publicBase}/member/${encodeURIComponent(member.username)}`
   page.drawRectangle({ x: 72, y: 440, width: width - 144, height: 22, color: rgb(1,1,1), borderColor: rgb(.82,.85,.88), borderWidth: 1 })
   page.drawText(fitText(profileUrl, 78), { x: 82, y: 447, size: 9, font: regular, color: navy })
 

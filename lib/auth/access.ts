@@ -94,6 +94,7 @@ export const staffCapabilities = [
   'support',
   'reports',
   'users',
+  'membership_ids',
 ] as const
 
 export type StaffCapability = (typeof staffCapabilities)[number]

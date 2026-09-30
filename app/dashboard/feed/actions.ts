@@ -33,23 +33,25 @@ export async function requestConnection(formData: FormData) {
 
   revalidatePath('/dashboard/network')
   revalidatePath('/dashboard/feed')
-  redirect(back(returnTo, 'message', 'Request sent. Both you and WTC Accra have been copied on it.'))
+  redirect(back(returnTo, 'message', 'Request received. WTC Accra is reviewing it before it is released to the other member.'))
 }
 
 export async function respondToConnection(formData: FormData) {
   const connectionId = String(formData.get('connectionId') ?? '')
   const decision = String(formData.get('decision') ?? '')
   const note = String(formData.get('responseNote') ?? '').trim()
+  const returnTo = String(formData.get('returnTo') ?? '/dashboard/network')
   if (!connectionId || !['accept', 'decline', 'withdraw'].includes(decision)) {
-    redirect(back('/dashboard/network', 'error', 'Invalid response.'))
+    redirect(back(returnTo, 'error', 'Invalid response.'))
   }
   const supabase = await createClient()
   const { error } = await supabase.rpc('respond_to_connection', {
     connection_id: connectionId, decision, response_note: note || null,
   })
-  if (error) redirect(back('/dashboard/network', 'error', error.message))
+  if (error) redirect(back(returnTo, 'error', error.message))
   revalidatePath('/dashboard/network')
-  redirect(back('/dashboard/network', 'message', 'Response recorded.'))
+  revalidatePath('/dashboard/feed')
+  redirect(back(returnTo, 'message', decision === 'withdraw' ? 'Request withdrawn.' : 'Response recorded.'))
 }
 
 export async function toggleFollow(formData: FormData) {

@@ -5,9 +5,9 @@ import { notFound } from 'next/navigation'
 import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
 import { marketplaceLockFor, humanize, labelForIntent, labelForParticipantType } from '@/lib/auth/access'
 import { money, date, dateTime, relativeDays } from '@/lib/format'
-import { submitOpportunity, expressInterest, toggleSaved, withdrawOpportunity, deleteOpportunity } from '../actions'
+import { submitOpportunity, expressInterest, toggleSaved, withdrawOpportunity, deleteOpportunity, withdrawDeal } from '../actions'
 import { SubmitButton } from '@/components/submit-button'
-import { requestConnection, toggleFollow } from '../../feed/actions'
+import { requestConnection, respondToConnection, toggleFollow } from '../../feed/actions'
 import { openDocument } from '../../documents/actions'
 
 export const dynamic = 'force-dynamic'
@@ -33,12 +33,13 @@ export default async function OpportunityDetailPage({ params, searchParams }: Pr
   const state = await readAccessState(supabase)
   const lock = state ? marketplaceLockFor(state, profile.system_role) : { locked: true as const, reason: '', action: null }
 
-  const [{ data: owners }, { data: savedRows }, { data: followRows }, { data: documents }, { data: myInterest }] = await Promise.all([
+  const [{ data: owners }, { data: savedRows }, { data: followRows }, { data: documents }, { data: myInterest }, { data: myConnection }] = await Promise.all([
     isOwner ? Promise.resolve({ data: [] }) : supabase.rpc('listing_owner_cards', { owner_ids: [item.owner_user_id] }),
     supabase.from('saved_opportunities').select('opportunity_id').eq('opportunity_id', id),
     supabase.from('follows').select('following_id').eq('following_id', item.owner_user_id),
     supabase.from('document_records').select('*').eq('opportunity_id', id),
     supabase.from('expressions_of_interest').select('id,status').eq('opportunity_id', id).eq('applicant_id', profile.id).maybeSingle(),
+    isOwner ? Promise.resolve({ data: null }) : supabase.from('connections').select('id,status,staff_approved_at').eq('requester_id',profile.id).eq('addressee_id',item.owner_user_id).eq('opportunity_id',id).maybeSingle(),
   ])
 
   const owner = (owners ?? [])[0]
@@ -141,34 +142,53 @@ export default async function OpportunityDetailPage({ params, searchParams }: Pr
               </form>
             </div>
 
-            <details className="eoi-block connect-block">
-              <summary>Connect about this listing</summary>
-              <form action={requestConnection} className="form-stack">
-                <input type="hidden" name="addressee" value={item.owner_user_id} />
-                <input type="hidden" name="opportunityId" value={item.id} />
-                <input type="hidden" name="returnTo" value={`/dashboard/opportunities/${item.id}`} />
-                <label>Request type
-                  <select name="intent" defaultValue={item.intent === 'seeking_investment' ? 'invest' : 'connect'}>
-                    <option value="invest">I want to invest</option>
-                    <option value="buy">I want to buy</option>
-                    <option value="partner">I want to partner</option>
-                    <option value="connect">Just connect</option>
-                  </select>
-                </label>
-                <label>Message<textarea name="note" rows={3} maxLength={2000} /></label>
-                <p className="field-help">WTC Accra is copied on every request, with this deal and the process attached.</p>
-                <button className="button button-primary" type="submit">Send request</button>
-              </form>
-            </details>
+            {myConnection && (myConnection.status === 'pending' || myConnection.status === 'accepted')
+              ? <div className="request-state-row">
+                  <span className={`status-dot status-conn-${myConnection.status}`}>{myConnection.status === 'accepted' ? 'Connected' : myConnection.staff_approved_at ? 'Approved · Awaiting Recipient' : 'Processing · WTC Accra Review'}</span>
+                  {myConnection.status === 'pending' && <form action={respondToConnection}>
+                    <input type="hidden" name="connectionId" value={myConnection.id} />
+                    <input type="hidden" name="returnTo" value={`/dashboard/opportunities/${item.id}`} />
+                    <button className="link-button link-button-danger" name="decision" value="withdraw">Withdraw Request</button>
+                  </form>}
+                </div>
+              : <details className="eoi-block connect-block">
+                  <summary>Request Connection About This Listing</summary>
+                  <form action={requestConnection} className="form-stack">
+                    <input type="hidden" name="addressee" value={item.owner_user_id} />
+                    <input type="hidden" name="opportunityId" value={item.id} />
+                    <input type="hidden" name="returnTo" value={`/dashboard/opportunities/${item.id}`} />
+                    <label>Request Type
+                      <select name="intent" defaultValue={item.intent === 'seeking_investment' ? 'invest' : 'connect'}>
+                        <option value="invest">I Want To Invest</option>
+                        <option value="buy">I Want To Buy</option>
+                        <option value="partner">I Want To Partner</option>
+                        <option value="connect">Just Connect</option>
+                      </select>
+                    </label>
+                    <label>Message<textarea name="note" rows={3} maxLength={2000} /></label>
+                    <p className="field-help">WTC Accra must approve this request before it is released to the other member. Direct contact details remain protected.</p>
+                    <button className="button button-primary" type="submit">Send Request</button>
+                  </form>
+                </details>}
 
-            <details className="eoi-block">
-              <summary>{myInterest ? `Interest already sent (${humanize(myInterest.status)}) — send another note` : 'Express interest'}</summary>
-              <form action={expressInterest} className="form-stack">
-                <input type="hidden" name="opportunityId" value={item.id} />
-                <label>Message to the owner<textarea name="message" rows={4} minLength={20} maxLength={3000} required /></label>
-                <button className="button button-secondary" type="submit">Send expression of interest</button>
-              </form>
-            </details>
+            {myInterest
+              ? <div className="request-state-row">
+                  <span className={`status-dot status-eoi-${myInterest.status}`}>{myInterest.status === 'submitted' ? 'Processing' : myInterest.status === 'under_review' ? 'Processed' : myInterest.status === 'accepted' ? 'Connected' : humanize(myInterest.status)}</span>
+                  {(myInterest.status === 'submitted' || myInterest.status === 'under_review') && <form action={withdrawDeal}>
+                    <input type="hidden" name="eoiId" value={myInterest.id} />
+                    <SubmitButton className="button button-outline" pendingLabel="Withdrawing…">Withdraw Deal Request</SubmitButton>
+                  </form>}
+                  <Link className="arrow-link" href="/dashboard/interests">Track Deal →</Link>
+                </div>
+              : <details className="eoi-block">
+                  <summary>Express Interest</summary>
+                  <form action={expressInterest} className="form-stack">
+                    <input type="hidden" name="opportunityId" value={item.id} />
+                    <input type="hidden" name="returnTo" value={`/dashboard/opportunities/${item.id}`} />
+                    <label>Message To The Owner<textarea name="message" rows={4} minLength={20} maxLength={3000} required /></label>
+                    <button className="button button-secondary" type="submit">Send Deal Request</button>
+                  </form>
+                </details>}
           </div>
         </section>}
   </div>

@@ -105,6 +105,15 @@ export async function expressInterest(formData: FormData) {
   const userId = claimsData?.claims?.sub
   if (!userId) redirect('/login')
   if (message.length < 20 || message.length > 3000) redirect(to(returnTo, 'error', 'Your deal request must be between 20 and 3000 characters.'))
+  const { data: existing } = await supabase.from('expressions_of_interest')
+    .select('id,status').eq('opportunity_id', opportunityId).eq('applicant_id', String(userId)).maybeSingle()
+  if (existing) {
+    const label = existing.status === 'submitted' ? 'Processing' : existing.status === 'under_review' ? 'Processed' : existing.status === 'accepted' ? 'Connected' : existing.status === 'declined' ? 'Declined' : 'Withdrawn'
+    if (existing.status === 'submitted' || existing.status === 'under_review' || existing.status === 'accepted') {
+      redirect(to(returnTo, 'error', `You already have a deal request for this opportunity. Current status: ${label}.`))
+    }
+    redirect(to(returnTo, 'error', 'A previous request already exists for this opportunity. Open Deals to review its status before submitting another request.'))
+  }
   const { error } = await supabase.from('expressions_of_interest').insert({
     opportunity_id: opportunityId, applicant_id: String(userId), message, status: 'submitted',
   })

@@ -24,7 +24,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const adminHasFactor = (factors?.totp ?? []).some(f => f.status === 'verified')
   // Profile, access state and unread count all come from the one bootstrap call; a daily cron expires lapsed subscriptions.
   const state = await readAccessState(supabase)
-  const { data: preferences } = await supabase.from('user_preferences').select('language,auto_translate').maybeSingle()
+  const [{ data: preferences }, { data: delegatedCapabilities }] = await Promise.all([
+    supabase.from('user_preferences').select('language,auto_translate').maybeSingle(),
+    supabase.rpc('my_staff_capabilities'),
+  ])
+  const hasStaffConsole = ((delegatedCapabilities ?? []) as string[]).length > 0
   const count = unread
   const daysLeft = state ? subscriptionDaysLeft(state) : null
   const planName = state?.subscription_plan_name ?? null
@@ -43,7 +47,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   return <div className={memberExperience ? 'dashboard-shell member-dashboard-shell' : 'dashboard-shell'}>
     {memberExperience
-      ? <MemberTopNav profile={profile} unreadCount={count ?? 0} />
+      ? <MemberTopNav profile={profile} unreadCount={count ?? 0} hasStaffConsole={hasStaffConsole} />
       : <DashboardNav profile={profile} unreadCount={count ?? 0} adminMfaReady={adminMfaReady} adminHasFactor={adminHasFactor} hasAccess={!!state && !marketplaceLock(state).locked} planLabel={planLabel} />}
     <main className="dashboard-main">
       {expiryNotice && <div className={`expiry-bar expiry-bar-${expiryNotice.tone}`}><span>{expiryNotice.text}</span><Link className="button button-light" href="/dashboard/billing">{expiryNotice.cta}</Link></div>}

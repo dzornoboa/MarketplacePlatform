@@ -11,13 +11,14 @@ import { SignOutButton } from '@/components/sign-out-button'
 type Props = {
   profile: Profile
   unreadCount?: number
+  hasStaffConsole?: boolean
 }
 
 function NavIcon({ children }: { children: string }) {
   return <span className="member-top-icon" aria-hidden="true">{children}</span>
 }
 
-export function MemberTopNav({ profile, unreadCount = 0 }: Props) {
+export function MemberTopNav({ profile, unreadCount = 0, hasStaffConsole = false }: Props) {
   const pathname = usePathname()
   const active = (href: string) => pathname === href || (href !== '/dashboard' && pathname.startsWith(`${href}/`))
   const links = [
@@ -59,6 +60,7 @@ export function MemberTopNav({ profile, unreadCount = 0 }: Props) {
             <Link href="/dashboard/billing">Membership And Billing</Link>
             <Link href="/dashboard/settings">Settings</Link>
             <Link href="/dashboard/support">Support</Link>
+            {hasStaffConsole && <Link href="/admin">Delegated Staff Console</Link>}
             <div className="member-me-signout"><SignOutButton /></div>
           </div>
         </details>

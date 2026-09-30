@@ -4,8 +4,8 @@ export type Database = {
   public: {
     Tables: {
       profiles: {
-        Row: { id:string; full_name:string; username:string|null; phone:string|null; phone_country_code:string|null; preferred_currency:string; job_title:string|null; country:string|null; country_code:string|null; city:string|null; date_of_birth:string|null; id_type:string|null; id_number:string|null; requested_participant_type:Database['public']['Enums']['participant_type']|null; participant_type:Database['public']['Enums']['participant_type']|null; verification_status:Database['public']['Enums']['verification_status']; system_role:Database['public']['Enums']['system_role']; wtca_membership_number:string|null; wtca_chapter:string|null; profile_completed:boolean; account_status:Database['public']['Enums']['account_status']; password_change_required:boolean; can_view_opportunities:boolean; can_post_opportunities:boolean; requested_plan_code:string|null; support_bypass_until:string|null; support_bypass_reason:string|null; grandfathered_verified_access:boolean; avatar_url:string|null; legal_agreement_version:string|null; legal_agreed_at:string|null; verified_at:string|null; verified_by:string|null; created_at:string; updated_at:string }
-        Insert: { id:string; full_name?:string; username?:string|null; phone?:string|null; phone_country_code?:string|null; preferred_currency?:string; job_title?:string|null; country?:string|null; country_code?:string|null; city?:string|null; date_of_birth?:string|null; id_type?:string|null; id_number?:string|null; requested_participant_type?:Database['public']['Enums']['participant_type']|null; participant_type?:Database['public']['Enums']['participant_type']|null; verification_status?:Database['public']['Enums']['verification_status']; system_role?:Database['public']['Enums']['system_role']; wtca_membership_number?:string|null; wtca_chapter?:string|null; profile_completed?:boolean; account_status?:Database['public']['Enums']['account_status']; password_change_required?:boolean; can_view_opportunities?:boolean; can_post_opportunities?:boolean; requested_plan_code?:string|null; support_bypass_until?:string|null; support_bypass_reason?:string|null; grandfathered_verified_access?:boolean; avatar_url?:string|null; legal_agreement_version?:string|null; legal_agreed_at?:string|null; verified_at?:string|null; verified_by?:string|null; created_at?:string; updated_at?:string }
+        Row: { id:string; full_name:string; username:string|null; phone:string|null; phone_country_code:string|null; preferred_currency:string; job_title:string|null; country:string|null; country_code:string|null; city:string|null; date_of_birth:string|null; id_type:string|null; id_number:string|null; requested_participant_type:Database['public']['Enums']['participant_type']|null; participant_type:Database['public']['Enums']['participant_type']|null; verification_status:Database['public']['Enums']['verification_status']; system_role:Database['public']['Enums']['system_role']; wtca_membership_number:string|null; wtca_chapter:string|null; wtc_accra_membership_id:string|null; profile_completed:boolean; account_status:Database['public']['Enums']['account_status']; password_change_required:boolean; can_view_opportunities:boolean; can_post_opportunities:boolean; requested_plan_code:string|null; support_bypass_until:string|null; support_bypass_reason:string|null; grandfathered_verified_access:boolean; avatar_url:string|null; legal_agreement_version:string|null; legal_agreed_at:string|null; verified_at:string|null; verified_by:string|null; created_at:string; updated_at:string }
+        Insert: { id:string; full_name?:string; username?:string|null; phone?:string|null; phone_country_code?:string|null; preferred_currency?:string; job_title?:string|null; country?:string|null; country_code?:string|null; city?:string|null; date_of_birth?:string|null; id_type?:string|null; id_number?:string|null; requested_participant_type?:Database['public']['Enums']['participant_type']|null; participant_type?:Database['public']['Enums']['participant_type']|null; verification_status?:Database['public']['Enums']['verification_status']; system_role?:Database['public']['Enums']['system_role']; wtca_membership_number?:string|null; wtca_chapter?:string|null; wtc_accra_membership_id?:string|null; profile_completed?:boolean; account_status?:Database['public']['Enums']['account_status']; password_change_required?:boolean; can_view_opportunities?:boolean; can_post_opportunities?:boolean; requested_plan_code?:string|null; support_bypass_until?:string|null; support_bypass_reason?:string|null; grandfathered_verified_access?:boolean; avatar_url?:string|null; legal_agreement_version?:string|null; legal_agreed_at?:string|null; verified_at?:string|null; verified_by?:string|null; created_at?:string; updated_at?:string }
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>
         Relationships: []
       }
@@ -178,9 +178,21 @@ export type Database = {
         Relationships: []
       }
       connections: {
-        Row: { id:string; requester_id:string; addressee_id:string; opportunity_id:string|null; intent:Database['public']['Enums']['connection_intent']; status:Database['public']['Enums']['connection_status']; message:string|null; response_note:string|null; responded_at:string|null; last_action_by:string|null; last_action_role:string|null; last_action_at:string|null; created_at:string; updated_at:string }
-        Insert: { id?:string; requester_id:string; addressee_id:string; opportunity_id?:string|null; intent?:Database['public']['Enums']['connection_intent']; status?:Database['public']['Enums']['connection_status']; message?:string|null; response_note?:string|null; responded_at?:string|null; last_action_by?:string|null; last_action_role?:string|null; last_action_at?:string|null; created_at?:string; updated_at?:string }
+        Row: { id:string; requester_id:string; addressee_id:string; opportunity_id:string|null; intent:Database['public']['Enums']['connection_intent']; status:Database['public']['Enums']['connection_status']; message:string|null; response_note:string|null; responded_at:string|null; staff_approved_at:string|null; staff_approved_by:string|null; staff_review_note:string|null; last_action_by:string|null; last_action_role:string|null; last_action_at:string|null; created_at:string; updated_at:string }
+        Insert: { id?:string; requester_id:string; addressee_id:string; opportunity_id?:string|null; intent?:Database['public']['Enums']['connection_intent']; status?:Database['public']['Enums']['connection_status']; message?:string|null; response_note?:string|null; responded_at?:string|null; staff_approved_at?:string|null; staff_approved_by?:string|null; staff_review_note?:string|null; last_action_by?:string|null; last_action_role?:string|null; last_action_at?:string|null; created_at?:string; updated_at?:string }
         Update: Partial<Database['public']['Tables']['connections']['Insert']>
+        Relationships: []
+      }
+      staff_capability_grants: {
+        Row: { id:string; user_id:string; capability:string; active:boolean; expires_at:string|null; granted_by:string; created_at:string; updated_at:string }
+        Insert: { id?:string; user_id:string; capability:string; active?:boolean; expires_at?:string|null; granted_by:string; created_at?:string; updated_at?:string }
+        Update: Partial<Database['public']['Tables']['staff_capability_grants']['Insert']>
+        Relationships: []
+      }
+      wtc_accra_membership_ids: {
+        Row: { id:string; code:string; status:string; assigned_email:string|null; assigned_user_id:string|null; generated_by:string; assigned_by:string|null; note:string|null; created_at:string; assigned_at:string|null; used_at:string|null; revoked_at:string|null; updated_at:string }
+        Insert: { id?:string; code:string; status?:string; assigned_email?:string|null; assigned_user_id?:string|null; generated_by:string; assigned_by?:string|null; note?:string|null; created_at?:string; assigned_at?:string|null; used_at?:string|null; revoked_at?:string|null; updated_at?:string }
+        Update: Partial<Database['public']['Tables']['wtc_accra_membership_ids']['Insert']>
         Relationships: []
       }
       follows: {
@@ -282,6 +294,14 @@ export type Database = {
       refresh_my_matches: { Args: Record<string, never>; Returns: number }
       post_deal_room_message: { Args: { room: string; message_body: string }; Returns: string }
       close_deal_room: { Args: { room_id: string; closed_value: number; closed_currency?: string; note?: string | null; closed_value_usd?: number | null; rate_to_usd?: number | null }; Returns: undefined }
+      my_staff_capabilities: { Args: Record<string, never>; Returns: string[] }
+      set_delegated_capabilities: { Args: { target_user: string; capabilities: string[]; grant_expires_at?: string | null }; Returns: undefined }
+      generate_wtc_accra_membership_id: { Args: { assigned_email?: string | null; note?: string | null }; Returns: string }
+      assign_wtc_accra_membership_id: { Args: { membership_code: string; member_email: string }; Returns: undefined }
+      revoke_wtc_accra_membership_id: { Args: { membership_code: string; reason?: string | null }; Returns: undefined }
+      wtc_membership_id_valid_for_signup: { Args: { membership_code: string; member_email: string }; Returns: boolean }
+      review_connection_request: { Args: { connection_id: string; decision: string; review_note?: string | null }; Returns: undefined }
+      withdraw_introduction: { Args: { introduction_id: string }; Returns: undefined }
       withdraw_bid: { Args: { bid_id: string }; Returns: undefined }
       withdraw_deal_request: { Args: { deal_id: string }; Returns: undefined }
       set_primary_payment_method: { Args: { method_id: string }; Returns: undefined }
@@ -331,7 +351,7 @@ export type Database = {
       content_status: 'draft'|'published'|'archived'
       support_status: 'open'|'in_progress'|'resolved'|'closed'
       organization_role: 'owner'|'admin'|'member'
-      introduction_status: 'requested'|'approved'|'introduced'|'meeting_scheduled'|'completed'|'declined'
+      introduction_status: 'requested'|'approved'|'introduced'|'meeting_scheduled'|'completed'|'declined'|'withdrawn'
       match_status: 'suggested'|'shortlisted'|'contacted'|'dismissed'
       document_access_scope: 'private'|'verified'|'granted'
       deal_room_status: 'active'|'closed'
