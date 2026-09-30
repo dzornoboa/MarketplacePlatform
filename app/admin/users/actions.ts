@@ -159,8 +159,11 @@ export async function adminUpdateProfile(formData: FormData) {
   const type = String(formData.get('participantType') ?? '')
   const countryCode = String(formData.get('countryCode') ?? '').trim().toUpperCase()
   const preferredCurrency = String(formData.get('preferredCurrency') ?? 'USD').trim().toUpperCase()
+  const dashboardLanguage = String(formData.get('dashboardLanguage') ?? 'en').trim().toLowerCase()
+  const autoTranslate = String(formData.get('autoTranslate') ?? '') === 'on'
   if (countryCode && !/^[A-Z]{2}$/.test(countryCode)) redirect(back('error', 'Select a valid country.', targetUser))
   if (!/^[A-Z]{3}$/.test(preferredCurrency)) redirect(back('error', 'Select a valid preferred currency.', targetUser))
+  if (!/^[a-z]{2,3}$/.test(dashboardLanguage)) redirect(back('error', 'Select a valid dashboard language.', targetUser))
   const supabase = await createClient()
   const { error } = await supabase.from('profiles').update({
     full_name: fullName,
@@ -168,14 +171,20 @@ export async function adminUpdateProfile(formData: FormData) {
     job_title: String(formData.get('jobTitle') ?? '').trim() || null,
     country: String(formData.get('country') ?? '').trim() || null,
     country_code: countryCode || null,
-    preferred_currency: preferredCurrency,
     city: String(formData.get('city') ?? '').trim() || null,
     wtca_membership_number: String(formData.get('wtcaNumber') ?? '').trim() || null,
     wtca_chapter: String(formData.get('wtcaChapter') ?? '').trim() || null,
     ...(type ? { participant_type: type as 'buyer', requested_participant_type: type as 'buyer' } : {}),
   }).eq('id', targetUser)
   if (error) redirect(back('error', error.message, targetUser))
-  revalidatePath(`/admin/users/${targetUser}`); revalidatePath('/admin/users')
+  const { error: displayError } = await supabase.rpc('admin_set_member_display_preferences', {
+    target_user: targetUser,
+    preferred_currency: preferredCurrency,
+    dashboard_language: dashboardLanguage,
+    enable_auto_translate: autoTranslate,
+  })
+  if (displayError) redirect(back('error', displayError.message, targetUser))
+  revalidatePath(`/admin/users/${targetUser}`); revalidatePath('/admin/users'); revalidatePath('/dashboard', 'layout')
   redirect(back('message', 'Profile updated.', targetUser))
 }
 
