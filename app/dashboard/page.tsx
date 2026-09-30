@@ -7,6 +7,7 @@ import { BarChart } from '@/components/charts'
 import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
 import { marketplaceLock, postingLock, labelForParticipantType, humanize, isAdminRole, systemRoleLabels } from '@/lib/auth/access'
 import { date, dateTime } from '@/lib/format'
+import { toggleSaved } from './opportunities/actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,6 +33,7 @@ export default async function DashboardPage() {
   ])
   const tally = (rows: Array<{ status: string }> | null) => { const o: Record<string, number> = {}; for (const r of rows ?? []) o[r.status] = (o[r.status] ?? 0) + 1; return o }
   const oppT = tally(myOpps), dealT = tally(myDeals), recvT = tally(recvDeals), matchT = tally(myMatches), connT = tally(myConns)
+  const savedIds = new Set((mySaved ?? []).map(row => row.opportunity_id))
   const capitalSought = (myOpps ?? []).filter(o => o.status === 'published').reduce((sum, o) => sum + Number(o.capital_required ?? 0), 0)
   const hasDealActivity = (myOpps ?? []).length + (myDeals ?? []).length + (recvDeals ?? []).length + (myMatches ?? []).length > 0
 
@@ -153,8 +155,13 @@ export default async function DashboardPage() {
               </div>
               <div className="member-post-actions">
                 <Link href={`/dashboard/opportunities/${item.id}`}>View Opportunity</Link>
-                <Link href="/dashboard/network">Connect</Link>
-                <Link href="/dashboard/saved">Save</Link>
+                <Link href={`/dashboard/opportunities/${item.id}`}>Request Connection</Link>
+                <form action={toggleSaved}>
+                  <input type="hidden" name="opportunityId" value={item.id} />
+                  <input type="hidden" name="saved" value={savedIds.has(item.id) ? '1' : '0'} />
+                  <input type="hidden" name="returnTo" value="/dashboard" />
+                  <button className="link-button" type="submit">{savedIds.has(item.id) ? '★ Saved' : '☆ Save'}</button>
+                </form>
               </div>
             </article>
           })}
