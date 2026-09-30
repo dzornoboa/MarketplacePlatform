@@ -10,13 +10,14 @@ export function VerifiedMemberShareActions({
   fullName: string
 }) {
   const [copied, setCopied] = useState(false)
-  const profileUrl = typeof window === 'undefined' ? '' : `${window.location.origin}/member/${encodeURIComponent(username)}`
+  const publicBase = (process.env.NEXT_PUBLIC_MEMBER_PROFILE_BASE_URL || 'https://wtcaccra.com').replace(/\/$/, '')
+  const profileUrl = `${publicBase}/member/${encodeURIComponent(username)}`
   const pdfUrl = `/api/verified-member/${encodeURIComponent(username)}/pdf`
   const shareText = `${fullName} is verified on WTC Accra Hub. Connect with @${username} to explore trusted trade, investment and partnership opportunities.`
 
   const nativeShare = async () => {
     try {
-      const absoluteProfile = `${window.location.origin}/member/${encodeURIComponent(username)}`
+      const absoluteProfile = profileUrl
       const response = await fetch(pdfUrl)
       if (response.ok) {
         const blob = await response.blob()
@@ -39,7 +40,7 @@ export function VerifiedMemberShareActions({
   }
 
   const copyLink = async () => {
-    const value = `${window.location.origin}/member/${encodeURIComponent(username)}`
+    const value = profileUrl
     await navigator.clipboard.writeText(value)
     setCopied(true)
     window.setTimeout(() => setCopied(false), 1800)
