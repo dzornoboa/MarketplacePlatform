@@ -23,7 +23,7 @@ export function languageOptions(uiLocale = 'en') {
   return out.sort((a,b) => a.name.localeCompare(b.name))
 }
 
-export function LanguageSelect({ name = 'language', defaultValue = 'en', autoTranslate = true, useStored = true }: { name?: string; defaultValue?: string; autoTranslate?: boolean; useStored?: boolean }) {
+export function LanguageSelect({ name = 'language', defaultValue = 'en', autoTranslate = true, useStored = true, persist = false }: { name?: string; defaultValue?: string; autoTranslate?: boolean; useStored?: boolean; persist?: boolean }) {
   const [value, setValue] = useState(defaultValue || 'en')
   const options = useMemo(() => languageOptions(typeof navigator === 'undefined' ? 'en' : navigator.language), [])
 
@@ -39,6 +39,13 @@ export function LanguageSelect({ name = 'language', defaultValue = 'en', autoTra
       localStorage.setItem('wtc-language', next)
       localStorage.setItem('wtc-auto-translate', '1')
       window.dispatchEvent(new Event('wtc-language-change'))
+    }
+    if (persist) {
+      void fetch('/api/preferences/display', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ language: next, autoTranslate }),
+      }).catch(() => {})
     }
   }
 
