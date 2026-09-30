@@ -4,7 +4,7 @@ import { FlashNotice } from '@/components/flash-notice'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { requireStaffConsole } from '@/lib/auth/guards'
-import { hasCapability, isAdminRole, systemRoleLabels } from '@/lib/auth/access'
+import { isAdminRole, systemRoleLabels } from '@/lib/auth/access'
 import { LogoLink } from '@/components/brand'
 import { Avatar } from '@/components/avatar'
 import { NavLinks } from '@/components/nav-links'
@@ -12,27 +12,29 @@ import { NavLinks } from '@/components/nav-links'
 export const dynamic = 'force-dynamic'
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
-  const { profile } = await requireStaffConsole()
+  const { profile, capabilities } = await requireStaffConsole()
   const role = profile.system_role
+  const can = (capability: string) => capabilities.has(capability)
   const links = [
     { href: '/admin', label: 'Overview', show: true },
     { href: '/admin/insights', label: 'Insights', show: true },
-    { href: '/admin/reports', label: 'Reports', show: hasCapability(role, 'reports') },
+    { href: '/admin/reports', label: 'Reports', show: can('reports') },
     { href: '/admin/assistant', label: 'AI agent', show: role === 'super_admin' },
     { href: '/admin/super', label: 'Super admin', show: role === 'super_admin' },
-    { href: '/admin/verification', label: 'Verification queue', show: hasCapability(role, 'verification') },
-    { href: '/admin/users', label: 'Members', show: hasCapability(role, 'users') },
-    { href: '/admin/opportunities', label: 'Opportunities', show: hasCapability(role, 'opportunities') },
-    { href: '/admin/deals', label: 'Deals', show: hasCapability(role, 'opportunities') || hasCapability(role, 'verification') },
-    { href: '/admin/matching', label: 'Matching', show: hasCapability(role, 'matching') },
-    { href: '/admin/introductions', label: 'Match Requests', show: hasCapability(role, 'introductions') || hasCapability(role, 'verification') },
-    { href: '/admin/subscriptions', label: 'Subscriptions', show: hasCapability(role, 'finance') },
-    { href: '/admin/payments', label: 'Payments', show: hasCapability(role, 'finance') },
-    { href: '/admin/support', label: 'Support', show: hasCapability(role, 'support') },
+    { href: '/admin/verification', label: 'Verification queue', show: can('verification') },
+    { href: '/admin/users', label: 'Members', show: can('users') },
+    { href: '/admin/opportunities', label: 'Opportunities', show: can('opportunities') },
+    { href: '/admin/deals', label: 'Deals', show: can('opportunities') || can('verification') },
+    { href: '/admin/matching', label: 'Matching', show: can('matching') },
+    { href: '/admin/introductions', label: 'Match Requests', show: can('introductions') || can('verification') },
+    { href: '/admin/subscriptions', label: 'Subscriptions', show: can('finance') },
+    { href: '/admin/payments', label: 'Payments', show: can('finance') },
+    { href: '/admin/support', label: 'Support', show: can('support') },
     { href: '/admin/emails', label: 'Email queue', show: isAdminRole(role) },
     { href: '/admin/audit', label: 'Audit log', show: isAdminRole(role) },
     { href: '/admin/security-monitor', label: 'Security Monitor', show: isAdminRole(role) },
     { href: '/admin/backups', label: 'Backup & Restore', show: isAdminRole(role) },
+    { href: '/admin/membership-ids', label: 'Membership IDs', show: can('membership_ids') },
   ].filter(link => link.show)
 
   return <div className="admin-shell">
