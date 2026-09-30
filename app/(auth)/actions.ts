@@ -87,21 +87,34 @@ export async function signup(formData: FormData) {
   const COMPANY_TYPES = new Set(['business', 'wtc_association_member', 'wtc_accra_member'])
   const organisationName = String(formData.get('organisationName') ?? '').trim()
   if (COMPANY_TYPES.has(participantType) && organisationName.length < 2) redirect(withMessage('/register', 'error', 'Enter your organisation name.'))
-  const wtcAccraMembershipId = String(formData.get('wtcAccraMembershipId') ?? '').trim().toUpperCase()
-  if (participantType === 'wtc_accra_member') {
-    if (!/^WTCA[0-9]{10}$/.test(wtcAccraMembershipId)) redirect(withMessage('/register', 'error', 'Enter the WTC Accra Membership ID issued to your email address.'))
-    let validMembershipId = false
+  const membershipAccessId = String(formData.get('membershipAccessId') ?? formData.get('wtcAccraMembershipId') ?? '').trim().toUpperCase()
+  if (participantType === 'wtc_accra_member' || participantType === 'wtc_association_member') {
+    const expectedPattern = participantType === 'wtc_accra_member' ? /^WTCA[0-9]{10}$/ : /^WTCAM[0-9]{10}$/
+    const label = participantType === 'wtc_accra_member' ? 'WTC Accra Membership ID' : 'WTCA Member ID'
+    if (!expectedPattern.test(membershipAccessId)) {
+      redirect(withMessage('/register', 'error', `Enter a valid ${label} issued and activated by WTC Accra. Membership access IDs are provided through wtcaccra.com.`))
+    }
+
     try {
       const admin = createAdminClient()
-      const { data, error: membershipIdError } = await admin.rpc('wtc_membership_id_valid_for_signup', {
-        membership_code: wtcAccraMembershipId,
+      const { data, error: membershipIdError } = await admin.rpc('membership_id_signup_state', {
+        membership_code: membershipAccessId,
         member_email: email,
+        participant: participantType,
       })
-      validMembershipId = !membershipIdError && data === true
-    } catch {
+      if (membershipIdError) throw membershipIdError
+      const state = typeof data === 'object' && data ? String((data as { state?: unknown }).state ?? '') : ''
+
+      if (state === 'linked_account') {
+        redirect(withMessage('/login', 'message', 'This Membership ID is already linked to an account. Sign in instead.'))
+      }
+      if (state !== 'valid') {
+        redirect(withMessage('/register', 'error', `That ${label} is not valid for this email or has not been activated. Enter the ID issued to you by WTC Accra through wtcaccra.com.`))
+      }
+    } catch (error) {
+      if (error instanceof Error && error.message === 'NEXT_REDIRECT') throw error
       redirect(withMessage('/register', 'error', 'Membership ID validation is temporarily unavailable. Please try again shortly.'))
     }
-    if (!validMembershipId) redirect(withMessage('/register', 'error', 'That Membership ID is invalid, already used, revoked, or assigned to a different email address. Contact WTC Accra if you need a Membership ID.'))
   }
   const country = String(formData.get('country') ?? '').trim()
   const countryCode = String(formData.get('countryCode') ?? '').trim().toUpperCase()
@@ -119,7 +132,8 @@ export async function signup(formData: FormData) {
   const extra = {
     organisation_name: organisationName || null,
     wtca_membership_number: String(formData.get('wtcaMembershipNumber') ?? '').trim() || null,
-    wtc_accra_membership_id: wtcAccraMembershipId || null,
+    membership_access_id: membershipAccessId || null,
+    wtc_accra_membership_id: participantType === 'wtc_accra_member' ? membershipAccessId || null : null,
     wtca_chapter: String(formData.get('wtcaChapter') ?? '').trim() || null,
     phone,
     country,
