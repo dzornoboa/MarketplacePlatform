@@ -14,7 +14,7 @@ export function languageOptions(uiLocale = 'en') {
   // Common ISO-639-2/3 languages that do not have a two-letter ISO-639-1 code.
   // This keeps African and regional language coverage from being limited to
   // the two-letter catalogue.
-  const extraCodes = ['gaa','pcm','krio','ber','kab','din','luo','nso','tsn','ven','nya','sot','tiv','fon','wol','ful','srr','bem','lug','run','kin','lin','nde','sna','toi','umb','ach','ady','ava','che','chv','lez','sah','udm','kom','mhr','myv','alt','tuk','uzb','kaz','kir','tgk','mon','bod','uig','pus','kur','ckb','syr','arc','amh','tir']
+  const extraCodes = ['gaa','pcm','kri','ber','kab','din','luo','nso','tsn','ven','nya','sot','tiv','fon','wol','ful','srr','bem','lug','run','kin','lin','nde','sna','toi','umb','ach','ady','ava','che','chv','lez','sah','udm','kom','mhr','myv','alt','tuk','uzb','kaz','kir','tgk','mon','bod','uig','pus','kur','ckb','syr','arc','amh','tir']
   for (const code of extraCodes) {
     if (seen.has(code)) continue
     const name = display.of(code)
