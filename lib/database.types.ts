@@ -294,6 +294,9 @@ export type Database = {
       set_participant_access: { Args: { target_user: string; allow_view: boolean; allow_post: boolean; reason?: string | null }; Returns: undefined }
       set_account_status: { Args: { target_user: string; new_status: string; reason?: string | null }; Returns: undefined }
       set_staff_role: { Args: { target_user: string; new_role: string }; Returns: undefined }
+      admin_set_member_display_preferences: { Args: { target_user: string; preferred_currency: string; dashboard_language: string; enable_auto_translate?: boolean }; Returns: undefined }
+      admin_member_display_preferences: { Args: { target_user: string }; Returns: Json }
+      queue_test_push: { Args: Record<string, never>; Returns: string }
       review_opportunity: { Args: { opportunity_id: string; decision: string; reviewer_note?: string | null }; Returns: undefined }
       submit_opportunity: { Args: { opportunity_id: string }; Returns: undefined }
       review_subscription: { Args: { subscription_id: string; decision: string; valid_until?: string | null }; Returns: undefined }
