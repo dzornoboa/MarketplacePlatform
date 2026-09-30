@@ -13,9 +13,20 @@ export async function GET() {
   if (!data?.claims?.sub) return NextResponse.json({ error: 'Sign in required.' }, { status: 401 })
 
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || process.env.VAPID_PUBLIC_KEY
-  const configured = !!(publicKey && process.env.VAPID_PRIVATE_KEY)
+  const hasPublicKey = !!publicKey
+  const hasPrivateKey = !!process.env.VAPID_PRIVATE_KEY
+  const hasSubject = !!process.env.VAPID_SUBJECT
+  const configured = hasPublicKey && hasPrivateKey
   return NextResponse.json(
-    { configured, publicKey: configured ? publicKey : null },
+    {
+      configured,
+      publicKey: configured ? publicKey : null,
+      diagnostics: {
+        publicKey: hasPublicKey,
+        privateKey: hasPrivateKey,
+        subject: hasSubject,
+      },
+    },
     { headers: { 'Cache-Control': 'private, no-store' } },
   )
 }
