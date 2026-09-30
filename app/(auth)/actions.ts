@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { safeNextPath } from '@/lib/auth/redirects'
 import { validateEmail, validatePassword, validateSignupInput } from '@/lib/auth/validation'
 import { getSiteUrl } from '@/lib/supabase/config'
-import { allow } from '@/lib/security/throttle'
+import { allow, checkAllowed, resetLimit } from '@/lib/security/throttle'
 import { checkEmailAddress } from '@/lib/email/verify-address'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -20,11 +20,29 @@ export async function login(formData: FormData) {
   const password = String(formData.get('password') ?? '')
   const next = safeNextPath(String(formData.get('next') ?? '/dashboard'))
   if (validateEmail(email) || !password) redirect(withMessage('/login', 'error', 'Enter a valid email address and password.'))
-  // 10 attempts per 15 minutes per address+IP, 60 per IP: slows credential stuffing without locking real users out.
-  if (!(await allow('login', 10, 900, email)) || !(await allow('login_ip', 60, 900))) redirect(withMessage('/login', 'error', 'Too many sign-in attempts. Wait 15 minutes and try again.'))
+  // Only failed password attempts consume the limiter. The old implementation
+  // counted every sign-in, including successful ones, which could lock legitimate
+  // members out. A limiter infrastructure fault now falls back to Supabase Auth
+  // instead of being presented as a false "too many attempts" error.
+  const [accountAllowed, ipAllowed] = await Promise.all([
+    checkAllowed('login', 10, 900, email),
+    checkAllowed('login_ip', 120, 900),
+  ])
+  if (accountAllowed === false || ipAllowed === false) {
+    redirect(withMessage('/login', 'error', 'Too many failed sign-in attempts. Wait 15 minutes and try again, or reset your password.'))
+  }
+
   const supabase = await createClient()
   const { error } = await supabase.auth.signInWithPassword({ email, password })
-  if (error) redirect(withMessage('/login', 'error', 'Invalid email or password.'))
+  if (error) {
+    await Promise.allSettled([
+      allow('login', 10, 900, email),
+      allow('login_ip', 120, 900),
+    ])
+    redirect(withMessage('/login', 'error', 'Invalid email or password.'))
+  }
+
+  await Promise.allSettled([resetLimit('login', email), resetLimit('login_ip')])
   revalidatePath('/', 'layout')
 
   /* An account with an enrolled authenticator is only at aal1 after the
