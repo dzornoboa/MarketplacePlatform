@@ -1608,3 +1608,12 @@ h1,h2,h3,h4,
   .member-me-menu-wide{width:min(360px,calc(100vw - 18px));max-height:82vh}
   .quick-language{right:14px;bottom:76px}
 }
+
+/* Complete member profile dropdown: all Marketplace, Business and Account modules remain visible/scrollable. */
+@media(min-width:901px){
+  .member-me-menu-wide{width:min(640px,calc(100vw - 36px));max-height:calc(100vh - 82px);padding:14px}
+  .member-me-menu-wide .member-me-section{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 8px}
+  .member-me-menu-wide .member-me-section>strong{grid-column:1/-1}
+  .member-me-menu-wide .member-me-section>a{min-width:0}
+}
+.push-diagnostics{display:block;margin-top:5px;line-height:1.45}
