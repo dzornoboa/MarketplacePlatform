@@ -10,7 +10,7 @@ import { createClient } from '@/lib/supabase/server'
 import { readAccessState } from '@/lib/auth/guards'
 import { humanize, labelForIntent, labelForParticipantType, marketplaceLockFor } from '@/lib/auth/access'
 import { money, date, relativeDays } from '@/lib/format'
-import { expressInterest, toggleSaved } from '@/app/dashboard/opportunities/actions'
+import { expressInterest, toggleSaved, withdrawDeal } from '@/app/dashboard/opportunities/actions'
 import { requestIntroduction } from '@/app/dashboard/introductions/actions'
 
 export const dynamic = 'force-dynamic'
@@ -139,7 +139,10 @@ export default async function ListingDetailPage({ params, searchParams }: Props)
         {!isOwner && <section className="card deal-card">
           <h2>{myBid ? 'Your Deal Request' : 'Send A Deal Request'}</h2>
           {myBid
-            ? <p className="muted">You sent a deal request on {date(myBid.created_at)}. Status: <span className={`status-dot status-eoi-${myBid.status}`}>{myBid.status === 'submitted' ? 'Processing' : myBid.status === 'under_review' ? 'Processed' : myBid.status === 'accepted' ? 'Connected' : humanize(myBid.status)}</span>{myBid.status === 'submitted' ? ' — WTC Accra is reviewing the request.' : myBid.status === 'under_review' ? ' — processed and now with the owner.' : ''}</p>
+            ? <div className="request-state-row">
+                <p className="muted">You sent a deal request on {date(myBid.created_at)}. Status: <span className={`status-dot status-eoi-${myBid.status}`}>{myBid.status === 'submitted' ? 'Processing' : myBid.status === 'under_review' ? 'Processed' : myBid.status === 'accepted' ? 'Connected' : humanize(myBid.status)}</span>{myBid.status === 'submitted' ? ' — WTC Accra is reviewing the request.' : myBid.status === 'under_review' ? ' — processed and now with the owner.' : ''}</p>
+                {(myBid.status === 'submitted' || myBid.status === 'under_review') && <form action={withdrawDeal}><input type="hidden" name="eoiId" value={myBid.id} /><SubmitButton className="button button-outline" pendingLabel="Withdrawing…">Withdraw Request</SubmitButton></form>}
+              </div>
             : <>
                 <p className="muted">Your deal request goes to WTC Accra first. The monitored team reviews it before it reaches the opportunity owner. If accepted, a monitored Deal Room opens for the parties and authorised WTC Accra staff.</p>
                 <form action={expressInterest} className="form-stack">
