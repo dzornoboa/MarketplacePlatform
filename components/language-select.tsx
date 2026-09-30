@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 
-function languageOptions(uiLocale = 'en') {
+export function languageOptions(uiLocale = 'en') {
   const display = new Intl.DisplayNames([uiLocale], { type: 'language' })
   const out: { code: string; name: string }[] = []
   for (let a = 97; a <= 122; a++) for (let b = 97; b <= 122; b++) {
