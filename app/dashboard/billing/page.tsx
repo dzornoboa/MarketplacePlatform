@@ -197,8 +197,8 @@ export default async function BillingPage({ searchParams }: Props) {
     <section className="dashboard-grid">
       <article className="metric-card">
         <span>Subscription</span>
-        <strong>{active ? (activePlan?.name ?? 'Active') : awaiting ? 'Awaiting approval' : pending ? 'Payment due' : expired ? 'Expired' : 'None'}</strong>
-        <p>{active ? `Active until ${date(active.ends_at)}.` : awaiting ? 'Paid; WTC Accra is confirming eligibility.' : pending ? 'Complete the payment above.' : expired ? 'Renew to restore access.' : 'An active eligible access plan unlocks the full published deal catalogue.'}</p>
+        <strong>{active ? (activePlan?.name ?? 'Active') : awaiting && profile.verification_status !== 'verified' ? 'Awaiting Approval' : pending ? 'Payment Due' : expired ? 'Expired' : profile.verification_status === 'verified' ? 'Verified' : 'None'}</strong>
+        <p>{active ? `Active until ${date(active.ends_at)}.` : awaiting && profile.verification_status !== 'verified' ? 'Paid; WTC Accra is confirming eligibility.' : pending ? 'Complete the payment above.' : expired ? 'Renew to restore access.' : profile.verification_status === 'verified' ? 'Your verification is complete. Choose or activate a plan only if your membership tier requires one.' : 'An active eligible access plan unlocks the full published deal catalogue.'}</p>
       </article>
       <article className="metric-card">
         <span>Marketplace access</span>
