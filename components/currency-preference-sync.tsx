@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 
 const ORIGINAL = 'data-wtc-original-currency'
 const SELECTOR = 'h1,h2,h3,h4,p,span,strong,small,label,button,a,summary,dt,dd,th,td,li,.button,.field-help,.muted,.eyebrow'
-const USD_RE = /(?:US\$|USD\s*)\s*([0-9][0-9,]*(?:\.[0-9]+)?)/g
+const USD_RE = /(?:US\$|USD\s*|\$)\s*([0-9][0-9,]*(?:\.[0-9]+)?)/g
 
 function shouldConvert(el: HTMLElement) {
   if (el.closest('[data-no-currency],input,textarea,script,style,code,pre')) return false
@@ -26,7 +26,16 @@ function format(amount: number, currency: string) {
   }
 }
 
+function restoreOriginalCurrencyText() {
+  document.querySelectorAll<HTMLElement>(`[${ORIGINAL}]`).forEach(el => {
+    const original = el.getAttribute(ORIGINAL)
+    if (original !== null) el.textContent = original
+    el.removeAttribute('data-wtc-display-currency')
+  })
+}
+
 async function convertVisibleUsd(targetCurrency: string) {
+  restoreOriginalCurrencyText()
   if (!targetCurrency || targetCurrency === 'USD') return
   const response = await fetch(`/api/fx?from=USD&to=${encodeURIComponent(targetCurrency)}&amount=1`, { cache: 'no-store' })
   if (!response.ok) return
@@ -52,11 +61,9 @@ export function CurrencyPreferenceSync({ currency = 'USD' }: { currency?: string
   useEffect(() => {
     const next = (currency || 'USD').toUpperCase()
     localStorage.setItem('wtc-currency', next)
+    window.dispatchEvent(new CustomEvent('wtc-currency-change', { detail: { currency: next } }))
     let timer: ReturnType<typeof setTimeout> | null = null
-    const run = () => {
-      if (next === 'USD') return
-      void convertVisibleUsd(next)
-    }
+    const run = () => { void convertVisibleUsd(next) }
     run()
     const observer = new MutationObserver(() => {
       if (timer) clearTimeout(timer)
@@ -66,6 +73,7 @@ export function CurrencyPreferenceSync({ currency = 'USD' }: { currency?: string
     return () => {
       observer.disconnect()
       if (timer) clearTimeout(timer)
+      restoreOriginalCurrencyText()
     }
   }, [currency])
   return null
