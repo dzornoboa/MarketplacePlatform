@@ -75,6 +75,7 @@ export default async function MembershipIdsPage({ searchParams }: Props) {
         <p className="eyebrow">Bulk Member Onboarding</p>
         <h2>Import Members From Excel</h2>
         <p className="muted">Upload an <strong>.xlsx</strong> workbook or CSV. Uploading only prepares IDs; no account is active until an administrator activates selected rows or the whole reviewed batch.</p>
+        <p><a className="button button-outline" href="/api/admin/membership-import/template">Download Excel Template</a></p>
       </div>
       <form action={importMembershipRoster} className="form-grid">
         <label>Membership Type<select name="memberType" required defaultValue="wtc_accra"><option value="wtc_accra">WTC Accra Member</option><option value="wtca">WTCA Member</option></select></label>
