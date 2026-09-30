@@ -46,13 +46,13 @@ export function PushNotificationToggle() {
   async function enable() {
     setError(null); setStatus('working')
     try {
-      const key = publicKey
-      if (!key) {
+      let vapidKey = publicKey
+      if (!vapidKey) {
         const config = await fetch('/api/push/config', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null) as { configured?: boolean; publicKey?: string | null } | null
         if (!config?.configured || !config.publicKey) throw new Error('Push notifications are not configured on this deployment.')
+        vapidKey = config.publicKey
         setPublicKey(config.publicKey)
       }
-      const vapidKey = key || (await fetch('/api/push/config', { cache: 'no-store' }).then(r => r.json()).then(d => d.publicKey as string))
       const reg = await navigator.serviceWorker.ready
       const permission = await Notification.requestPermission()
       if (permission !== 'granted') { setStatus(permission === 'denied' ? 'denied' : 'off'); return }
