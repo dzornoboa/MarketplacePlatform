@@ -18,8 +18,8 @@ const ID_TYPES = [
 const HINT: Record<string, string> = {
   investor: 'Investors join and post deals for free. Deal and business details stay protected until access is requested and approved. A 1% success fee applies to successfully closed deals.',
   business: 'Businesses join and post deals for free. US$1,000/year unlocks restricted deal details and networking after the profile is completed and verified. A 1% success fee applies to successful requested deals.',
-  wtc_association_member: 'WTCA members join and post deals for free. US$1,500/year unlocks investors, opportunities and restricted deal details after verification. A 1% success fee applies to closed deals.',
-  wtc_accra_member: 'WTC Accra members join and post deals for free. US$500/year unlocks meeting details and restricted deal opportunities. A 1% success fee applies to closed deals.',
+  wtc_association_member: 'World Trade Centers Association members require an activated WTCAM Member ID issued to their email address. They join and post deals for free; US$1,500/year unlocks investors, opportunities and restricted deal details after verification. A 1% success fee applies to closed deals.',
+  wtc_accra_member: 'WTC Accra members require an activated WTCA Membership ID issued to their email address. They join and post deals for free; US$500/year unlocks meeting details and restricted deal opportunities. A 1% success fee applies to closed deals.',
 }
 
 type CountryOption = { code: string; name: string; callingCode: string; currencyCode: string; currencyName: string; currencySymbol: string }
