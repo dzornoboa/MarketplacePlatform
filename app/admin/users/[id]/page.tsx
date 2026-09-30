@@ -10,6 +10,7 @@ import { humanize, labelForParticipantType, systemRoleLabels, systemRoles, accou
 import { date, dateTime, money } from '@/lib/format'
 import { SubmitButton } from '@/components/submit-button'
 import { CountryCurrencyFields } from '@/components/country-currency-fields'
+import { LanguageSelect } from '@/components/language-select'
 import { updateMarketplaceAccess, updateAccountStatus, updateStaffRole, setVerificationStatus, messageMember, setMemberSubscription, setSupportBypass, sendPasswordReset, adminUpdateProfile, requestUserServiceAction, setDelegatedCapabilities } from '../actions'
 
 export const dynamic = 'force-dynamic'
@@ -28,11 +29,13 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
 
   const { data: person } = await supabase.from('profiles').select('*').eq('id', id).maybeSingle()
   if (!person) notFound()
+  if (person.system_role === 'super_admin' && me.system_role !== 'super_admin') notFound()
+  if (person.system_role === 'admin' && !['admin','super_admin'].includes(me.system_role)) notFound()
   const { data: email } = await supabase.rpc('member_email', { target_user: id })
   const bypassActive = !!person.support_bypass_until && new Date(person.support_bypass_until) > new Date()
   const self = person.id === me.id
 
-  const [{ data: requests }, { data: docs }, { data: subs }, { data: payments }, { data: orgLinks }, { data: plans }, { data: notes }, { data: listings }, { data: bids }, { data: memberships }, { data: billingRow }, { data: delegatedRows }, { data: capabilityCatalog }] = await Promise.all([
+  const [{ data: requests }, { data: docs }, { data: subs }, { data: payments }, { data: orgLinks }, { data: plans }, { data: notes }, { data: listings }, { data: bids }, { data: memberships }, { data: billingRow }, { data: delegatedRows }, { data: capabilityCatalog }, { data: targetPreferences }] = await Promise.all([
     supabase.from('verification_requests').select('*').eq('user_id', id).order('submitted_at', { ascending: false }),
     supabase.from('document_records').select('id,file_name,purpose,created_at,opportunity_id').eq('owner_user_id', id).order('created_at', { ascending: false }),
     supabase.from('subscriptions').select('*').eq('user_id', id).order('created_at', { ascending: false }),
@@ -46,6 +49,7 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
     supabase.from('billing_addresses').select('user_id').eq('user_id', id).maybeSingle(),
     me.system_role === 'super_admin' ? supabase.from('staff_capability_grants').select('capability,active,expires_at').eq('user_id',id) : Promise.resolve({ data: [] }),
     me.system_role === 'super_admin' ? supabase.from('staff_capability_catalog').select('capability,label,description,active,sort_order').eq('active',true).order('sort_order') : Promise.resolve({ data: [] }),
+    supabase.rpc('admin_member_display_preferences', { target_user: id }),
   ])
   const billingOnFile = !!billingRow
   const orgIds = (orgLinks ?? []).map(o => o.organization_id)
@@ -82,6 +86,7 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
           <div><dt>Job title</dt><dd>{person.job_title || '—'}</dd></div>
           <div><dt>City</dt><dd>{person.city || '—'}</dd></div>
           <div><dt>Role</dt><dd>{systemRoleLabels[person.system_role] ?? person.system_role}</dd></div>
+          <div><dt>Membership ID</dt><dd>{person.membership_access_id || '—'}</dd></div>
           <div><dt>WTCA member no.</dt><dd>{person.wtca_membership_number || '—'}</dd></div>
           <div><dt>WTCA chapter</dt><dd>{person.wtca_chapter || '—'}</dd></div>
           <div><dt>Browsing</dt><dd>{person.can_view_opportunities ? 'Allowed' : 'Blocked'}</dd></div>
@@ -258,6 +263,10 @@ export default async function AdminMemberPage({ params, searchParams }: Props) {
         />
       </div>
       <label>City<input name="city" defaultValue={person.city ?? ''} /></label>
+      <div className="form-grid">
+        <label>Dashboard Language<LanguageSelect name="dashboardLanguage" defaultValue={(targetPreferences as { language?: string } | null)?.language ?? 'en'} autoTranslate={false} useStored={false} /></label>
+        <label className="switch preference-row"><input type="checkbox" name="autoTranslate" defaultChecked={(targetPreferences as { auto_translate?: boolean } | null)?.auto_translate ?? true} /><span><strong>Automatic Translation</strong><small>Apply the selected language automatically on the member dashboard.</small></span></label>
+      </div>
       <div className="form-grid">
         <label>WTCA membership no.<input name="wtcaNumber" defaultValue={person.wtca_membership_number ?? ''} /></label>
         <label>WTCA chapter<input name="wtcaChapter" defaultValue={person.wtca_chapter ?? ''} /></label>

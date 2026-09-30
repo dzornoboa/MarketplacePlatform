@@ -28,15 +28,55 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  const translationInstruction = 'Translate every input string faithfully into the requested target language. Preserve personal names, organisation names, brand names, codes, URLs, email addresses, numbers and currency values exactly. Return only a JSON array of translated strings in exactly the same order and length as the input.'
+
+  // Vercel deployments receive a short-lived OIDC token automatically. Using
+  // AI Gateway here gives the Hub a production translation provider without
+  // exposing a provider key to the browser or committing credentials to code.
+  const gatewayToken = process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN
+  if (gatewayToken) {
+    try {
+      const response = await fetch('https://ai-gateway.vercel.sh/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${gatewayToken}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: process.env.VERCEL_TRANSLATION_MODEL || 'google/gemini-3.5-flash-lite',
+          messages: [
+            { role: 'system', content: translationInstruction },
+            { role: 'user', content: JSON.stringify({ targetLanguage, texts }) },
+          ],
+          temperature: 0,
+          max_tokens: 5000,
+          stream: false,
+        }),
+        signal: AbortSignal.timeout(25_000),
+      })
+      if (response.ok) {
+        const data = await response.json() as { choices?: { message?: { content?: string } }[] }
+        const raw = data.choices?.[0]?.message?.content?.trim() ?? ''
+        const clean = raw.replace(/^\`\`\`(?:json)?\s*/i, '').replace(/\s*\`\`\`$/, '')
+        const parsed = JSON.parse(clean) as unknown
+        if (Array.isArray(parsed) && parsed.length === texts.length && parsed.every(x => typeof x === 'string')) {
+          return NextResponse.json({ translations: parsed })
+        }
+      }
+    } catch {
+      // Continue to an explicitly configured Anthropic provider when available.
+    }
+  }
+
   const anthropicKey = process.env.ANTHROPIC_API_KEY
-  if (!anthropicKey) return NextResponse.json({ error: 'Translation service is not configured.' }, { status: 503 })
+  if (!anthropicKey) return NextResponse.json({ error: 'Translation service is temporarily unavailable.' }, { status: 503 })
 
   const client = new Anthropic({ apiKey: anthropicKey })
   const result = await client.messages.create({
     model: process.env.ANTHROPIC_TRANSLATION_MODEL || 'claude-3-5-haiku-latest',
     max_tokens: 5000,
     temperature: 0,
-    system: 'You are a translation engine. Translate faithfully. Preserve names, numbers, URLs, email addresses, currency values and brand names. Return only a JSON array of translated strings in exactly the same order and length as the input.',
+    system: translationInstruction,
     messages: [{ role: 'user', content: JSON.stringify({ targetLanguage, texts }) }],
   })
   const content = result.content.find(part => part.type === 'text')

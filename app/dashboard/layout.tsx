@@ -13,6 +13,8 @@ import { TranslationPreferenceSync } from '@/components/translation-preference-s
 import { ClearRegistrationDraft } from '@/components/registration-draft'
 import { MemberTopNav } from '@/components/member-top-nav'
 import { AccessPaymentPrompt } from '@/components/access-payment-prompt'
+import { QuickLanguageSwitcher } from '@/components/quick-language-switcher'
+import { CurrencyPreferenceSync } from '@/components/currency-preference-sync'
 
 export const dynamic = 'force-dynamic'
 
@@ -47,7 +49,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   return <div className={memberExperience ? 'dashboard-shell member-dashboard-shell' : 'dashboard-shell'}>
     {memberExperience
-      ? <MemberTopNav profile={profile} unreadCount={count ?? 0} hasStaffConsole={hasStaffConsole} />
+      ? <MemberTopNav profile={profile} unreadCount={count ?? 0} hasStaffConsole={hasStaffConsole} hasAccess={!!state && !marketplaceLock(state).locked} />
       : <DashboardNav profile={profile} unreadCount={count ?? 0} adminMfaReady={adminMfaReady} adminHasFactor={adminHasFactor} hasAccess={!!state && !marketplaceLock(state).locked} planLabel={planLabel} />}
     <main className="dashboard-main">
       {expiryNotice && <div className={`expiry-bar expiry-bar-${expiryNotice.tone}`}><span>{expiryNotice.text}</span><Link className="button button-light" href="/dashboard/billing">{expiryNotice.cta}</Link></div>}
@@ -56,6 +58,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     </main>
     <RealtimeAccess userId={profile.id} />
     <TranslationPreferenceSync language={preferences?.language ?? 'en'} enabled={preferences?.auto_translate ?? false} />
+    <CurrencyPreferenceSync currency={profile.preferred_currency ?? 'USD'} />
+    <QuickLanguageSwitcher initialLanguage={preferences?.language ?? 'en'} />
     <ClearRegistrationDraft />
     <Suspense fallback={null}><FlashNotice /></Suspense>
   </div>

@@ -5,6 +5,7 @@ import { date } from '@/lib/format'
 import { PushNotificationToggle } from '@/components/push-notification-toggle'
 import { updatePreferences } from './actions'
 import { LanguageSelect } from '@/components/language-select'
+import { CurrencySelect } from '@/components/currency-select'
 
 export const dynamic = 'force-dynamic'
 
@@ -67,12 +68,15 @@ export default async function SettingsPage({ searchParams }: Props) {
         <label>Timezone<input name="timezone" defaultValue={preferences?.timezone ?? 'UTC'} required /></label>
         <label>Locale<input name="locale" defaultValue={preferences?.locale ?? 'en'} required /></label>
       </div>
-      <label>Dashboard Language<LanguageSelect defaultValue={preferences?.language ?? 'en'} /></label>
+      <div className="form-grid">
+        <label>Dashboard Language<LanguageSelect defaultValue={preferences?.language ?? 'en'} /></label>
+        <label>Preferred Currency<CurrencySelect defaultValue={profile.preferred_currency ?? 'USD'} /></label>
+      </div>
       <label className="switch preference-row">
         <input type="checkbox" name="autoTranslate" defaultChecked={preferences?.auto_translate ?? false} />
         <span><strong>Automatic Translation</strong><small>Translate interface text into your selected dashboard language. Changing language is an opt-in request to the configured translation service.</small></span>
       </label>
-      <p className="field-help">Timezone and locale format dates and times. Dashboard Language controls optional automatic translation.</p>
+      <p className="field-help">Timezone and locale format dates and times. Dashboard Language controls automatic interface translation. Preferred Currency converts displayed USD prices and deal values to your selected currency using the platform FX service; stored transaction currencies remain unchanged for audit accuracy.</p>
       <button className="button button-primary" type="submit">Save preferences</button>
     </form>
 
