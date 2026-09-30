@@ -13,14 +13,15 @@ export function languageOptions(uiLocale = 'en') {
   return out.sort((a,b) => a.name.localeCompare(b.name))
 }
 
-export function LanguageSelect({ name = 'language', defaultValue = 'en', autoTranslate = true }: { name?: string; defaultValue?: string; autoTranslate?: boolean }) {
+export function LanguageSelect({ name = 'language', defaultValue = 'en', autoTranslate = true, useStored = true }: { name?: string; defaultValue?: string; autoTranslate?: boolean; useStored?: boolean }) {
   const [value, setValue] = useState(defaultValue || 'en')
   const options = useMemo(() => languageOptions(typeof navigator === 'undefined' ? 'en' : navigator.language), [])
 
   useEffect(() => {
+    if (!useStored) return
     const stored = localStorage.getItem('wtc-language')
     if (stored && options.some(o => o.code === stored)) setValue(stored)
-  }, [options])
+  }, [options, useStored])
 
   const change = (next: string) => {
     setValue(next)
