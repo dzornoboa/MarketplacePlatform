@@ -7,7 +7,7 @@ function buildCsp(nonce: string, supabaseHost: string) {
   return [
     "default-src 'self'",
     "base-uri 'self'",
-    "frame-ancestors 'self'",
+    "frame-ancestors 'none'",
     "form-action 'self'",
     "object-src 'none'",
     `img-src 'self' data: blob: https://${supabaseHost} https://*.supabase.co https://encrypted-tbn0.gstatic.com`,

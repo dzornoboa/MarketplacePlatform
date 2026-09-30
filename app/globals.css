@@ -1562,9 +1562,14 @@ h1,h2,h3,h4,
 
 
 /* ---------- Compact Deal Metadata ---------------------------------------- */
-.compact-tags{margin:8px 0 4px;font-size:10px;line-height:1.45;color:var(--muted);text-transform:none;letter-spacing:0}
-.compact-tags strong{color:var(--wtc-navy);font-size:9px;text-transform:uppercase;letter-spacing:.08em}
+.compact-tags{margin:3px 0 1px;font-size:9px;line-height:1.35;color:var(--muted);text-transform:none;letter-spacing:0;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.compact-tags strong{color:var(--wtc-navy);font-size:8px;text-transform:uppercase;letter-spacing:.06em}
+.opportunity-card{gap:10px}
+.opportunity-card>p{margin-top:0;margin-bottom:0}
+.opportunity-card .save-row{margin-top:2px}
 .request-state-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .membership-id-gate{padding:14px;border:1px solid var(--line);border-left:4px solid var(--wtc-orange);border-radius:8px;background:#fafbfd}
 .capability-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px 14px}
-.capability-grid .check-row{display:flex;align-items:center;gap:8px;font-size:12px}
+.capability-grid .check-row{display:flex;align-items:flex-start;gap:8px;font-size:12px}
+.capability-grid .check-row span{display:flex;flex-direction:column;gap:2px}
+.capability-grid .check-row small{font-size:10px;font-weight:400;color:var(--muted);line-height:1.35}

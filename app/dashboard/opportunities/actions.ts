@@ -20,6 +20,21 @@ function optionalNumber(value: FormDataEntryValue | null): number | null {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : null
 }
 
+function containsDirectContact(value: string): boolean {
+  const text = value.trim()
+  if (!text) return false
+  const email = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i
+  const contactNumber = /\b(?:phone|telephone|tel|mobile|whatsapp|contact|call|text)\s*[:\-]?\s*\+?[0-9][0-9 ()\-.]{6,}[0-9]\b/i
+  const directLink = /(?:wa\.me\/|api\.whatsapp\.com\/|mailto:|tel:|t\.me\/)/i
+  return email.test(text) || contactNumber.test(text) || directLink.test(text)
+}
+
+function rejectDirectContact(path: string, values: string[]) {
+  if (values.some(containsDirectContact)) {
+    redirect(to(path, 'error', 'Do not place email addresses, telephone numbers, WhatsApp links or other direct contact details in a listing. WTC Accra releases contact access only after an approved request.'))
+  }
+}
+
 /* Creates a draft. RLS (opportunities_insert_verified_owner) independently
    re-checks verification, the posting switch and the participant type. */
 export async function createOpportunity(formData: FormData) {
@@ -51,6 +66,7 @@ export async function createOpportunity(formData: FormData) {
   if (!KINDS.has(kind)) redirect(to('/dashboard/opportunities/new', 'error', 'Select an opportunity type.'))
   if (!INTENTS.has(intent)) redirect(to('/dashboard/opportunities/new', 'error', 'Select what you are posting as.'))
   if (!/^[A-Z]{3}$/.test(currency)) redirect(to('/dashboard/opportunities/new', 'error', 'Currency must be a 3-letter code such as USD or GHS.'))
+  rejectDirectContact('/dashboard/opportunities/new', [title, summary, description, ...userTags])
 
   const capitalRequired = optionalNumber(formData.get('capitalRequired'))
   const minimumTicket = optionalNumber(formData.get('minimumTicket'))
@@ -100,27 +116,21 @@ export async function expressInterest(formData: FormData) {
   const opportunityId = String(formData.get('opportunityId') ?? '')
   const message = String(formData.get('message') ?? '').trim()
   const returnTo = String(formData.get('returnTo') ?? '/dashboard/opportunities')
-  const supabase = await createClient()
-  const { data: claimsData } = await supabase.auth.getClaims()
-  const userId = claimsData?.claims?.sub
-  if (!userId) redirect('/login')
+  if (!opportunityId) redirect(to(returnTo, 'error', 'Opportunity not found.'))
   if (message.length < 20 || message.length > 3000) redirect(to(returnTo, 'error', 'Your deal request must be between 20 and 3000 characters.'))
-  const { data: existing } = await supabase.from('expressions_of_interest')
-    .select('id,status').eq('opportunity_id', opportunityId).eq('applicant_id', String(userId)).maybeSingle()
-  if (existing) {
-    const label = existing.status === 'submitted' ? 'Processing' : existing.status === 'under_review' ? 'Processed' : existing.status === 'accepted' ? 'Connected' : existing.status === 'declined' ? 'Declined' : 'Withdrawn'
-    if (existing.status === 'submitted' || existing.status === 'under_review' || existing.status === 'accepted') {
-      redirect(to(returnTo, 'error', `You already have a deal request for this opportunity. Current status: ${label}.`))
-    }
-    redirect(to(returnTo, 'error', 'A previous request already exists for this opportunity. Open Deals to review its status before submitting another request.'))
-  }
-  const { error } = await supabase.from('expressions_of_interest').insert({
-    opportunity_id: opportunityId, applicant_id: String(userId), message, status: 'submitted',
+
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('submit_deal_request', {
+    opportunity_id: opportunityId,
+    request_message: message,
   })
   if (error) redirect(to(returnTo, 'error', error.message))
+
   revalidatePath('/dashboard/interests')
+  revalidatePath('/dashboard/opportunities')
+  revalidatePath('/dashboard/feed')
   revalidatePath(returnTo)
-  redirect(to(returnTo, 'message', 'Deal request submitted. WTC Accra will review it, notify the monitored team and update you at each step.'))
+  redirect(to(returnTo, 'message', 'Deal request submitted. WTC Accra will review it before any direct connection or contact details are released.'))
 }
 
 export async function respondToInterest(formData: FormData) {
@@ -157,10 +167,14 @@ export async function toggleSaved(formData: FormData) {
     ? await supabase.from('saved_opportunities').delete()
         .eq('user_id', String(userId)).eq('opportunity_id', opportunityId)
     : await supabase.from('saved_opportunities')
-        .insert({ user_id: String(userId), opportunity_id: opportunityId })
+        .upsert({ user_id: String(userId), opportunity_id: opportunityId }, { onConflict: 'user_id,opportunity_id', ignoreDuplicates: true })
 
   if (error) redirect(to(returnTo, 'error', error.message))
   revalidatePath('/dashboard/opportunities')
+  revalidatePath('/dashboard/saved')
+  revalidatePath('/dashboard/feed')
+  revalidatePath('/dashboard')
+  revalidatePath(returnTo)
   redirect(to(returnTo, 'message', saved ? 'Removed from your shortlist.' : 'Saved to your shortlist.'))
 }
 
@@ -194,13 +208,15 @@ export async function updateOpportunity(formData: FormData) {
   if (!INTENTS.has(intent)) redirect(to(target, 'error', 'Select what you are posting as.'))
   if (!/^[A-Z]{3}$/.test(currency)) redirect(to(target, 'error', 'Currency must be a 3-letter code such as USD or GHS.'))
 
+  const userTags = String(formData.get('tags') ?? '').split(',').map(t => t.trim()).filter(Boolean)
+  rejectDirectContact(target, [title, summary, description, ...userTags])
+
   const supabase = await createClient()
   const capitalRequired = optionalNumber(formData.get('capitalRequired'))
   const minimumTicket = optionalNumber(formData.get('minimumTicket'))
   const capitalUsd = await convertCurrency(capitalRequired, currency, 'USD')
   const ticketUsd = await convertCurrency(minimumTicket, currency, 'USD')
   const fxRate = capitalUsd?.rate ?? ticketUsd?.rate ?? (currency === 'USD' ? 1 : null)
-  const userTags = String(formData.get('tags') ?? '').split(',').map(t => t.trim()).filter(Boolean)
   const tags = [...new Set([`category:${categoryTag(category)}`, ...userTags])].slice(0, 12)
   const { error } = await supabase.from('opportunities').update({
     title, summary, description, category, sector, country, country_code: countryCode,

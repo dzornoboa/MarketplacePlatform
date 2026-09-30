@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { readFile } from 'node:fs/promises'
+import path from 'node:path'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import { createClient } from '@/lib/supabase/server'
 import { labelForParticipantType } from '@/lib/auth/access'
@@ -58,10 +60,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ user
   page.drawRectangle({ x: 0, y: height - 10, width, height: 10, color: orange })
 
   const requestUrl = new URL(request.url)
-  const origin = requestUrl.origin
   const supabaseHost = new URL(getSupabasePublicConfig().url).host
   const allowedHosts = new Set([requestUrl.host, supabaseHost])
-  const logo = await embedRemoteImage(pdf, origin + '/brand/wtc-accra-logo-black.png', allowedHosts)
+  let logo = null
+  try {
+    const logoBytes = await readFile(path.join(process.cwd(), 'public', 'brand', 'wtc-accra-logo-black.png'))
+    logo = await pdf.embedPng(logoBytes)
+  } catch {
+    logo = null
+  }
   if (logo) {
     const scale = Math.min(190 / logo.width, 38 / logo.height)
     page.drawImage(logo, { x: 52, y: height - 92, width: logo.width * scale, height: logo.height * scale })

@@ -12,12 +12,28 @@ const SUGGESTIONS = ['How do I get verified?', 'Where do I pay for my plan?', 'H
    WTC Accra team as a support request. */
 export function HelpAssistant({ signedIn = false }: { signedIn?: boolean }) {
   const [open, setOpen] = useState(false)
+  const [visible, setVisible] = useState(true)
   const [turns, setTurns] = useState<Turn[]>([{ role: 'assistant', text: 'Hi! Ask me where to find anything on WTC Accra Hub, or how something works.' }])
   const [q, setQ] = useState('')
   const [busy, setBusy] = useState(false)
   const log = useRef<HTMLDivElement>(null)
 
   useEffect(() => { log.current?.scrollTo({ top: log.current.scrollHeight, behavior: 'smooth' }) }, [turns, open])
+  useEffect(() => {
+    if (open || !visible) return
+    const timer = window.setTimeout(() => setVisible(false), 12000)
+    return () => window.clearTimeout(timer)
+  }, [open, visible])
+
+  const toggleOpen = () => {
+    setVisible(true)
+    setOpen(value => !value)
+  }
+
+  const closePanel = () => {
+    setOpen(false)
+    window.setTimeout(() => setVisible(false), 3000)
+  }
 
   const ask = async (question: string) => {
     if (!question.trim() || busy) return
@@ -49,12 +65,12 @@ export function HelpAssistant({ signedIn = false }: { signedIn?: boolean }) {
   })
 
   return <>
-    <button type="button" className="helper-fab" onClick={() => setOpen(v => !v)} aria-expanded={open} aria-controls="help-assistant">
+    {visible && <button type="button" className="helper-fab" onClick={toggleOpen} aria-expanded={open} aria-controls="help-assistant">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M9.1 9a3 3 0 015.8 1c0 2-3 2-3 4" /><path d="M12 17h.01" /></svg>
       {open ? 'Close help' : 'Need help?'}
-    </button>
+    </button>}
     {open && <section id="help-assistant" className="helper-panel" aria-label="Help assistant">
-      <header className="helper-head"><span>WTC Accra helper</span><button type="button" onClick={() => setOpen(false)} aria-label="Close">×</button></header>
+      <header className="helper-head"><span>WTC Accra helper</span><button type="button" onClick={closePanel} aria-label="Close">×</button></header>
       <div className="helper-log" ref={log}>
         {turns.map((t, i) => <div key={i} className={`helper-msg helper-msg-${t.role === 'user' ? 'user' : 'bot'}`}>
           {render(t.text)}

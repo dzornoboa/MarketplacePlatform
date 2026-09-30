@@ -50,7 +50,7 @@ export function VerifiedMemberShareActions({
   const encodedText = encodeURIComponent(shareText)
 
   return <div className="verified-share-actions">
-    <a className="button button-primary" href={pdfUrl}>Download PDF</a>
+    <a className="button button-primary" href={pdfUrl} download>Download PDF</a>
     <button className="button button-secondary" type="button" onClick={nativeShare}>Share Card</button>
     <a className="button button-outline" href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`} target="_blank" rel="noreferrer">LinkedIn</a>
     <a className="button button-outline" href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`} target="_blank" rel="noreferrer">Facebook</a>

@@ -8,6 +8,7 @@ import { validateEmail, validatePassword, validateSignupInput } from '@/lib/auth
 import { getSiteUrl } from '@/lib/supabase/config'
 import { allow } from '@/lib/security/throttle'
 import { checkEmailAddress } from '@/lib/email/verify-address'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 function withMessage(path: string, key: 'error' | 'message', message: string) {
   const separator = path.includes('?') ? '&' : '?'
@@ -71,11 +72,18 @@ export async function signup(formData: FormData) {
   const wtcAccraMembershipId = String(formData.get('wtcAccraMembershipId') ?? '').trim().toUpperCase()
   if (participantType === 'wtc_accra_member') {
     if (!/^WTCA[0-9]{10}$/.test(wtcAccraMembershipId)) redirect(withMessage('/register', 'error', 'Enter the WTC Accra Membership ID issued to your email address.'))
-    const { data: validMembershipId, error: membershipIdError } = await supabase.rpc('wtc_membership_id_valid_for_signup', {
-      membership_code: wtcAccraMembershipId,
-      member_email: email,
-    })
-    if (membershipIdError || !validMembershipId) redirect(withMessage('/register', 'error', 'That Membership ID is invalid, already used, revoked, or assigned to a different email address. Contact WTC Accra if you need a Membership ID.'))
+    let validMembershipId = false
+    try {
+      const admin = createAdminClient()
+      const { data, error: membershipIdError } = await admin.rpc('wtc_membership_id_valid_for_signup', {
+        membership_code: wtcAccraMembershipId,
+        member_email: email,
+      })
+      validMembershipId = !membershipIdError && data === true
+    } catch {
+      redirect(withMessage('/register', 'error', 'Membership ID validation is temporarily unavailable. Please try again shortly.'))
+    }
+    if (!validMembershipId) redirect(withMessage('/register', 'error', 'That Membership ID is invalid, already used, revoked, or assigned to a different email address. Contact WTC Accra if you need a Membership ID.'))
   }
   const country = String(formData.get('country') ?? '').trim()
   const countryCode = String(formData.get('countryCode') ?? '').trim().toUpperCase()

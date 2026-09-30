@@ -8,22 +8,26 @@ export function AccessPaymentPrompt({
   participantType,
   subscriptionStatus,
   hasActiveSubscription,
+  fullAccess = false,
+  verified = false,
 }: {
   participantType: string | null
   subscriptionStatus: string | null | undefined
   hasActiveSubscription: boolean
+  fullAccess?: boolean
+  verified?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const fee = participantType ? membershipFees[participantType] : undefined
   const paidTier = typeof fee === 'number' && fee > 0
 
   useEffect(() => {
-    if (!paidTier || hasActiveSubscription || subscriptionStatus === 'awaiting_approval') return
+    if (!paidTier || fullAccess || hasActiveSubscription || (verified && subscriptionStatus === 'awaiting_approval') || subscriptionStatus === 'awaiting_approval') return
     const key = 'wtc-access-payment-prompt-dismissed'
     if (sessionStorage.getItem(key) !== '1') setOpen(true)
-  }, [paidTier, hasActiveSubscription, subscriptionStatus])
+  }, [paidTier, fullAccess, verified, hasActiveSubscription, subscriptionStatus])
 
-  if (!open || !paidTier || !participantType) return null
+  if (!open || !paidTier || !participantType || fullAccess) return null
 
   const dismiss = () => {
     sessionStorage.setItem('wtc-access-payment-prompt-dismissed', '1')

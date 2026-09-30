@@ -51,7 +51,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       : <DashboardNav profile={profile} unreadCount={count ?? 0} adminMfaReady={adminMfaReady} adminHasFactor={adminHasFactor} hasAccess={!!state && !marketplaceLock(state).locked} planLabel={planLabel} />}
     <main className="dashboard-main">
       {expiryNotice && <div className={`expiry-bar expiry-bar-${expiryNotice.tone}`}><span>{expiryNotice.text}</span><Link className="button button-light" href="/dashboard/billing">{expiryNotice.cta}</Link></div>}
-      {memberOnly && state && !state.grandfathered_verified_access && <AccessPaymentPrompt participantType={state.participant_type} subscriptionStatus={state.subscription_status} hasActiveSubscription={state.has_active_subscription} />}
+      {memberOnly && state && !state.grandfathered_verified_access && <AccessPaymentPrompt participantType={state.participant_type} subscriptionStatus={state.subscription_status} hasActiveSubscription={state.has_active_subscription} fullAccess={!!state.can_view_deal_details} verified={profile.verification_status === 'verified'} />}
       {children}
     </main>
     <RealtimeAccess userId={profile.id} />
