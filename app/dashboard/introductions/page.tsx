@@ -4,7 +4,7 @@ import { dateTime } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
 import { SubmitButton } from '@/components/submit-button'
 import { RealtimeRefresh } from '@/components/realtime-refresh'
-import { requestIntroduction } from './actions'
+import { requestIntroduction, withdrawIntroduction } from './actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,6 +15,7 @@ const STAGE_HELP: Record<string, string> = {
   meeting_scheduled: 'Meeting Scheduled — meeting details have been added by WTC Accra.',
   completed: 'Deal Verified — WTC Accra marked the monitored workflow complete.',
   declined: 'Declined — WTC Accra did not proceed with this access request.',
+  withdrawn: 'Withdrawn — you cancelled this access request before connection.',
 }
 const STAGE_LABEL: Record<string, string> = {
   requested: 'Processing',
@@ -23,6 +24,7 @@ const STAGE_LABEL: Record<string, string> = {
   meeting_scheduled: 'Meeting Scheduled',
   completed: 'Deal Verified',
   declined: 'Declined',
+  withdrawn: 'Withdrawn',
 }
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
@@ -101,6 +103,10 @@ export default async function IntroductionsPage({ searchParams }: Props) {
             <p className="field-help">{STAGE_HELP[item.status] ?? ''}</p>
             {item.staff_note && <p className="field-help">WTC Accra Note: {item.staff_note}</p>}
             {item.last_action_by && actorById.get(item.last_action_by) && <p className="field-help">Last Updated By <strong>{actorById.get(item.last_action_by)?.full_name}</strong> · {humanize(item.last_action_role || actorById.get(item.last_action_by)?.system_role)}{item.last_action_at ? ` · ${dateTime(item.last_action_at)}` : ''}</p>}
+            {outbound && (item.status === 'requested' || item.status === 'approved') && <form action={withdrawIntroduction}>
+              <input type="hidden" name="introductionId" value={item.id} />
+              <SubmitButton className="button button-outline" pendingLabel="Withdrawing…">Withdraw Access Request</SubmitButton>
+            </form>}
             {item.meeting_at && <dl className="detail-grid detail-grid-two">
               <div><dt>Meeting</dt><dd>{dateTime(item.meeting_at)}</dd></div>
               {item.meeting_url && <div><dt>Joining link</dt><dd><a className="arrow-link" href={item.meeting_url} rel="noopener noreferrer" target="_blank">Open meeting →</a></dd></div>}
