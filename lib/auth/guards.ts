@@ -2,7 +2,7 @@ import { cache } from 'react'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/database.types'
-import { hasAdminMfaAccess, hasCapability, isAdminRole, isStaffRole, marketplaceLock, type AccessState, type StaffCapability } from '@/lib/auth/access'
+import { hasAdminMfaAccess, isAdminRole, marketplaceLock, type AccessState, type StaffCapability } from '@/lib/auth/access'
 
 /* Authenticated session + profile, with no access gates applied. Use this only
    for the pages that must stay reachable while an account is blocked or is
@@ -65,26 +65,27 @@ export async function requireAdminProfile() {
 
 /* Staff console guard. Administrators hold every capability but must clear MFA
    first, matching private.staff_has_capability(). */
+async function loadCapabilities(context: Awaited<ReturnType<typeof requireUserProfile>>) {
+  const { data } = await context.supabase.rpc('my_staff_capabilities')
+  return new Set((data ?? []) as string[])
+}
+
 export async function requireCapability(capability: StaffCapability) {
   const context = await requireUserProfile()
-  const role = context.profile.system_role
-  if (!isStaffRole(role) || !hasCapability(role, capability)) redirect('/dashboard')
-  if (isAdminRole(role)) {
-    const aal = typeof context.claims.aal === 'string' ? context.claims.aal : null
-    if (!hasAdminMfaAccess(role, aal)) redirect('/dashboard/security?required=admin-mfa')
-  }
-  return context
+  const capabilities = await loadCapabilities(context)
+  if (!capabilities.has(capability)) redirect('/dashboard')
+  const aal = typeof context.claims.aal === 'string' ? context.claims.aal : null
+  if (aal !== 'aal2') redirect('/dashboard/security?required=admin-mfa')
+  return { ...context, capabilities }
 }
 
 export async function requireAnyCapability(capabilities: StaffCapability[]) {
   const context = await requireUserProfile()
-  const role = context.profile.system_role
-  if (!isStaffRole(role) || !capabilities.some(capability => hasCapability(role, capability))) redirect('/dashboard')
-  if (isAdminRole(role)) {
-    const aal = typeof context.claims.aal === 'string' ? context.claims.aal : null
-    if (!hasAdminMfaAccess(role, aal)) redirect('/dashboard/security?required=admin-mfa')
-  }
-  return context
+  const mine = await loadCapabilities(context)
+  if (!capabilities.some(capability => mine.has(capability))) redirect('/dashboard')
+  const aal = typeof context.claims.aal === 'string' ? context.claims.aal : null
+  if (aal !== 'aal2') redirect('/dashboard/security?required=admin-mfa')
+  return { ...context, capabilities: mine }
 }
 
 type SupabaseLike = Awaited<ReturnType<typeof createClient>>
@@ -112,13 +113,11 @@ export async function getAccessState() {
    finance officer sees subscriptions without either needing full admin. */
 export async function requireStaffConsole() {
   const context = await requireUserProfile()
-  const role = context.profile.system_role
-  if (!isStaffRole(role)) redirect('/dashboard')
-  if (isAdminRole(role)) {
-    const aal = typeof context.claims.aal === 'string' ? context.claims.aal : null
-    if (!hasAdminMfaAccess(role, aal)) redirect('/dashboard/security?required=admin-mfa')
-  }
-  return context
+  const capabilities = await loadCapabilities(context)
+  if (capabilities.size === 0) redirect('/dashboard')
+  const aal = typeof context.claims.aal === 'string' ? context.claims.aal : null
+  if (aal !== 'aal2') redirect('/dashboard/security?required=admin-mfa')
+  return { ...context, capabilities }
 }
 
 /* Super administrator only. The database agrees: the profile-protection trigger
