@@ -33,7 +33,7 @@ export default async function MembershipIdsPage({ searchParams }: Props) {
     <div>
       <p className="eyebrow">WTC Accra Membership</p>
       <h1>Membership IDs</h1>
-      <p className="muted">Generate, assign, search and track the unique IDs required to create WTC Accra Member accounts. IDs begin with WTCA and can only be used once by the email they were assigned to.</p>
+      <p className="muted">Generate, assign, search and track the unique IDs required to create WTC Accra Member accounts. IDs begin with WTCA and can only be used once by the email they were assigned to. Existing WTC Accra Member accounts are linked automatically when their email is used.</p>
     </div>
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
@@ -43,7 +43,7 @@ export default async function MembershipIdsPage({ searchParams }: Props) {
         <h2>Generate Membership ID</h2>
         <label>Member Email (Optional)<input name="email" type="email" placeholder="member@example.com" /></label>
         <label>Internal Note<textarea name="note" rows={2} placeholder="Membership confirmation or reference" /></label>
-        <p className="field-help">If an email is supplied, the ID is immediately assigned and queued for email delivery. Leave email blank to create an available ID for later assignment.</p>
+        <p className="field-help">If an email is supplied, the ID is immediately assigned and queued for email delivery. If that email already belongs to a WTC Accra Member account, the ID is linked to that account automatically and marked used. Leave email blank to create an available ID for later assignment.</p>
         <SubmitButton pendingLabel="Generating…">Generate ID</SubmitButton>
       </form>
 
