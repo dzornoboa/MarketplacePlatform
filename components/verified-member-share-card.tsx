@@ -52,7 +52,7 @@ export function VerifiedMemberShareCard({
 
       <div className="verified-member-footer">
         <span>Verified by World Trade Centre Accra</span>
-        <span>wtcaccrahub.vercel.app/member/{username}</span>
+        <span>wtcaccra.com/member/{username}</span>
       </div>
     </div>
 
