@@ -1595,3 +1595,16 @@ h1,h2,h3,h4,
   .member-me-section>strong{grid-column:1}
   .quick-language{right:14px;bottom:68px}
 }
+
+/* Member profile menu status badges and floating language control */
+.member-me-menu-wide{width:min(460px,calc(100vw - 28px));max-height:min(86vh,820px)}
+.member-me-identity .plan-tag{display:inline-flex;margin-top:5px;max-width:100%}
+.module-state-badge{display:inline-flex;align-items:center;max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-radius:999px;background:#eef3f8;color:var(--wtc-navy);padding:2px 6px;font-size:8px;font-weight:800;letter-spacing:.02em}
+.module-state-good{background:#e8f7f2;color:#08785f}
+.quick-language{right:18px;bottom:78px}
+.quick-language-button{transition:transform .15s ease,background .15s ease,color .15s ease}
+.quick-language-button:hover{transform:translateY(-1px)}
+@media(max-width:720px){
+  .member-me-menu-wide{width:min(360px,calc(100vw - 18px));max-height:82vh}
+  .quick-language{right:14px;bottom:76px}
+}
