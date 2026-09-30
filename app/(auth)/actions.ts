@@ -95,6 +95,7 @@ export async function signup(formData: FormData) {
       redirect(withMessage('/register', 'error', `Enter a valid ${label} issued and activated by WTC Accra. Membership access IDs are provided through wtcaccra.com.`))
     }
 
+    let membershipState = ''
     try {
       const admin = createAdminClient()
       const { data, error: membershipIdError } = await admin.rpc('membership_id_signup_state', {
@@ -103,17 +104,15 @@ export async function signup(formData: FormData) {
         participant: participantType,
       })
       if (membershipIdError) throw membershipIdError
-      const state = typeof data === 'object' && data ? String((data as { state?: unknown }).state ?? '') : ''
-
-      if (state === 'linked_account') {
-        redirect(withMessage('/login', 'message', 'This Membership ID is already linked to an account. Sign in instead.'))
-      }
-      if (state !== 'valid') {
-        redirect(withMessage('/register', 'error', `That ${label} is not valid for this email or has not been activated. Enter the ID issued to you by WTC Accra through wtcaccra.com.`))
-      }
-    } catch (error) {
-      if (error instanceof Error && error.message === 'NEXT_REDIRECT') throw error
+      membershipState = typeof data === 'object' && data ? String((data as { state?: unknown }).state ?? '') : ''
+    } catch {
       redirect(withMessage('/register', 'error', 'Membership ID validation is temporarily unavailable. Please try again shortly.'))
+    }
+    if (membershipState === 'linked_account') {
+      redirect(withMessage('/login', 'message', 'This Membership ID is already linked to an account. Sign in instead.'))
+    }
+    if (membershipState !== 'valid') {
+      redirect(withMessage('/register', 'error', `That ${label} is not valid for this email or has not been activated. Enter the ID issued to you by WTC Accra through wtcaccra.com.`))
     }
   }
   const country = String(formData.get('country') ?? '').trim()
