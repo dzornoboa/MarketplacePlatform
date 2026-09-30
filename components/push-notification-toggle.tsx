@@ -22,13 +22,15 @@ export function PushNotificationToggle() {
   const [error, setError] = useState<string | null>(null)
 
   const [publicKey, setPublicKey] = useState<string | null>(null)
+  const [diagnostics, setDiagnostics] = useState<{ publicKey?: boolean; privateKey?: boolean; subject?: boolean } | null>(null)
 
   useEffect(() => {
     let cancelled = false
     async function check() {
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) { setStatus('unsupported'); return }
-      const config = await fetch('/api/push/config', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null) as { configured?: boolean; publicKey?: string | null } | null
+      const config = await fetch('/api/push/config', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null) as { configured?: boolean; publicKey?: string | null; diagnostics?: { publicKey?: boolean; privateKey?: boolean; subject?: boolean } } | null
       if (cancelled) return
+      setDiagnostics(config?.diagnostics ?? null)
       if (!config?.configured || !config.publicKey) { setStatus('unconfigured'); return }
       setPublicKey(config.publicKey)
       if (isIosSafariNotInstalled()) { setStatus('ios-not-installed'); return }
@@ -48,8 +50,9 @@ export function PushNotificationToggle() {
     try {
       let vapidKey = publicKey
       if (!vapidKey) {
-        const config = await fetch('/api/push/config', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null) as { configured?: boolean; publicKey?: string | null } | null
-        if (!config?.configured || !config.publicKey) throw new Error('Push notifications are not configured on this deployment.')
+        const config = await fetch('/api/push/config', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null) as { configured?: boolean; publicKey?: string | null; diagnostics?: { publicKey?: boolean; privateKey?: boolean; subject?: boolean } } | null
+        setDiagnostics(config?.diagnostics ?? null)
+        if (!config?.configured || !config.publicKey) throw new Error('Push notifications are not active on this deployment yet.')
         vapidKey = config.publicKey
         setPublicKey(config.publicKey)
       }
@@ -98,7 +101,11 @@ export function PushNotificationToggle() {
     <p className="muted">Get an alert on your phone the moment something happens — a new match, a reply, or a listing you follow going live.</p>
     {error && <div className="alert alert-error">{error}</div>}
     {status === 'checking' && <p className="field-help">Checking this device…</p>}
-    {status === 'unconfigured' && <div className="alert alert-error">Push notifications are not configured for this deployment. WTC Accra administrators have been asked to check the VAPID environment configuration.</div>}
+    {status === 'unconfigured' && <div className="alert alert-error">
+      Push notifications are not active on this deployment yet.
+      {diagnostics && <small className="push-diagnostics"> Public key: {diagnostics.publicKey ? 'available' : 'missing'} · Private key: {diagnostics.privateKey ? 'available' : 'missing'} · Subject: {diagnostics.subject ? 'available' : 'default will be used'}.</small>}
+      <small className="push-diagnostics"> If the keys were added after the current production build, redeploy the latest main deployment so the runtime receives them.</small>
+    </div>}
     {status === 'unsupported' && <p className="field-help">This browser doesn&rsquo;t support push notifications.</p>}
     {status === 'ios-not-installed' && <p className="field-help">On iPhone, tap Share → &ldquo;Add to Home Screen&rdquo; first, then open WTC Accra Hub from your home screen to turn this on.</p>}
     {status === 'denied' && <p className="field-help">Notifications are blocked for this site in your browser settings. Allow them there, then reload this page.</p>}
