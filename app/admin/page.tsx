@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { requireStaffConsole } from '@/lib/auth/guards'
-import { hasCapability, isAdminRole, humanize } from '@/lib/auth/access'
+import { isAdminRole, humanize } from '@/lib/auth/access'
 import { money, dateTime, date } from '@/lib/format'
 
 export const dynamic = 'force-dynamic'
@@ -20,8 +20,9 @@ const sum = (t: Tally, keys?: string[]) => (keys ?? Object.keys(t)).reduce((n, k
 const breakdown = (t: Tally, order: string[]) => order.filter(k => t[k]).map(k => `${t[k]} ${humanize(k).toLowerCase()}`).join(' · ') || 'nothing yet'
 
 export default async function AdminPage() {
-  const { supabase, profile } = await requireStaffConsole()
+  const { supabase, profile, capabilities } = await requireStaffConsole()
   const role = profile.system_role
+  const can = (capability: string) => capabilities.has(capability)
   const admin = isAdminRole(role)
 
   const [vr, opp, subs, bids, support, pay, intros, members, verif, { data: plans }, { data: activeSubs }, { data: paidRows }, { data: recentAudit }, { data: staffNotes }, { data: latestMembers }, { data: latestListings }] = await Promise.all([
@@ -46,13 +47,13 @@ export default async function AdminPage() {
   const actorName = new Map((actors ?? []).map(a => [a.id, a.full_name]))
 
   const queues = [
-    { label: 'Verification requests', waiting: vr.pending_review ?? 0, total: sum(vr), detail: breakdown(vr, ['pending_review', 'verified', 'changes_requested', 'rejected']), href: '/admin/verification', show: hasCapability(role, 'verification') },
-    { label: 'Opportunities to review', waiting: (opp.submitted ?? 0) + (opp.in_review ?? 0), total: sum(opp), detail: breakdown(opp, ['submitted', 'in_review', 'published', 'changes_requested', 'rejected', 'draft']), href: '/admin/opportunities', show: hasCapability(role, 'opportunities') },
-    { label: 'Deals Processing', waiting: bids.submitted ?? 0, total: sum(bids), detail: breakdown(bids, ['submitted', 'under_review', 'accepted', 'declined', 'withdrawn']), href: '/admin/deals', show: hasCapability(role, 'opportunities') || hasCapability(role, 'verification') },
-    { label: 'Introductions to arrange', waiting: (intros.requested ?? 0) + (intros.approved ?? 0), total: sum(intros), detail: breakdown(intros, ['requested', 'approved', 'introduced', 'meeting_scheduled', 'completed', 'declined']), href: '/admin/introductions', show: hasCapability(role, 'introductions') },
-    { label: 'Payments to confirm', waiting: pay.pending ?? 0, total: sum(pay), detail: breakdown(pay, ['pending', 'paid', 'failed', 'cancelled', 'refunded']), href: '/admin/payments', show: hasCapability(role, 'finance') },
-    { label: 'Plans awaiting approval', waiting: (subs.awaiting_approval ?? 0) + (subs.pending ?? 0), total: sum(subs), detail: breakdown(subs, ['awaiting_approval', 'pending', 'active', 'expired', 'cancelled']), href: '/admin/subscriptions', show: hasCapability(role, 'finance') },
-    { label: 'Open support requests', waiting: (support.open ?? 0) + (support.in_progress ?? 0), total: sum(support), detail: breakdown(support, ['open', 'in_progress', 'resolved', 'closed']), href: '/admin/support', show: hasCapability(role, 'support') },
+    { label: 'Verification requests', waiting: vr.pending_review ?? 0, total: sum(vr), detail: breakdown(vr, ['pending_review', 'verified', 'changes_requested', 'rejected']), href: '/admin/verification', show: can('verification') },
+    { label: 'Opportunities to review', waiting: (opp.submitted ?? 0) + (opp.in_review ?? 0), total: sum(opp), detail: breakdown(opp, ['submitted', 'in_review', 'published', 'changes_requested', 'rejected', 'draft']), href: '/admin/opportunities', show: can('opportunities') },
+    { label: 'Deals Processing', waiting: bids.submitted ?? 0, total: sum(bids), detail: breakdown(bids, ['submitted', 'under_review', 'accepted', 'declined', 'withdrawn']), href: '/admin/deals', show: can('opportunities') || can('verification') },
+    { label: 'Introductions to arrange', waiting: (intros.requested ?? 0) + (intros.approved ?? 0), total: sum(intros), detail: breakdown(intros, ['requested', 'approved', 'introduced', 'meeting_scheduled', 'completed', 'declined']), href: '/admin/introductions', show: can('introductions') },
+    { label: 'Payments to confirm', waiting: pay.pending ?? 0, total: sum(pay), detail: breakdown(pay, ['pending', 'paid', 'failed', 'cancelled', 'refunded']), href: '/admin/payments', show: can('finance') },
+    { label: 'Plans awaiting approval', waiting: (subs.awaiting_approval ?? 0) + (subs.pending ?? 0), total: sum(subs), detail: breakdown(subs, ['awaiting_approval', 'pending', 'active', 'expired', 'cancelled']), href: '/admin/subscriptions', show: can('finance') },
+    { label: 'Open support requests', waiting: (support.open ?? 0) + (support.in_progress ?? 0), total: sum(support), detail: breakdown(support, ['open', 'in_progress', 'resolved', 'closed']), href: '/admin/support', show: can('support') },
   ].filter(q => q.show)
   const waitingTotal = queues.reduce((n, q) => n + q.waiting, 0)
 
@@ -75,8 +76,8 @@ export default async function AdminPage() {
 
     <section className="dashboard-grid">
       <article className="metric-card"><span>Members</span><strong>{sum(members)}</strong><p>{verif.verified ?? 0} verified · {verif.pending_review ?? 0} in review · {members.active ?? 0} active accounts{(members.suspended ?? 0) + (members.disabled ?? 0) > 0 ? ` · ${(members.suspended ?? 0) + (members.disabled ?? 0)} blocked` : ''}</p><Link href="/admin/users">Members →</Link></article>
-      <article className="metric-card"><span>Active subscriptions</span><strong>{subs.active ?? 0}</strong><p>{hasCapability(role, 'finance') ? `Annual list value ${money(recurringValue)}` : 'Members with marketplace access'}{subs.expired ? ` · ${subs.expired} expired` : ''}</p><Link href="/admin/subscriptions?status=active">Subscriptions →</Link></article>
-      {hasCapability(role, 'finance') && <article className="metric-card"><span>Payments received</span><strong>{money(received)}</strong><p>{pay.paid ?? 0} payment{(pay.paid ?? 0) === 1 ? '' : 's'} · {money(receivedThisMonth)} this month</p><Link href="/admin/payments?status=paid">Payments →</Link></article>}
+      <article className="metric-card"><span>Active subscriptions</span><strong>{subs.active ?? 0}</strong><p>{can('finance') ? `Annual list value ${money(recurringValue)}` : 'Members with marketplace access'}{subs.expired ? ` · ${subs.expired} expired` : ''}</p><Link href="/admin/subscriptions?status=active">Subscriptions →</Link></article>
+      {can('finance') && <article className="metric-card"><span>Payments received</span><strong>{money(received)}</strong><p>{pay.paid ?? 0} payment{(pay.paid ?? 0) === 1 ? '' : 's'} · {money(receivedThisMonth)} this month</p><Link href="/admin/payments?status=paid">Payments →</Link></article>}
       <article className="metric-card"><span>Live Deals</span><strong>{opp.published ?? 0}</strong><p>{sum(bids)} deal request{sum(bids) === 1 ? '' : 's'} · {bids.accepted ?? 0} connected</p><Link href="/opportunities">Public Deals →</Link></article>
     </section>
 
