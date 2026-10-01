@@ -4,11 +4,11 @@ import { Open_Sans } from 'next/font/google'
 import { Suspense } from 'react'
 import { AuthLinkHandler } from '@/components/auth-link-handler'
 import { MenuAutoClose } from '@/components/menu-autoclose'
-import { HelpAssistantMount } from '@/components/help-assistant-mount'
+import { FloatingDock } from '@/components/floating-dock'
 import { ServiceWorkerRegister } from '@/components/service-worker-register'
 import { AutoTranslate } from '@/components/auto-translate'
 import { AutoPagination } from '@/components/auto-pagination'
-import { QuickLanguageSwitcher } from '@/components/quick-language-switcher'
+import { CurrencyConversion } from '@/components/currency-conversion'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -31,5 +31,5 @@ const openSans = Open_Sans({
 
 // Open Sans is the WTCA brand font for both the logo lockup and all copy.
 export default function RootLayout({ children }: { children: ReactNode }) {
-  return <html lang="en"><body className={openSans.variable}><Suspense fallback={null}><AuthLinkHandler /><MenuAutoClose /><AutoPagination /><HelpAssistantMount /><ServiceWorkerRegister /><AutoTranslate /><QuickLanguageSwitcher /></Suspense>{children}</body></html>
+  return <html lang="en"><body className={openSans.variable}><Suspense fallback={null}><AuthLinkHandler /><MenuAutoClose /><AutoPagination /><FloatingDock /><ServiceWorkerRegister /><AutoTranslate /><CurrencyConversion /></Suspense>{children}</body></html>
 }
