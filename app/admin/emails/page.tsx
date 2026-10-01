@@ -4,7 +4,7 @@ import { humanize } from '@/lib/auth/access'
 import { dateTime } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
 import { SubmitButton } from '@/components/submit-button'
-import { sendQueuedNow, sendTestEmail } from './actions'
+import { sendQueuedNow, sendTestEmail, checkMailConnection } from './actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,7 +44,7 @@ export default async function AdminEmailsPage({ searchParams }: Props) {
       <div>
         <p className="eyebrow">Delivery</p>
         <h1>Outbound email queue</h1>
-        <p className="muted">Bid, connection, verification, plan and staff messages are queued here, then sent over SMTP and delivered as phone push notifications automatically. Use Send now to drain the backlog immediately (useful right after adding RESEND_API_KEY / VAPID env vars).</p>
+        <p className="muted">Bid, connection, verification, plan and staff messages are queued here, then sent over SMTP and delivered as phone push notifications automatically. Use Send now to drain the backlog immediately (useful right after entering the SMTP or push settings).</p>
       </div>
       <div className="button-row">
       <form action={sendQueuedNow}>
@@ -52,6 +52,9 @@ export default async function AdminEmailsPage({ searchParams }: Props) {
       </form>
       <form action={sendTestEmail}>
         <SubmitButton className="button button-outline" pendingLabel="Sending…">Send a test to me</SubmitButton>
+      </form>
+      <form action={checkMailConnection}>
+        <SubmitButton className="button button-outline" pendingLabel="Checking…">Check the connection</SubmitButton>
       </form>
       </div>
     </div>

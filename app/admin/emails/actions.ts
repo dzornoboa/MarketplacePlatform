@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { requireAdminProfile } from '@/lib/auth/guards'
-import { adminClient, drainEmails, drainPushes } from '@/lib/notifications/worker'
+import { adminClient, drainEmails, drainPushes, verifyMailConnection } from '@/lib/notifications/worker'
 
 /* Manual trigger for admins to drain the queue on demand — the same worker
    the DB wakes automatically after every insert, and the pg_cron safety net
@@ -45,4 +45,15 @@ export async function sendTestEmail() {
   revalidatePath('/admin/emails')
   if (after?.status === 'sent') redirect('/admin/emails?status=sent&message=' + encodeURIComponent(`Test email sent to ${address}. Check the inbox (and spam) to confirm delivery.`))
   redirect('/admin/emails?status=failed&error=' + encodeURIComponent(after?.error ?? result.note ?? 'The test is still queued — SMTP is not configured on this deployment.'))
+}
+
+/* Checks the mailbox credentials without sending a message. Run this first
+   after entering SMTP settings: it separates "the login is wrong" from
+   "the message was rejected". */
+export async function checkMailConnection() {
+  await requireAdminProfile()
+  const result = await verifyMailConnection()
+  revalidatePath('/admin/emails')
+  if (result.ok) redirect('/admin/emails?message=' + encodeURIComponent('The mail server accepted these credentials. Send a test to yourself to confirm delivery.'))
+  redirect('/admin/emails?error=' + encodeURIComponent(result.error))
 }

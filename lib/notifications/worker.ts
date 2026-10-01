@@ -47,6 +47,23 @@ function transport() {
   })
 }
 
+/* Opens the SMTP session and authenticates without sending anything, so a
+   wrong host, port, username or password is reported while the settings are
+   being entered rather than discovered later by a member who never got their
+   email. */
+export async function verifyMailConnection(): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!smtpConfigured()) return { ok: false, error: 'SMTP_HOST, SMTP_USER and SMTP_PASSWORD are not all set on this deployment.' }
+  const mailer = transport()
+  try {
+    await mailer.verify()
+    return { ok: true }
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'The mail server refused the connection.' }
+  } finally {
+    mailer.close()
+  }
+}
+
 export async function drainEmails(admin: SupabaseClient<Database>) {
   if (!smtpConfigured()) return { attempted: 0, sent: 0, note: 'SMTP not configured — left queued' }
   const from = process.env.EMAIL_FROM || 'WTC Accra Hub <membership@wtcaccra.com>'
