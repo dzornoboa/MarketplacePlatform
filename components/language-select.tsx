@@ -58,7 +58,8 @@ export function LanguageSelect({ name = 'language', defaultValue = 'en', autoTra
     }
   }
 
-  return <select name={name} value={value} onChange={e => change(e.target.value)} required>
+  // Language names come from Intl in the reader's own language already.
+  return <select name={name} value={value} onChange={e => change(e.target.value)} required data-no-translate>
     {options.map(option => <option key={option.code} value={option.code}>{option.name}</option>)}
   </select>
 }

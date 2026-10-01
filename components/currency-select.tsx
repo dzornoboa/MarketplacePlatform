@@ -58,7 +58,10 @@ export function CurrencySelect({ name = 'preferredCurrency', defaultValue = 'USD
     }
   }
 
-  return <select name={name} value={value} onChange={e => change(e.target.value)} required>
+  /* The codes and names here come from the browser, already in the reader's own
+     language, so the page translator must leave this list alone — it was
+     turning the currency code ALL into TOUS. */
+  return <select name={name} value={value} onChange={e => change(e.target.value)} required data-no-translate>
     {items.length === 0 && <option value={value}>{value}</option>}
     {items.map(item => <option key={item.code} value={item.code}>{item.code} — {item.name}{item.symbol && item.symbol !== item.code ? ` (${item.symbol})` : ''}</option>)}
   </select>

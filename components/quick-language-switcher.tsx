@@ -47,7 +47,7 @@ export function QuickLanguageSwitcher({ initialLanguage = 'en' }: { initialLangu
   return <div className="quick-language" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
     {open && <div className="quick-language-panel" role="dialog" aria-label="Choose language">
       <strong>Language</strong>
-      <select value={value} size={12} onChange={e => void change(e.target.value)} aria-label="Page language">
+      <select value={value} size={12} onChange={e => void change(e.target.value)} aria-label="Page language" data-no-translate>
         {options.map(option => <option key={option.code} value={option.code}>{option.name}</option>)}
       </select>
       {status === 'error'
