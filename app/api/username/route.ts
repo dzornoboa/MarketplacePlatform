@@ -10,11 +10,14 @@ export async function GET(request: NextRequest) {
   if (!/^[a-z0-9][a-z0-9._-]{2,29}$/.test(candidate)) {
     return NextResponse.json({ available: false, valid: false })
   }
+  /* Availability is checked with the service role. When that is not configured
+     the answer is unknown, not "taken" — saying taken would mark every name in
+     the form red. The account insert still enforces uniqueness. */
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!serviceKey) return NextResponse.json({ available: false, valid: true }, { status: 503 })
+  if (!serviceKey) return NextResponse.json({ available: null, valid: true })
   const { url } = getSupabasePublicConfig()
   const supabase = createSupabaseClient<Database>(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } })
   const { data, error } = await supabase.rpc('username_available', { candidate })
-  if (error) return NextResponse.json({ available: false, valid: true }, { status: 503 })
+  if (error) return NextResponse.json({ available: null, valid: true })
   return NextResponse.json({ available: Boolean(data), valid: true })
 }

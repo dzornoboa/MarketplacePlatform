@@ -14,10 +14,22 @@ export async function clientKey(): Promise<string> {
   return createHash('sha256').update(`${salt}:${ip}`).digest('hex').slice(0, 32)
 }
 
+/* Returns false only when the limiter actually says "too many". A limiter that
+   is not configured, or that fails, must not masquerade as a rate limit: doing
+   so takes registration, password reset, verification codes and support off the
+   air behind a message that blames the member for sending too many requests.
+   The miss is logged so the deployment problem is visible in the server log. */
+let warnedUnconfigured = false
 export async function allow(bucket: string, max: number, windowSeconds: number, extraKey?: string): Promise<boolean> {
   try {
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!serviceKey) return false
+    if (!serviceKey) {
+      if (!warnedUnconfigured) {
+        warnedUnconfigured = true
+        console.error('Rate limiting is switched off: SUPABASE_SERVICE_ROLE_KEY is not set on this deployment.')
+      }
+      return true
+    }
     const { url } = getSupabasePublicConfig()
     const admin = createSupabaseClient<Database>(url, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -31,10 +43,10 @@ export async function allow(bucket: string, max: number, windowSeconds: number, 
       window_seconds: windowSeconds,
       subject_hint: hint,
     })
-    if (error) return false
+    if (error) { console.error('Rate limit check failed for bucket ' + bucket + ':', error.message); return true }
     return data !== false
   } catch {
-    return false
+    return true
   }
 }
 

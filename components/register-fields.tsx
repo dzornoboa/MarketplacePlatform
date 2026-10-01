@@ -68,8 +68,12 @@ export function RegisterFields({ email, initialPlan = '', initialType = '' }: { 
     const timer = setTimeout(async () => {
       try {
         const response = await fetch(`/api/username?username=${encodeURIComponent(username)}`)
-        const data = await response.json() as { available?: boolean; valid?: boolean }
-        setUsernameState(data.valid === false ? 'invalid' : data.available ? 'available' : 'taken')
+        const data = await response.json() as { available?: boolean | null; valid?: boolean }
+        // available === null means the check could not run; leave the field unmarked.
+        setUsernameState(data.valid === false ? 'invalid'
+          : data.available === true ? 'available'
+          : data.available === false ? 'taken'
+          : 'idle')
       } catch { setUsernameState('idle') }
     }, 350)
     return () => clearTimeout(timer)
