@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { ContentPost } from '@/lib/database.types'
+import { ImageUploadField } from '@/components/image-upload-field'
 
 /* Shared by the create and edit screens. `intent` on the submit button tells the
    action whether to save a draft, publish, unpublish or archive. */
@@ -19,10 +20,9 @@ export function PostForm({ post, action }: { post?: ContentPost; action: (formDa
     <label>Excerpt<textarea name="excerpt" rows={2} defaultValue={post?.excerpt ?? ''} placeholder="One or two sentences shown in listings." /></label>
     <label>Body<textarea name="body" rows={16} defaultValue={post?.body ?? ''} minLength={20} required placeholder="Write the full article. Blank lines separate paragraphs." /></label>
     <div className="form-grid">
-      <label>Image URL<input name="imageUrl" defaultValue={post?.image_url ?? ''} placeholder="/images/example.webp or https://…" /></label>
+      <ImageUploadField name="imageUrl" defaultValue={post?.image_url} label="Article picture" />
       <label>External link<input name="externalUrl" defaultValue={post?.external_url ?? ''} placeholder="https://… (optional)" /></label>
     </div>
-    <p className="field-help">Images must be an https:// URL or a path beginning with / inside this site.</p>
     <div className="button-row">
       <button className="button button-secondary" name="intent" value="save" type="submit">{post ? 'Save changes' : 'Save draft'}</button>
       {(!post || post.status !== 'published') && <button className="button button-primary" name="intent" value="publish" type="submit">Publish</button>}

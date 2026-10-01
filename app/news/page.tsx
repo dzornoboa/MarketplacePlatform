@@ -5,6 +5,7 @@ import { BrandCircle } from '@/components/brand'
 import { createPublicClient } from '@/lib/supabase/public'
 import { date } from '@/lib/format'
 import { getPageBlock } from '@/lib/content/site-content'
+import { displayImage } from '@/lib/media/image'
 
 export const revalidate = 300
 
@@ -48,7 +49,7 @@ type CardPost = { id: string; title: string; slug: string; excerpt: string | nul
 
 function ArticleCard({ post }: { post: CardPost }) {
   return <article className="card article-card">
-    {post.image_url && <img className="article-image" src={post.image_url} alt="" />}
+    {displayImage(post.image_url) && <img className="article-image" src={displayImage(post.image_url) as string} alt="" />}
     <span className="eyebrow">{post.category === 'resource' ? 'Resource' : 'News'}</span>
     <h3><Link href={`/news/${post.slug}`}>{post.title}</Link></h3>
     {post.excerpt && <p className="muted">{post.excerpt}</p>}

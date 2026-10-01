@@ -5,6 +5,7 @@ import { SubmitButton } from '@/components/submit-button'
 import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
 import { marketplaceLockFor, humanize, labelForIntent, labelForParticipantType, listingIntents, listingIntentLabels } from '@/lib/auth/access'
 import { money, date, relativeDays } from '@/lib/format'
+import { displayImage } from '@/lib/media/image'
 import { BrandCircle } from '@/components/brand'
 import { requestConnection, respondToConnection, toggleFollow } from './actions'
 import { toggleSaved } from '../opportunities/actions'
@@ -102,7 +103,7 @@ export default async function FeedPage({ searchParams }: Props) {
     {(news ?? []).length > 0 && <section>
       <div className="listing-head"><h2>News and resources</h2><Link className="arrow-link" href="/news">All news →</Link></div>
       <div className="article-grid">{(news ?? []).map(post => <article className="card article-card" key={post.id}>
-        {post.image_url && <img className="article-image" src={post.image_url} alt="" />}
+        {displayImage(post.image_url) && <img className="article-image" src={displayImage(post.image_url) as string} alt="" />}
         <span className="eyebrow">{post.category === 'resource' ? 'Resource' : 'News'}</span>
         <h3><Link href={`/news/${post.slug}`}>{post.title}</Link></h3>
         {post.excerpt && <p className="muted">{post.excerpt}</p>}

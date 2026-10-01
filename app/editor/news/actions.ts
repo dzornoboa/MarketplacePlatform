@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { slugify } from '@/lib/format'
+import { isUsableImage } from '@/lib/media/image'
 import type { Database } from '@/lib/database.types'
 
 function back(path: string, key: 'error' | 'message', message: string) {
@@ -28,8 +29,10 @@ function validate(post: ReturnType<typeof readPost>): string | null {
   if (!CATEGORIES.has(post.category)) return 'Choose news or resource.'
   if (!post.slug) return 'A URL slug is required.'
   if (post.body.length < 20) return 'Body must be at least 20 characters.'
-  if (post.imageUrl && !(post.imageUrl.startsWith('https://') || post.imageUrl.startsWith('/'))) {
-    return 'Image URL must start with https:// or /.'
+  /* Hotlinked pictures are refused on save: the site's image policy blocks
+     them and the other site can delete the file at any time. */
+  if (post.imageUrl && !isUsableImage(post.imageUrl)) {
+    return 'Upload the article picture instead of linking it from another website.'
   }
   return null
 }

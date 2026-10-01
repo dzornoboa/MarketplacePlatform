@@ -7,6 +7,7 @@ import { BarChart } from '@/components/charts'
 import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
 import { marketplaceLock, postingLock, labelForParticipantType, humanize, isAdminRole, systemRoleLabels } from '@/lib/auth/access'
 import { date, dateTime } from '@/lib/format'
+import { displayImage } from '@/lib/media/image'
 import { toggleSaved } from './opportunities/actions'
 
 export const dynamic = 'force-dynamic'
@@ -169,7 +170,7 @@ export default async function DashboardPage() {
           {(news ?? []).length > 0 && <section className="member-news-feed">
             <div className="member-section-title"><h2>WTC News And Resources</h2><Link href="/news">View All →</Link></div>
             {(news ?? []).map(post => <article className="member-social-post member-news-post" key={post.id}>
-              {post.image_url && <img src={post.image_url} alt="" />}
+              {displayImage(post.image_url) && <img src={displayImage(post.image_url) as string} alt="" />}
               <div className="member-post-content">
                 <span className="eyebrow">{post.category === 'resource' ? 'Resource' : 'News'}</span>
                 <h2><Link href={`/news/${post.slug}`}>{post.title}</Link></h2>

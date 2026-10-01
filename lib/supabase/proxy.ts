@@ -10,7 +10,7 @@ function buildCsp(nonce: string, supabaseHost: string) {
     "frame-ancestors 'none'",
     "form-action 'self'",
     "object-src 'none'",
-    `img-src 'self' data: blob: https://${supabaseHost} https://*.supabase.co https://encrypted-tbn0.gstatic.com`,
+    `img-src 'self' data: blob: https://${supabaseHost} https://*.supabase.co`,
     "font-src 'self' data:",
     "style-src 'self' 'unsafe-inline'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''}`,

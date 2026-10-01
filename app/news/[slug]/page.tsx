@@ -4,6 +4,7 @@ import { PublicHeader } from '@/components/public-header'
 import { PublicFooter } from '@/components/public-footer'
 import { createPublicClient } from '@/lib/supabase/public'
 import { date } from '@/lib/format'
+import { displayImage } from '@/lib/media/image'
 
 export const revalidate = 300
 
@@ -32,7 +33,7 @@ export default async function ArticlePage({ params }: Props) {
       <p className="eyebrow">{post.category === 'resource' ? 'Resource' : 'News'}</p>
       <h1 className="article-title">{post.title}</h1>
       <p className="field-help">{date(post.published_at)}</p>
-      {post.image_url && <img className="article-hero" src={post.image_url} alt="" />}
+      {displayImage(post.image_url) && <img className="article-hero" src={displayImage(post.image_url) as string} alt="" />}
       {post.excerpt && <p className="lede">{post.excerpt}</p>}
       <div className="prose">{paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}</div>
       {post.external_url && <p><a className="arrow-link" href={post.external_url} rel="noopener noreferrer" target="_blank">Read the full source →</a></p>}
