@@ -13,7 +13,6 @@ import { TranslationPreferenceSync } from '@/components/translation-preference-s
 import { ClearRegistrationDraft } from '@/components/registration-draft'
 import { MemberTopNav } from '@/components/member-top-nav'
 import { AccessPaymentPrompt } from '@/components/access-payment-prompt'
-import { QuickLanguageSwitcher } from '@/components/quick-language-switcher'
 import { CurrencyPreferenceSync } from '@/components/currency-preference-sync'
 
 export const dynamic = 'force-dynamic'
@@ -59,7 +58,6 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     <RealtimeAccess userId={profile.id} />
     <TranslationPreferenceSync language={preferences?.language ?? 'en'} enabled={preferences?.auto_translate ?? false} />
     <CurrencyPreferenceSync currency={profile.preferred_currency ?? 'USD'} />
-    <QuickLanguageSwitcher initialLanguage={preferences?.language ?? 'en'} />
     <ClearRegistrationDraft />
     <Suspense fallback={null}><FlashNotice /></Suspense>
   </div>
