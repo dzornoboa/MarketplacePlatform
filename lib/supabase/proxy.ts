@@ -73,7 +73,9 @@ export async function updateSession(request: NextRequest) {
     login.pathname = '/login'
     login.search = ''
     login.searchParams.set('next', request.nextUrl.pathname)
-    const away = NextResponse.redirect(login)
+    /* 303 for a form post or a server action, so the browser asks for the
+       sign-in page with a GET instead of replaying the submission at it. */
+    const away = NextResponse.redirect(login, request.method === 'GET' ? 307 : 303)
     // Keep the cookies this request refreshed, and the policy header.
     response.cookies.getAll().forEach(cookie => away.cookies.set(cookie))
     away.headers.set('Content-Security-Policy', buildCsp(supabaseHost))
