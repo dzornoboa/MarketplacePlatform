@@ -3,7 +3,14 @@
 import { useEffect, useMemo, useState } from 'react'
 
 export function languageOptions(uiLocale = 'en') {
-  const display = new Intl.DisplayNames([uiLocale], { type: 'language' })
+  /* An unusable locale tag from the browser would throw here and take the whole
+     floating dock down with it, so English is used when that happens. */
+  let display: Intl.DisplayNames
+  try {
+    display = new Intl.DisplayNames([uiLocale], { type: 'language' })
+  } catch {
+    display = new Intl.DisplayNames(['en'], { type: 'language' })
+  }
   const out: { code: string; name: string }[] = []
   const seenCode = new Set<string>()
   const seenName = new Set<string>()

@@ -33,6 +33,10 @@ function buildCsp(supabaseHost: string) {
   ].join('; ')
 }
 
+// Areas that are useless without a session, so an unauthenticated request to
+// one of them is turned away before the page runs.
+const SIGNED_IN_ONLY = /^\/(dashboard|admin|editor)(\/|$)/
+
 export async function updateSession(request: NextRequest) {
   const { url, publishableKey } = getSupabasePublicConfig()
   const supabaseHost = new URL(url).host
@@ -57,6 +61,24 @@ export async function updateSession(request: NextRequest) {
     },
   })
 
-  await supabase.auth.getClaims()
+  const { data: claimsData } = await supabase.auth.getClaims()
+
+  /* An expired session used to reach the page itself, where the guard calls
+     redirect() in the middle of rendering. During a click inside the dashboard
+     that leaves the member watching the loading skeleton with nothing to show
+     for it. Turning it away here answers with a plain redirect before any
+     rendering starts. The guards on each page remain the authority. */
+  if (!claimsData?.claims?.sub && SIGNED_IN_ONLY.test(request.nextUrl.pathname)) {
+    const login = request.nextUrl.clone()
+    login.pathname = '/login'
+    login.search = ''
+    login.searchParams.set('next', request.nextUrl.pathname)
+    const away = NextResponse.redirect(login)
+    // Keep the cookies this request refreshed, and the policy header.
+    response.cookies.getAll().forEach(cookie => away.cookies.set(cookie))
+    away.headers.set('Content-Security-Policy', buildCsp(supabaseHost))
+    return away
+  }
+
   return response
 }

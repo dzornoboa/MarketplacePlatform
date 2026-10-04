@@ -24,7 +24,7 @@ async function embedRemoteImage(pdf: PDFDocument, url: string | null | undefined
   try {
     const parsed = new URL(url)
     if (parsed.protocol !== 'https:' || !allowedHosts.has(parsed.host)) return null
-    const response = await fetch(parsed, { cache: 'no-store', redirect: 'error' })
+    const response = await fetch(parsed, { cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(8_000) })
     if (!response.ok) return null
     const bytes = new Uint8Array(await response.arrayBuffer())
     const type = response.headers.get('content-type') ?? ''

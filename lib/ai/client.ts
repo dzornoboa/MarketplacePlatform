@@ -12,6 +12,8 @@ export function aiAvailable(): boolean {
 
 let client: Anthropic | null = null
 export function anthropic(): Anthropic {
-  if (!client) client = new Anthropic()
+  /* Bounded so a slow answer cannot hold a request open until the platform's
+     own limit: the helper would rather say it could not reach the assistant. */
+  if (!client) client = new Anthropic({ timeout: 45_000, maxRetries: 1 })
   return client
 }

@@ -26,6 +26,7 @@ export async function initializeTransaction(input: {
       channels: input.channels,
       metadata: input.metadata,
     }),
+    signal: AbortSignal.timeout(20_000),
   })
   const json = await res.json() as { status: boolean; message: string; data?: { authorization_url: string; access_code: string; reference: string } }
   if (!res.ok || !json.status || !json.data) throw new Error(json.message || 'Paystack did not accept the transaction')
@@ -36,6 +37,7 @@ export async function verifyTransaction(reference: string): Promise<{ succeeded:
   const res = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
     headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` },
     cache: 'no-store',
+    signal: AbortSignal.timeout(20_000),
   })
   const json = await res.json() as { status: boolean; data?: { status: string; id: number; amount: number; currency: string; reference: string } }
   if (!res.ok || !json.status || !json.data) return { succeeded: false, providerReference: reference, amount: 0, currency: '' }

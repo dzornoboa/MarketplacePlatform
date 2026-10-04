@@ -1,12 +1,20 @@
-export function money(amount: number | null | undefined, currency = 'USD'): string {
+export function money(amount: number | null | undefined, currency: string | null | undefined = 'USD'): string {
   if (amount === null || amount === undefined) return '—'
   const value = Number(amount)
   if (!Number.isFinite(value)) return '—'
   const compact = value >= 1_000_000
-  return new Intl.NumberFormat('en-GH', {
-    style: 'currency', currency, maximumFractionDigits: compact ? 1 : 0,
-    notation: compact ? 'compact' : 'standard',
-  }).format(value)
+  /* Intl throws on a currency code it does not recognise, and a page that shows
+     a stored amount would then fail to render entirely. One unexpected row must
+     not cost the whole page, so the code is shown as written instead. */
+  const code = (currency ?? 'USD').trim().toUpperCase()
+  try {
+    return new Intl.NumberFormat('en-GH', {
+      style: 'currency', currency: code, maximumFractionDigits: compact ? 1 : 0,
+      notation: compact ? 'compact' : 'standard',
+    }).format(value)
+  } catch {
+    return `${code || 'USD'} ${value.toLocaleString('en-GH', { maximumFractionDigits: compact ? 1 : 0 })}`
+  }
 }
 
 export function date(value: string | null | undefined): string {

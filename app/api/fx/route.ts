@@ -28,6 +28,7 @@ export async function GET(request: Request) {
     const response = await fetch(`https://open.er-api.com/v6/latest/${from}`, {
       next: { revalidate: 3600 },
       headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(8_000),
     })
     if (!response.ok) throw new Error(`FX service returned ${response.status}`)
     const data = await response.json() as RateResponse

@@ -7,11 +7,12 @@ import { money, date } from '@/lib/format'
 import { requestSubscription, requestMembership, startPayment, cancelPlanChange } from './actions'
 import { subscriptionDaysLeft } from '@/lib/auth/access'
 import { paystackConfigured } from '@/lib/payments/paystack'
-import { getSiteChrome } from '@/lib/content/site-content'
+import { getSiteChrome, CHROME_FALLBACK } from '@/lib/content/site-content'
 import { PaymentDetails } from '@/components/payment-details'
 import { methodTitle } from '@/lib/payments/method-title'
 import { kycChecklist, requirementNote } from '@/lib/kyc'
 import { KycChecklist } from '@/components/kyc-checklist'
+import { withTimeout, query } from '@/lib/data/timeout'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,24 +27,28 @@ export default async function BillingPage({ searchParams }: Props) {
   const section = typeof params.section === 'string' ? params.section : null
   const sectionNotice = section === 'payment-details' && (error || message) ? { tone: error ? 'error' as const : 'success' as const, text: (error ?? message)! } : null
 
-  const [{ data: plans }, { data: subscriptions }, { data: memberships }, { data: membershipTypes }, state] = await Promise.all([
-    supabase.from('subscription_plans').select('*').eq('active', true).order('price_usd'),
-    supabase.from('subscriptions').select('*').order('created_at', { ascending: false }),
-    supabase.from('memberships').select('*').order('created_at', { ascending: false }),
-    supabase.from('membership_types').select('*').eq('active', true),
-    readAccessState(supabase),
-  ])
-  const [{ data: payments }, chrome, { data: billingAddress }, { data: methods }] = await Promise.all([
-    supabase.from('payments').select('*').order('created_at', { ascending: false }).limit(10),
-    getSiteChrome(),
-    supabase.from('billing_addresses').select('*').eq('user_id', profile.id).maybeSingle(),
-    supabase.from('payment_methods').select('*').eq('user_id', profile.id).order('is_primary', { ascending: false }).order('created_at'),
+  /* Everything this page needs, in one wave rather than four in sequence, and
+     each one bounded: a query that stops answering must not leave the member on
+     a loading skeleton for ever. */
+  const [
+    { data: plans }, { data: subscriptions }, { data: memberships }, { data: membershipTypes }, state,
+    { data: payments }, chrome, { data: billingAddress }, { data: methods },
+    { data: myDocs }, { data: orgRows },
+  ] = await Promise.all([
+    query(supabase.from('subscription_plans').select('*').eq('active', true).order('price_usd'), 'subscription plans'),
+    query(supabase.from('subscriptions').select('*').order('created_at', { ascending: false }), 'subscriptions'),
+    query(supabase.from('memberships').select('*').order('created_at', { ascending: false }), 'memberships'),
+    query(supabase.from('membership_types').select('*').eq('active', true), 'membership types'),
+    withTimeout(readAccessState(supabase), null, 'access state'),
+    query(supabase.from('payments').select('*').order('created_at', { ascending: false }).limit(10), 'payments'),
+    withTimeout(getSiteChrome(), CHROME_FALLBACK, 'site settings'),
+    query(supabase.from('billing_addresses').select('*').eq('user_id', profile.id).maybeSingle(), 'billing address'),
+    query(supabase.from('payment_methods').select('*').eq('user_id', profile.id).order('is_primary', { ascending: false }).order('created_at'), 'payment methods'),
+    query(supabase.from('document_records').select('purpose').eq('owner_user_id', profile.id), 'documents'),
+    query(supabase.from('organization_members').select('organization_id').eq('user_id', profile.id), 'organisations'),
   ])
   const primaryMethod = (methods ?? []).find(m => m.is_primary) ?? null
-  const [{ data: myDocs }, { count: orgCount }] = await Promise.all([
-    supabase.from('document_records').select('purpose').eq('owner_user_id', profile.id),
-    supabase.from('organization_members').select('*', { count: 'exact', head: true }).eq('user_id', profile.id),
-  ])
+  const orgCount = (orgRows ?? []).length
   const kyc = kycChecklist({ type: profile.participant_type ?? profile.requested_participant_type, purposes: (myDocs ?? []).map(d => d.purpose), hasBillingAddress: !!billingAddress, hasOrganisation: (orgCount ?? 0) > 0, verified: profile.verification_status === 'verified' })
   const active = (subscriptions ?? []).find(s => s.status === 'active')
   const activeCreatedAt = active ? new Date(active.created_at).getTime() : 0
@@ -53,8 +58,9 @@ export default async function BillingPage({ searchParams }: Props) {
   const daysLeft = state ? subscriptionDaysLeft(state) : null
   const email = String(claims.email ?? '')
   const emailDomain = email.split('@')[1]?.toLowerCase() ?? ''
-  const { data: orgRows } = await supabase.from('organization_members').select('organization_id').eq('user_id', profile.id)
-  const { data: verifiedOrgs } = (orgRows ?? []).length ? await supabase.from('organizations').select('id').in('id', (orgRows ?? []).map(r => r.organization_id)).eq('is_verified', true) : { data: [] }
+  const { data: verifiedOrgs } = (orgRows ?? []).length
+    ? await query(supabase.from('organizations').select('id').in('id', (orgRows ?? []).map(r => r.organization_id)).eq('is_verified', true), 'verified organisations')
+    : { data: null }
   const orgVerified = (verifiedOrgs ?? []).length > 0
   const testMode = (st => (st.payment_mode ?? 'test') !== 'live')(chrome.settings as Record<string, string | undefined>)
   const online = testMode || paystackConfigured()
