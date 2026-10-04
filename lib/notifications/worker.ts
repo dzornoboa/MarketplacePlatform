@@ -128,7 +128,11 @@ export async function drainPushes(admin: SupabaseClient<Database>) {
   const { data: rows } = await admin.from('outbound_pushes').select('*').eq('status', 'queued')
     .order('created_at', { ascending: true }).limit(BATCH_SIZE)
   let sent = 0
+  let ranOut = false
+  // Same budget as the mail drain: answer in time, leave the rest for the next pass.
+  const deadline = Date.now() + SEND_BUDGET_MS
   for (const row of rows ?? []) {
+    if (Date.now() > deadline) { ranOut = true; break }
     const { data: subs } = await admin.from('push_subscriptions').select('*').eq('user_id', row.user_id)
     if (!subs || subs.length === 0) {
       await admin.from('outbound_pushes').update({ status: 'no_subscription' }).eq('id', row.id)
@@ -157,5 +161,5 @@ export async function drainPushes(admin: SupabaseClient<Database>) {
       await admin.from('outbound_pushes').update({ status: 'failed', error: lastError || 'No subscription accepted the push.' }).eq('id', row.id)
     }
   }
-  return { attempted: rows?.length ?? 0, sent }
+  return { attempted: rows?.length ?? 0, sent, ...(ranOut ? { note: 'Time ran out — the rest stay queued for the next pass' } : {}) }
 }
