@@ -6,6 +6,9 @@ import { getSupabasePublicConfig, getSiteUrl } from '@/lib/supabase/config'
 import { marketingUnsubscribeUrl } from '@/lib/email/unsubscribe'
 
 const BATCH_SIZE = 25
+// Comfortably inside the route's own 60s limit and the deadline the database
+// gives the call, so the queue is always written back before anything gives up.
+const SEND_BUDGET_MS = 40_000
 
 /* Queued bodies are plain text; wrap them in the WTC Accra shell so members
    receive a branded message with the contact line on every email. */
@@ -44,6 +47,13 @@ function transport() {
     // 465 is implicit TLS; 587 and 25 upgrade with STARTTLS.
     secure: port === 465,
     auth: { user: process.env.SMTP_USER as string, pass: process.env.SMTP_PASSWORD as string },
+    /* Without these the library waits two minutes to connect and ten for a
+       reply. A mail server that accepts the connection and then goes quiet was
+       enough to keep the whole drain running past the deadline the database
+       gives it, so every message stayed queued and was tried again for ever. */
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 15_000,
   })
 }
 
@@ -73,7 +83,14 @@ export async function drainEmails(admin: SupabaseClient<Database>) {
   const { data: rows } = await admin.from('outbound_emails').select('*').eq('status', 'queued')
     .order('created_at', { ascending: true }).limit(BATCH_SIZE)
   let sent = 0
+  let ranOut = false
+  /* The drain has to answer before the caller stops waiting, so it stops
+     starting new messages once the budget is spent and leaves the rest for the
+     next pass two minutes later, rather than being killed halfway through with
+     nothing written back. */
+  const deadline = Date.now() + SEND_BUDGET_MS
   for (const row of rows ?? []) {
+    if (Date.now() > deadline) { ranOut = true; break }
     try {
       const marketing = /^(marketing|waitlist|newsletter|campaign)/i.test(row.kind)
       const unsubscribeUrl = marketing && row.to_user_id
@@ -96,7 +113,7 @@ export async function drainEmails(admin: SupabaseClient<Database>) {
     }
   }
   mailer.close()
-  return { attempted: rows?.length ?? 0, sent }
+  return { attempted: rows?.length ?? 0, sent, ...(ranOut ? { note: 'Time ran out — the rest stay queued for the next pass' } : {}) }
 }
 
 /* Drains the outbound_pushes queue via Web Push. Rows stay 'queued' when
