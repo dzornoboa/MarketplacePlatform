@@ -15,7 +15,7 @@ export default async function NotificationsPage({ searchParams }: Props) {
   const { data: notifications } = await supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(1000)
   const unread = (notifications ?? []).filter(n => !n.read_at).length
 
-  return <div className="page-stack narrow-content">
+  return <div className="page-stack list-content">
     <div>
       <p className="eyebrow">Activity</p>
       <h1>Notifications</h1>

@@ -242,7 +242,14 @@ p{margin:0}
 .page-stack>div:first-child{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
 .page-stack h1{font-size:clamp(26px,3vw,38px);font-weight:700;color:var(--wtc-navy);margin:2px 0}
 .page-stack h2{font-size:21px}
-.narrow-content{max-width:880px}
+/* A reading measure, centred. Capped but left-aligned, it pushed every spare
+   pixel into one broad empty band down the right of settings, profile, the
+   mandate, notifications and every other page that uses it. */
+.narrow-content{max-width:880px;margin-inline:auto;width:100%}
+/* Rows of data earn a wider measure than prose does: a notification, a document
+   or a connection puts its detail on the left and its date on the right, and at
+   a reading width they were squeezed into half the room available. */
+.list-content{max-width:1180px;margin-inline:auto;width:100%}
 
 .restriction-banner{background:var(--wtc-navy);color:#fff;border-radius:var(--radius);padding:26px 28px;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;border-left:4px solid var(--wtc-orange)}
 .restriction-banner strong{font-size:16px}

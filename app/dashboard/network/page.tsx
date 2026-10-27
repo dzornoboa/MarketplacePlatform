@@ -24,7 +24,7 @@ export default async function NetworkPage({ searchParams }: Props) {
   const lock = state ? marketplaceLock(state) : null
 
   if (!lock || lock.locked) {
-    return <div className="page-stack narrow-content">
+    return <div className="page-stack list-content">
       <div><p className="eyebrow">Your network</p><h1>Network</h1></div>
       <section className="restriction-banner">
         <div>

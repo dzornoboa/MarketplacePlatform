@@ -40,7 +40,7 @@ export default async function DocumentsPage({ searchParams }: Props) {
   const oppById = new Map((myOpportunities ?? []).map(o => [o.id, o.title]))
   const canUpload = profile.account_status === 'active' || profile.account_status === 'pending'
 
-  return <div className="page-stack narrow-content">
+  return <div className="page-stack list-content">
     <div>
       <p className="eyebrow">Secure storage</p>
       <h1>Documents</h1>
