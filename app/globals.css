@@ -197,7 +197,12 @@ p{margin:0}
 .form-stack button{align-self:flex-start}
 .form-stack code{overflow-wrap:anywhere;background:var(--wtc-mist);padding:2px 6px;font-size:13px}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-.field-help{font-size:12px;color:var(--muted);margin-top:-8px;line-height:1.6}
+/* The pull-up exists to tighten a hint against the field above it inside a
+   form stack, whose gap is 18px. Applied to every hint it also dragged the
+   ones that follow something else — a scrolling agreement, a card, a list —
+   up over the last line of it. It now applies only after a form control. */
+.field-help{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6}
+:is(label,input,select,textarea,fieldset,.form-grid,.button-row,.avatar-upload,.form-row)+.field-help{margin-top:-8px}
 .alert{padding:13px 16px;border-radius:var(--radius);margin:16px 0;font-size:14px;border-left:3px solid}
 .alert-error{background:var(--danger-soft);color:var(--danger);border-color:var(--danger)}
 .alert-success{background:var(--success-soft);color:var(--success);border-color:var(--success)}
@@ -877,7 +882,9 @@ a.contact-card:hover strong{color:var(--wtc-orange)}
 .dashboard-shell .filter-row input,.dashboard-shell .filter-row select,.admin-shell .filter-row input,.admin-shell .filter-row select,
 .admin-shell .review-form textarea,.dashboard-shell .review-form textarea,.admin-action-grid input,.admin-action-grid select,.admin-action-grid textarea{padding:8px 10px;font-size:13.5px}
 .dashboard-shell .filter-row,.admin-shell .filter-row{gap:10px}
-.dashboard-shell .field-help,.admin-shell .field-help{font-size:11.5px;margin-top:-4px}
+.dashboard-shell .field-help,.admin-shell .field-help{font-size:11.5px;margin-top:4px}
+.dashboard-shell :is(label,input,select,textarea,fieldset,.form-grid,.button-row,.avatar-upload,.form-row)+.field-help,
+.admin-shell :is(label,input,select,textarea,fieldset,.form-grid,.button-row,.avatar-upload,.form-row)+.field-help{margin-top:-4px}
 .dashboard-shell .alert,.admin-shell .alert{padding:9px 12px;font-size:13px;margin:0}
 .dashboard-shell .queue-tabs,.admin-shell .queue-tabs{gap:6px}
 .dashboard-shell .queue-tab,.admin-shell .queue-tab{padding:7px 11px;font-size:12.5px}
