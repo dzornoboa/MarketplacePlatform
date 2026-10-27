@@ -72,7 +72,7 @@ export default async function DealRoomPage({ params, searchParams }: Props) {
       {room.close_note && <p className="field-help">WTC Accra Note: {room.close_note}</p>}
     </section>}
 
-    <div className="split-grid admin-detail-grid deal-room-grid">
+    <div className="deal-room-frame"><div className="deal-room-layout">
       <section className="card deal-thread">
         <h2>Messages</h2>
         <div className="deal-messages">
@@ -138,6 +138,6 @@ export default async function DealRoomPage({ params, searchParams }: Props) {
           </form>}
         </section>
       </div>
-    </div>
+    </div></div>
   </div>
 }
