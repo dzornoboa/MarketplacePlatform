@@ -77,7 +77,7 @@ export default async function NetworkPage({ searchParams }: Props) {
           <div className="opportunity-head">
             <div>
               <span className={`status-dot status-conn-${item.status}`}>{humanize(item.intent)} request</span>
-              <h3>{person?.full_name ?? 'A member'}</h3>
+              <h3>{person ? <Link href={`/dashboard/members/${item.requester_id}`}>{person.full_name}</Link> : 'A member'}</h3>
               <p className="muted">{person ? `${labelForParticipantType(person.participant_type)}${person.organisation ? ` · ${person.organisation}` : ''} · ` : ''}{dateTime(item.created_at)}</p>
             </div>
           </div>
@@ -104,7 +104,7 @@ export default async function NetworkPage({ searchParams }: Props) {
               const otherId = item.requester_id === profile.id ? item.addressee_id : item.requester_id
               const person = personById.get(otherId)
               return <div key={item.id}>
-                <strong>{person?.full_name ?? 'Member'}</strong>
+                <strong>{person ? <Link href={`/dashboard/members/${otherId}`}>{person.full_name}</Link> : 'Member'}</strong>
                 <span>{item.staff_approved_at ? 'Approved · Awaiting Recipient' : 'Processing · WTC Accra Review'} · {humanize(item.intent)}</span>
                 <p className="muted">{person ? labelForParticipantType(person.participant_type) : ''} · connected {dateTime(item.responded_at ?? item.created_at)}</p>
               </div>
@@ -117,7 +117,7 @@ export default async function NetworkPage({ searchParams }: Props) {
           : <div className="history-list">{outgoing.map(item => {
               const person = personById.get(item.addressee_id)
               return <div key={item.id}>
-                <strong>{person?.full_name ?? 'Member'}</strong>
+                <strong>{person ? <Link href={`/dashboard/members/${item.addressee_id}`}>{person.full_name}</Link> : 'Member'}</strong>
                 <span>{humanize(item.intent)}</span>
                 <form action={respondToConnection}>
                   <input type="hidden" name="connectionId" value={item.id} />
@@ -146,13 +146,13 @@ export default async function NetworkPage({ searchParams }: Props) {
       {(directory ?? []).length === 0
         ? <section className="card empty-state"><BrandCircle /><h2>No members match</h2><p>Widen your search, or check back as WTC Accra verifies more participants.</p></section>
         : <div className="member-grid">{(directory ?? []).map(person => <article className="card member-card" key={person.id}>
-            <div className="member-identity">
+            <Link className="member-identity member-identity-link" href={`/dashboard/members/${person.id}`}>
               <Avatar src={person.avatar_url} name={person.full_name} size={44} />
               <div>
                 <strong>{person.full_name}<VerifiedCheck verified={person.is_verified} /></strong>{person.is_staff && <span className="status-dot status-verified">WTC Accra staff</span>}
                 <ParticipantBadge type={person.participant_type} />
               </div>
-            </div>
+            </Link>
             <p className="muted">{[person.job_title, person.organisation].filter(Boolean).join(' · ') || 'WTC Accra member'}</p>
             <p className="field-help">{[person.city, person.country].filter(Boolean).join(', ') || 'Location not set'}</p>
 

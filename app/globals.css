@@ -1662,3 +1662,18 @@ h1,h2,h3,h4,
 @media(max-width:720px){
   .floating-dock{right:14px;bottom:14px}
 }
+
+/* ---------- Member profile ----------------------------------------------
+   Following someone led nowhere: the directory listed people but nothing
+   about them could be opened. The identity block is now the way in. */
+.member-identity-link{text-decoration:none;color:inherit;border-radius:8px;padding:2px;margin:-2px;width:100%}
+.member-identity-link:hover strong,.member-identity-link:focus-visible strong{color:var(--wtc-orange)}
+.member-identity-link:focus-visible{outline:2px solid var(--wtc-navy);outline-offset:2px}
+.member-profile-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:18px;align-items:start}
+.member-profile-identity h1{font-size:clamp(20px,2.2vw,26px);margin:0 0 6px}
+.member-profile-identity p{margin:0 0 4px}
+.member-profile-actions{display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:170px}
+@media(max-width:720px){
+  .member-profile-head{grid-template-columns:auto minmax(0,1fr);gap:12px}
+  .member-profile-actions{grid-column:1 / -1;min-width:0}
+}

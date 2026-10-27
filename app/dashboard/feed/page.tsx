@@ -182,8 +182,8 @@ export default async function FeedPage({ searchParams }: Props) {
                   </div>
                   <h3><Link href={`/dashboard/opportunities/${item.id}`}>{item.title}</Link></h3>
                   <p className="muted avatar-stack">
-                    {owner && <Avatar src={owner.avatar_url} name={owner.full_name} size={22} />}
-                    {owner ? <>{owner.organisation ?? owner.full_name}<VerifiedCheck verified={owner.is_verified} size={14} /> · {labelForParticipantType(owner.participant_type)} · </> : ''}
+                    {owner && <Link href={`/dashboard/members/${item.owner_user_id}`}><Avatar src={owner.avatar_url} name={owner.full_name} size={22} /></Link>}
+                    {owner ? <><Link href={`/dashboard/members/${item.owner_user_id}`}>{owner.organisation ?? owner.full_name}</Link><VerifiedCheck verified={owner.is_verified} size={14} /> · {labelForParticipantType(owner.participant_type)} · </> : ''}
                     {item.category ? `${item.category} · ` : ''}{item.sector} · {item.city ? `${item.city}, ` : ''}{item.country}
                     {item.region ? ` · ${item.region}` : ''}
                     {item.deadline ? ` · ${relativeDays(item.deadline)}` : ''}

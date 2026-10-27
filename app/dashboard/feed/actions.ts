@@ -3,9 +3,14 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { safeNextPath } from '@/lib/auth/redirects'
 
+/* returnTo arrives in a form field, so it is treated as untrusted: only a path
+   on this site is accepted, never an address that would carry the member off
+   it. */
 function back(path: string, key: 'error' | 'message', message: string) {
-  return `${path}${path.includes('?') ? '&' : '?'}${key}=${encodeURIComponent(message)}`
+  const safe = safeNextPath(path, '/dashboard/network')
+  return `${safe}${safe.includes('?') ? '&' : '?'}${key}=${encodeURIComponent(message)}`
 }
 
 const INTENTS = new Set(['connect', 'invest', 'buy', 'partner'])
