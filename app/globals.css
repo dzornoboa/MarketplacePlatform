@@ -201,6 +201,10 @@ p{margin:0}
 .alert{padding:13px 16px;border-radius:var(--radius);margin:16px 0;font-size:14px;border-left:3px solid}
 .alert-error{background:var(--danger-soft);color:var(--danger);border-color:var(--danger)}
 .alert-success{background:var(--success-soft);color:var(--success);border-color:var(--success)}
+/* The registration page shows an information notice that had no colours of its
+   own: transparent, with the bare border-left of .alert falling back to the
+   text colour. It now reads as a notice like the others. */
+.alert-info{background:var(--navy-soft);color:var(--wtc-navy);border-color:var(--wtc-navy)}
 
 .status-dot{display:inline-flex;width:max-content;border-radius:999px;padding:6px 13px;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;background:var(--wtc-mist);color:var(--muted)}
 .status-verified{background:var(--success-soft);color:var(--success)}
