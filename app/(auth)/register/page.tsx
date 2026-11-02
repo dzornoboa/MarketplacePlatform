@@ -24,7 +24,7 @@ export default async function RegisterPage({ searchParams }: Props) {
         <LogoLink />
         <p className="eyebrow">Join the platform</p>
         <h1>Create your account</h1>
-        <p className="muted">{chosen ? `You are signing up for the ${chosen.name} tier. ` : ''}Account creation and posting deals are free. Restricted deal details and networking access depend on your tier, verification status and annual access plan.</p>
+        <p className="muted">{chosen ? `You are signing up for the ${chosen.name} tier. ` : ''}Select Investor, Business or WTC Accra/WTCA Member. The proposed new pricing is shown on the Membership page; existing billing rules apply until WTC Accra approves and deploys the subscription changes.</p>
         {error && <div className="alert alert-error">{error}</div>}
         <form action={signup} className="form-stack" data-registration-form>
           <RegistrationAgreementGate>
