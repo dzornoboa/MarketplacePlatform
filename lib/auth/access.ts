@@ -37,10 +37,10 @@ export const participantTypeLabels: Record<ParticipantType, string> = {
 /* Annual membership fee per group, for copy that names a price before the
    plans are loaded. The subscription_plans table stays the source of truth. */
 export const membershipFees: Record<string, number> = {
-  investor: 0,
-  business: 1000,
-  wtc_accra_member: 500,
-  wtc_association_member: 1500,
+  investor: 1500,
+  business: 0,
+  wtc_accra_member: 0,
+  wtc_association_member: 0,
 }
 export const feeFor = (type: string | null | undefined) => (type && membershipFees[type]) ?? null
 
@@ -258,8 +258,8 @@ export const listingIntents = [
 export type ListingIntent = (typeof listingIntents)[number]
 
 export const listingIntentLabels: Record<ListingIntent, string> = {
-  seeking_investment: 'Seeking investment',
-  offering_investment: 'Investor — capital available',
+  seeking_investment: 'Business Deal — seeking investment',
+  offering_investment: 'Investor Deal — capital available',
   offering_supply: 'Offering goods or services',
   seeking_supply: 'Sourcing goods or services',
   partnership: 'Seeking a partner',
