@@ -16,7 +16,7 @@ const ID_TYPES = [
 ] as const
 
 const HINT: Record<string, string> = {
-  investor: 'Proposed Marketplace V2: US$1,500 annual investor access and 0% success fee. Existing billing rules remain in force until the approved migration is deployed.',
+  investor: 'Proposed Marketplace V2: US$1,500 annual investor access and a 1% success fee on eligible verified completed deals. Existing billing rules remain in force until the approved migration is deployed.',
   business: 'Proposed Marketplace V2: free registration and posting, with a 1% fee on eligible verified completed deals. Existing billing rules remain in force until migration.',
   wtc_association_member: 'Proposed WTC Accra/WTCA Member category: free registration and posting, with a 1% eligible verified-deal success fee. WTCA Member ID verification is required. Existing billing rules remain in force until migration.',
   wtc_accra_member: 'Proposed WTC Accra/WTCA Member category: free registration and posting, with a 1% eligible verified-deal success fee. WTC Accra Membership ID verification is required. Existing billing rules remain in force until migration.',
@@ -142,6 +142,16 @@ export function RegisterFields({ email, initialPlan = '', initialType = '' }: { 
     </label>
     {commercialType === 'wtc_member' && <label>Membership Affiliation<select aria-label="Membership Affiliation" required value={type} onChange={e => pickType(e.target.value)}><option value="wtc_accra_member">WTC Accra Member</option><option value="wtc_association_member">WTCA Member</option></select></label>}
     {type && <p className="field-help">{HINT[type]}</p>}
+    {(type === 'investor' || type === 'business' || wtc) && <label>{type === 'investor' ? 'Amount You Plan To Invest (USD)' : 'Investment Amount You Seek Or Plan To Invest (USD)'}
+      <select name="investmentBand" defaultValue="" required>
+        <option value="" disabled>Select Investment Size</option>
+        <option value="up-to-5m">Up To US$5 Million</option>
+        <option value="5m-to-10m">Above US$5 Million To US$10 Million</option>
+        <option value="10m-to-50m">Above US$10 Million To US$50 Million</option>
+        <option value="above-50m">Above US$50 Million</option>
+      </select>
+      <span className="field-help">Your investment preference is saved with registration and is used for matching once your account and profile data are synchronized. A 1% success fee applies to eligible verified completed transactions, not merely selecting a band.</span>
+    </label>
     {company && <label>Organisation Name<input name="organisationName" required placeholder="Registered Name" /></label>}
     {wtcAccra && <div className="form-stack membership-id-gate">
       <label>WTC Accra Membership ID
