@@ -128,7 +128,10 @@ export async function signup(formData: FormData) {
   const language = String(formData.get('language') ?? 'en').trim().toLowerCase()
   const locale = String(formData.get('locale') ?? 'en').trim()
   const timezone = String(formData.get('timezone') ?? 'UTC').trim()
+  const investmentBand = String(formData.get('investmentBand') ?? '')
+  if (!['up-to-5m', '5m-to-10m', '10m-to-50m', 'above-50m'].includes(investmentBand)) redirect(withMessage('/register', 'error', 'Select your intended investment size category.'))
   const extra = {
+    investment_band: investmentBand,
     organisation_name: organisationName || null,
     wtca_membership_number: String(formData.get('wtcaMembershipNumber') ?? '').trim() || null,
     membership_access_id: membershipAccessId || null,
