@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { investmentBands } from '@/lib/deals/investment-bands'
 
 function back(key: 'error' | 'message', message: string) {
   return `/dashboard/mandate?${key}=${encodeURIComponent(message)}`
@@ -38,7 +39,10 @@ export async function saveMandate(formData: FormData) {
   if (title.length < 3) redirect(back('error', 'Give the mandate a title of at least 3 characters.'))
   if (!currency) redirect(back('error', 'Currency must be a 3-letter code such as USD or GHS.'))
 
-  const ticketMin = optionalNumber(formData.get('ticketMin')), ticketMax = optionalNumber(formData.get('ticketMax'))
+  const selectedBand = investmentBands.find(b => b.code === String(formData.get('investmentBand') ?? ''))
+  const ticketMin = selectedBand ? Math.max(0, selectedBand.minExclusive + 1) : optionalNumber(formData.get('ticketMin'))
+  const ticketMax = selectedBand ? selectedBand.maxInclusive : optionalNumber(formData.get('ticketMax'))
+  if (selectedBand && currency !== 'USD') redirect(back('error', 'Select USD as the currency when using a USD investment size tier.'))
   if (ticketMin !== null && ticketMax !== null && ticketMin > ticketMax) redirect(back('error', 'Minimum ticket cannot be higher than the maximum ticket.'))
   const payload = {
     user_id: String(userId),

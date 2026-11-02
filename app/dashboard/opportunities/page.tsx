@@ -4,6 +4,7 @@ import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
 import { marketplaceLockFor, postingLockFor, humanize, labelForIntent } from '@/lib/auth/access'
 import { money, date, relativeDays } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
+import { investmentBands, investmentBandTag } from '@/lib/deals/investment-bands'
 import { submitOpportunity, expressInterest, toggleSaved, withdrawOpportunity, deleteOpportunity, withdrawDeal } from './actions'
 
 export const dynamic = 'force-dynamic'
@@ -16,6 +17,7 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
   const error = typeof params.error === 'string' ? params.error : null
   const message = typeof params.message === 'string' ? params.message : null
   const sector = typeof params.sector === 'string' ? params.sector : ''
+  const investmentBand = typeof params.band === 'string' && investmentBands.some(b => b.code === params.band) ? params.band : ''
   const kind = typeof params.kind === 'string' ? params.kind : ''
   const q = typeof params.q === 'string' ? params.q.trim() : ''
   const sort = typeof params.sort === 'string' && ['newest', 'oldest', 'amount', 'deadline'].includes(params.sort) ? params.sort : 'newest'
@@ -29,6 +31,7 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
   let query = supabase.from('opportunities').select('*').eq('status', 'published').limit(100)
   if (sector) query = query.eq('sector', sector)
   if (kind) query = query.eq('kind', kind as 'investment')
+  if (investmentBand) query = query.contains('tags', [investmentBandTag(investmentBand as (typeof investmentBands)[number]['code'])])
   if (q) query = query.or(`title.ilike.%${q}%,summary.ilike.%${q}%,country.ilike.%${q}%`)
   query = sort === 'amount' ? query.order('capital_required', { ascending: false, nullsFirst: false })
     : sort === 'deadline' ? query.order('deadline', { ascending: true, nullsFirst: false })
@@ -117,6 +120,7 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
       <form className="filter-row" method="get">
         {mineSort !== 'updated' && <input type="hidden" name="mine" value={mineSort} />}
         <label>Search<input name="q" defaultValue={q} placeholder="Title, summary or country" /></label>
+        <label>Investment Size (USD)<select name="band" defaultValue={investmentBand}><option value="">All Investment Sizes</option>{investmentBands.map(b => <option key={b.code} value={b.code}>{b.label}</option>)}</select></label>
         <label>Sector
           <select name="sector" defaultValue={sector}>
             <option value="">All sectors</option>

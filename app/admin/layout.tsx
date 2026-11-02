@@ -25,6 +25,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     { href: '/admin/users', label: 'Members', show: can('users') },
     { href: '/admin/opportunities', label: 'Opportunities', show: can('opportunities') },
     { href: '/admin/deals', label: 'Deals', show: can('opportunities') || can('verification') },
+    { href: '/admin/deals-finance', label: 'Deals & Finance', show: can('finance') || can('opportunities') || can('verification') },
     { href: '/admin/matching', label: 'Matching', show: can('matching') },
     { href: '/admin/introductions', label: 'Match Requests', show: can('introductions') || can('verification') },
     { href: '/admin/subscriptions', label: 'Subscriptions', show: can('finance') },

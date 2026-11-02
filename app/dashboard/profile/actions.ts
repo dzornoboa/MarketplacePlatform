@@ -35,6 +35,8 @@ export async function updateProfile(formData: FormData) {
   if (!allowedIdTypes.has(idType)) redirect('/dashboard/profile?error=Select%20a%20valid%20identification%20type.')
   if (idNumber.length < 3 || idNumber.length > 80) redirect('/dashboard/profile?error=Enter%20a%20valid%20identification%20number.')
 
+  const investmentBand = String(formData.get('investmentBand') ?? '')
+  if (investmentBand && !['up-to-5m','5m-to-10m','10m-to-50m','above-50m'].includes(investmentBand)) redirect('/dashboard/profile?error=Invalid%20investment%20size%20tier.')
   const patch: Database['public']['Tables']['profiles']['Update'] = {
     full_name: fullName, username, phone, phone_country_code: phoneCountryCode, preferred_currency: preferredCurrency, job_title: jobTitle, country, country_code: countryCode, city,
     date_of_birth: dateOfBirth, id_type: idType, id_number: idNumber, profile_completed: true,
@@ -52,6 +54,8 @@ export async function updateProfile(formData: FormData) {
 
   const { error } = await supabase.from('profiles').update(patch).eq('id', profile.id)
   if (error) redirect(`/dashboard/profile?error=${encodeURIComponent(error.message)}`)
+  const { error: preferenceError } = await supabase.auth.updateUser({ data: { investment_band: investmentBand || null } })
+  if (preferenceError) redirect(`/dashboard/profile?error=${encodeURIComponent(preferenceError.message)}`)
   revalidatePath('/dashboard', 'layout')
   redirect('/dashboard/profile?message=Profile%20saved.')
 }
