@@ -77,6 +77,8 @@ export async function createOpportunity(formData: FormData) {
   const fxRate = capitalUsd?.rate ?? ticketUsd?.rate ?? (currency === 'USD' ? 1 : null)
   const usdCapital = capitalUsd?.converted ?? (currency === 'USD' ? capitalRequired : null)
   const band = kind === 'investment' ? investmentBandForUsd(usdCapital) : null
+  const selectedBand = String(formData.get('investmentBand') ?? '')
+  if (selectedBand && selectedBand !== band) redirect(to('/dashboard/opportunities/new', 'error', 'The selected investment size tier does not match the converted USD capital amount. Adjust the amount or choose automatic classification.'))
   if (band) tags.push(investmentBandTag(band))
 
   const { data, error } = await supabase.from('opportunities').insert({
