@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { dealCategories, categoryTag } from '@/lib/deals/categories'
+import { investmentBandForUsd, investmentBandTag } from '@/lib/deals/investment-bands'
 import { convertCurrency } from '@/lib/fx/server'
 
 function to(path: string, key: 'error' | 'message', message: string) {
@@ -56,7 +57,8 @@ export async function createOpportunity(formData: FormData) {
   const currency = String(formData.get('currency') ?? 'USD').trim().toUpperCase()
   const deadline = String(formData.get('deadline') ?? '').trim()
   const userTags = String(formData.get('tags') ?? '').split(',').map(t => t.trim()).filter(Boolean)
-  const tags = [...new Set([`category:${categoryTag(category)}`, ...userTags])].slice(0, 12)
+  // Searchable investment-size tags are assigned from the verified USD amount below.
+  const tags = [...new Set([`category:${categoryTag(category)}`, ...userTags])].slice(0, 11)
 
   if (title.length < 5 || title.length > 180) redirect(to('/dashboard/opportunities/new', 'error', 'Title must be between 5 and 180 characters.'))
   if (summary.length < 20 || summary.length > 700) redirect(to('/dashboard/opportunities/new', 'error', 'Summary must be between 20 and 700 characters.'))
@@ -73,6 +75,9 @@ export async function createOpportunity(formData: FormData) {
   const capitalUsd = await convertCurrency(capitalRequired, currency, 'USD')
   const ticketUsd = await convertCurrency(minimumTicket, currency, 'USD')
   const fxRate = capitalUsd?.rate ?? ticketUsd?.rate ?? (currency === 'USD' ? 1 : null)
+  const usdCapital = capitalUsd?.converted ?? (currency === 'USD' ? capitalRequired : null)
+  const band = kind === 'investment' ? investmentBandForUsd(usdCapital) : null
+  if (band) tags.push(investmentBandTag(band))
 
   const { data, error } = await supabase.from('opportunities').insert({
     owner_user_id: String(userId),
