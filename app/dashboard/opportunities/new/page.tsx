@@ -5,6 +5,7 @@ import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
 import { postingLockFor, listingIntents, listingIntentLabels, listingIntentHelp } from '@/lib/auth/access'
 import { createOpportunity } from '../actions'
 import { dealCategories } from '@/lib/deals/categories'
+import { investmentBands } from '@/lib/deals/investment-bands'
 import { ListingFinancialFields } from '@/components/listing-financial-fields'
 
 export const dynamic = 'force-dynamic'
@@ -68,6 +69,8 @@ export default async function NewOpportunityPage({ searchParams }: Props) {
         </label>
       </div>
       <label>Sector<input name="sector" required placeholder="Agribusiness" /></label>
+      <label>Investment Size Tier (USD)<select name="investmentBand" defaultValue=""><option value="">Automatically Classify From Capital Required</option>{investmentBands.map(b => <option key={b.code} value={b.code}>{b.label}</option>)}</select></label>
+      <p className="field-help">For Businesses Seeking Investment and Investors Offering Capital, select a preferred band or let the recorded amount determine it. The matching and search tag uses the converted USD value.</p>
       <ListingFinancialFields initialCountry="Ghana" initialCountryCode="GH" initialCurrency="USD" initialCity="Accra" />
       <label>Deadline<input name="deadline" type="date" /></label>
       <label>Tags<input name="tags" placeholder="processing, export, expansion" /></label>
