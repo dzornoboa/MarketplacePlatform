@@ -3,6 +3,7 @@ import { SubmitButton } from '@/components/submit-button'
 import { requireUserProfile } from '@/lib/auth/guards'
 import { labelForParticipantType } from '@/lib/auth/access'
 import { money } from '@/lib/format'
+import { investmentBands } from '@/lib/deals/investment-bands'
 import { saveMandate, saveRequirement } from './actions'
 
 export const dynamic = 'force-dynamic'
@@ -52,6 +53,8 @@ export default async function MandatePage({ searchParams }: Props) {
         <label>Sectors<input name="sectors" defaultValue={(mandate?.sectors ?? []).join(', ')} placeholder="Agribusiness, logistics, fintech" /></label>
         <label>Geographies<input name="geographies" defaultValue={(mandate?.geographies ?? []).join(', ')} placeholder="Ghana, Nigeria, Côte d'Ivoire" /></label>
         <p className="field-help">Comma separated, up to 15 entries each.</p>
+        <label>Investment Size Tier (USD)<select name="investmentBand" defaultValue=""><option value="">Use Custom Ticket Range Below</option>{investmentBands.map(b => <option key={b.code} value={b.code}>{b.label}</option>)}</select></label>
+        <p className="field-help">Selecting a USD tier will set your mandate's investment range. This is for matching, not an account subscription tier.</p>
         <div className="form-grid">
           <label>Minimum ticket<input name="ticketMin" type="number" min="0" step="1000" defaultValue={mandate?.ticket_min ?? ''} /></label>
           <label>Maximum ticket<input name="ticketMax" type="number" min="0" step="1000" defaultValue={mandate?.ticket_max ?? ''} /></label>
