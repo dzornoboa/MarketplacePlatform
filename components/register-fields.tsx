@@ -151,7 +151,7 @@ export function RegisterFields({ email, initialPlan = '', initialType = '' }: { 
         <option value="above-50m">Above US$50 Million</option>
       </select>
       <span className="field-help">Your investment preference is saved with registration and is used for matching once your account and profile data are synchronized. A 1% success fee applies to eligible verified completed transactions, not merely selecting a band.</span>
-    </label>
+    </label>}
     {company && <label>Organisation Name<input name="organisationName" required placeholder="Registered Name" /></label>}
     {wtcAccra && <div className="form-stack membership-id-gate">
       <label>WTC Accra Membership ID
