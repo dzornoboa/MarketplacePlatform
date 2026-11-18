@@ -1,4 +1,4 @@
-import { filterOptions, opportunityKind, searchColumns } from '@/lib/filters'
+import { filterOptions, opportunityKind, opportunityKinds, searchColumns } from '@/lib/filters'
 import Link from 'next/link'
 import { SubmitButton } from '@/components/submit-button'
 import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
@@ -28,31 +28,50 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
   const browseLock = state ? marketplaceLockFor(state, profile.system_role) : { locked: true as const, reason: 'Access state unavailable.', action: null }
   const postLock = state ? postingLockFor(state, profile.system_role) : { locked: true as const, reason: 'Access state unavailable.', action: null }
 
-  // RLS returns only what this member may see; the filters are UX, not security.
-  let query = supabase.from('opportunities').select('*').eq('status', 'published').limit(100)
-  if (sector) query = query.eq('sector', sector)
-  if (kind) query = query.eq('kind', kind)
+  // Apply the same filters to the results and the type counts, using this member's RLS.
   const band = investmentBands.find(option => option.code === investmentBand)
-  if (band) {
-    query = query.eq('kind', 'investment').gt('capital_required_usd', band.minExclusive)
-    if (band.maxInclusive !== null) query = query.lte('capital_required_usd', band.maxInclusive)
+  const publishedQuery = (countOnly = false) => {
+    let query = supabase.from('opportunities').select('*', countOnly ? { count: 'exact', head: true } : undefined).eq('status', 'published')
+    if (sector) query = query.eq('sector', sector)
+    if (band) {
+      query = query.eq('kind', 'investment').gt('capital_required_usd', band.minExclusive)
+      if (band.maxInclusive !== null) query = query.lte('capital_required_usd', band.maxInclusive)
+    }
+    if (q) query = query.or(searchColumns(q, ['title', 'summary', 'country']))
+    return query
   }
-  if (q) query = query.or(searchColumns(q, ['title', 'summary', 'country']))
+  let query = publishedQuery().limit(100)
+  if (kind) query = query.eq('kind', kind)
   query = sort === 'amount' ? query.order('capital_required_usd', { ascending: false, nullsFirst: false })
     : sort === 'deadline' ? query.order('deadline', { ascending: true, nullsFirst: false })
     : query.order('published_at', { ascending: sort === 'oldest' })
-  const [{ data: published }, { data: mine }, { data: sentInterests }, { data: savedRows }, { data: facets }] = await Promise.all([
-    browseLock.locked ? Promise.resolve({ data: [] }) : query,
+  const [{ data: published, error: publishedError }, { data: mine }, { data: sentInterests }, { data: savedRows }, { data: facets }, typeCounts] = await Promise.all([
+    browseLock.locked ? Promise.resolve({ data: [], error: null }) : query,
     supabase.from('opportunities').select('*').eq('owner_user_id', profile.id).order(mineSort === 'title' ? 'title' : mineSort === 'status' ? 'status' : 'updated_at', { ascending: mineSort !== 'updated' }),
     supabase.from('expressions_of_interest').select('id,opportunity_id,status').eq('applicant_id', profile.id),
     supabase.from('saved_opportunities').select('opportunity_id'),
     browseLock.locked ? Promise.resolve({ data: [] }) : supabase.rpc('public_listing_facets'),
+    browseLock.locked ? [] : Promise.all(opportunityKinds.map(async type => {
+      const { count } = await publishedQuery(true).eq('kind', type)
+      return [type, count] as const
+    })),
   ])
   const interestByOpportunity = new Map((sentInterests ?? []).map(e => [e.opportunity_id, e]))
   const savedIds = new Set((savedRows ?? []).map(r => r.opportunity_id))
   const requestLabel = (status: string) => status === 'submitted' ? 'Processing' : status === 'under_review' ? 'Processed' : status === 'accepted' ? 'Connected' : status === 'declined' ? 'Declined' : 'Withdrawn'
   const displayTags = (tags: string[]) => tags.map(tag => tag.replace(/^category:/i,'').replaceAll('-', ' ')).filter(Boolean).join(', ')
   const sectors = filterOptions((facets ?? []).filter(f => f.facet === 'sector').map(f => f.value), sector)
+
+  const countByType = new Map(typeCounts)
+  const filtered = Boolean(q || sector || kind || band)
+  const clearTypeParams = new URLSearchParams()
+  if (q) clearTypeParams.set('q', q)
+  if (sector) clearTypeParams.set('sector', sector)
+  if (band) clearTypeParams.set('band', band.code)
+  if (sort !== 'newest') clearTypeParams.set('sort', sort)
+  if (mineSort !== 'updated') clearTypeParams.set('mine', mineSort)
+  const clearTypeHref = `/dashboard/opportunities${clearTypeParams.size ? `?${clearTypeParams}` : ''}`
+  const otherTypesAvailable = kind && typeCounts.some(([type, count]) => type !== kind && (count ?? 0) > 0)
 
   return <div className="page-stack">
     <div>
@@ -136,10 +155,10 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
         <label>Type
           <select name="kind" defaultValue={kind}>
             <option value="">All types</option>
-            <option value="investment">Investment</option>
-            <option value="trade">Trade</option>
-            <option value="procurement">Procurement</option>
-            <option value="partnership">Partnership</option>
+            {opportunityKinds.map(type => {
+              const count = countByType.get(type)
+              return <option key={type} value={type}>{humanize(type)}{count != null ? ` (${count})` : ''}</option>
+            })}
           </select>
         </label>
         <label>Sort
@@ -151,8 +170,17 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
         {(q || investmentBand || sector || kind || sort !== 'newest') && <Link className="text-link" href={mineSort === 'updated' ? '/dashboard/opportunities' : `?mine=${mineSort}`}>Reset filters</Link>}
       </form>
 
-      {(published ?? []).length === 0
-        ? <section className="card empty-state"><BrandCircle /><h2>{q || sector || kind ? 'No listings match' : 'No published opportunities yet'}</h2><p>{q || sector || kind ? 'Try a different search or filter.' : 'New listings appear here as WTC Accra approves them.'}</p></section>
+      {publishedError
+        ? <section className="card empty-state"><h2>Could not load listings</h2><p>Refresh the page to try again.</p></section>
+        : (published ?? []).length === 0
+        ? <section className="card empty-state">
+            <BrandCircle />
+            <h2>{filtered ? 'No listings match' : 'No published opportunities yet'}</h2>
+            <p>{otherTypesAvailable
+              ? `No ${humanize(kind).toLowerCase()} listings match these filters. Other listing types are available.`
+              : filtered ? 'Try a different search or filter.' : 'New listings appear here as WTC Accra approves them.'}</p>
+            {otherTypesAvailable && <Link className="button button-outline" href={clearTypeHref}>Show all matching types</Link>}
+          </section>
         : <div className="opportunity-list">{(published ?? []).map(item => { const own = item.owner_user_id === profile.id; return (
             <article className={own ? 'card opportunity-card opportunity-own' : 'card opportunity-card'} key={item.id}>
               <div className="opportunity-head">
