@@ -1,10 +1,13 @@
 import Link from 'next/link'
 import { requireCapability } from '@/lib/auth/guards'
 import { RealtimeRefresh } from '@/components/realtime-refresh'
-import { humanize } from '@/lib/auth/access'
+import { humanize, isAdminRole } from '@/lib/auth/access'
 import { dateTime } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
-import { replyAsStaff, assignToMe } from './actions'
+import { DOCUMENT_ACCEPT, EXTRA_DOCUMENT_CATEGORY } from '@/lib/document-uploads'
+import { DOCUMENT_PURPOSES, purposeLabel } from '@/lib/kyc'
+import { SubmitButton } from '@/components/submit-button'
+import { replyAsStaff, assignToMe, fulfillExtraUpload } from './actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -108,6 +111,13 @@ export default async function AdminSupportPage({ searchParams }: Props) {
             })}</div>
 
             <div className="admin-action-grid">
+              {isAdminRole(profile.system_role) && request.category === EXTRA_DOCUMENT_CATEGORY && (request.status === 'open' || request.status === 'in_progress') && <form action={fulfillExtraUpload} className="review-form">
+                <input type="hidden" name="requestId" value={request.id} />
+                <label>Upload on behalf of the member<input name="file" type="file" required accept={DOCUMENT_ACCEPT} /></label>
+                <label>Document type<select name="purpose" defaultValue="general">{DOCUMENT_PURPOSES.map(purpose => <option key={purpose} value={purpose}>{purposeLabel(purpose)}</option>)}</select></label>
+                <p className="field-help">Maximum 1 MB. The file goes into the member’s private documents and resolves this request.</p>
+                <SubmitButton pendingLabel="Uploading…">Upload and resolve</SubmitButton>
+              </form>}
               <form action={replyAsStaff} className="review-form">
                 <input type="hidden" name="requestId" value={request.id} />
                 <label>Reply to the member</label>

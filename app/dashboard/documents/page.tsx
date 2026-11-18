@@ -6,6 +6,8 @@ import { dateTime } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
 import { uploadDocument, deleteDocument, setDocumentPurpose } from './actions'
 
+import { DOCUMENT_ACCEPT, DOCUMENT_LIMIT } from '@/lib/document-uploads'
+
 export const dynamic = 'force-dynamic'
 
 const SCOPE_HELP: Record<string, string> = {
@@ -33,9 +35,10 @@ export default async function DocumentsPage({ searchParams }: Props) {
   const { count: orgCount } = await supabase.from('organization_members').select('*', { count: 'exact', head: true }).eq('user_id', profile.id)
   const hasOrg = (orgCount ?? 0) > 0
 
-  const [{ data: documents }, { data: myOpportunities }] = await Promise.all([
+  const [{ data: documents }, { data: myOpportunities }, { count: ownedCount }] = await Promise.all([
     supabase.from('document_records').select('*').order('created_at', { ascending: false }).limit(100),
     supabase.from('opportunities').select('id,title').eq('owner_user_id', profile.id).order('updated_at', { ascending: false }),
+    supabase.from('document_records').select('id', { count: 'exact', head: true }).eq('owner_user_id', profile.id),
   ])
   const oppById = new Map((myOpportunities ?? []).map(o => [o.id, o.title]))
   const canUpload = profile.account_status === 'active' || profile.account_status === 'pending'
@@ -54,11 +57,17 @@ export default async function DocumentsPage({ searchParams }: Props) {
           <div><strong>Account not active</strong><p>Document upload is paused while your account is not active.</p></div>
           <a className="button button-light" href="/dashboard/support">Contact support</a>
         </section>
+      : ownedCount === null || ownedCount >= DOCUMENT_LIMIT
+      ? <section className="card">
+          <h2>{ownedCount === null ? 'Document limit unavailable' : `You have ${ownedCount} documents`}</h2>
+          <p>{ownedCount === null ? 'Refresh this page to check your upload slots.' : 'To upload another file yourself, delete old documents until fewer than five remain. You can also ask WTC Accra to upload an additional file for you.'}</p>
+          <a className="button button-outline" href="/dashboard/support?extraUpload=1">Request an extra upload</a>
+        </section>
       : <form action={uploadDocument} className="card form-stack">
           <h2>Upload a document</h2>
           {profile.system_role === 'user' && <p className="field-help">{requirementNote(myType, hasOrg)} Still needed: {requiredDocuments(myType, hasOrg).filter(r => !(documents ?? []).some(d => d.purpose === r)).map(purposeLabel).join(', ') || 'nothing — all required documents are uploaded'}.</p>}
-          <label>File<input name="file" type="file" required accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx" /></label>
-          <p className="field-help">PDF, PNG, JPEG, DOCX or XLSX. Maximum 25MB.</p>
+          <label>File<input name="file" type="file" required accept={DOCUMENT_ACCEPT} /></label>
+          <p className="field-help">PDF, PNG, JPEG, DOCX or XLSX. Maximum 1 MB per file. {ownedCount} of {DOCUMENT_LIMIT} self-service slots in use.</p>
           <div className="form-grid">
             <label>What is this document
               <select name="purpose" defaultValue={wanted ?? 'general'}>
@@ -80,6 +89,7 @@ export default async function DocumentsPage({ searchParams }: Props) {
             </label>
           </div>
           <SubmitButton pendingLabel="Uploading…">Upload</SubmitButton>
+          <a className="text-link" href="/dashboard/support?extraUpload=1">Request an extra upload</a>
         </form>}
 
     {(documents ?? []).length === 0

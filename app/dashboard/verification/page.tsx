@@ -134,9 +134,9 @@ export default async function VerificationPage({ searchParams }: Props) {
                 {DOCUMENT_PURPOSES.filter(v => !['general', 'other'].includes(v)).map(v => <option key={v} value={v}>{purposeLabel(v)}{requiredDocuments(type, hasOrg).includes(v) ? ' — required' : ''}</option>)}
               </select>
             </label>
-            <label>File<input name="file" type="file" required accept=".pdf,.png,.jpg,.jpeg,.docx" /></label>
+            <label>File<input name="file" type="file" required accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx" /></label>
           </div>
-          <p className="field-help">PDF, PNG, JPEG or DOCX, up to 25MB. Only you and WTC Accra can open these.</p>
+          <p className="field-help">PDF, PNG, JPEG, DOCX or XLSX. Maximum 1 MB per file and five documents per account. Only you and WTC Accra can open these. <a href="/dashboard/documents">Manage documents</a>.</p>
           <SubmitButton pendingLabel="Uploading…">Upload document</SubmitButton>
         </form>
       </section>

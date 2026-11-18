@@ -134,7 +134,7 @@ export default async function DealRoomPage({ params, searchParams }: Props) {
               </select>
             </label>
             <div><SubmitButton className="button button-outline" pendingLabel="Uploading…">Upload to room</SubmitButton></div>
-            <p className="field-help">Visible only to the people in this room and WTC Accra.</p>
+            <p className="field-help">Maximum 1 MB per file. Shared files count toward your five-document limit. <a href="/dashboard/documents">Manage documents</a>. Visible only to the people in this room and WTC Accra.</p>
           </form>}
         </section>
       </div>

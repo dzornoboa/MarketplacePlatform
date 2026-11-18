@@ -154,8 +154,8 @@ export type Database = {
         Relationships: []
       }
       document_records: {
-        Row: { id:string; owner_user_id:string; opportunity_id:string|null; deal_room_id:string|null; object_path:string; file_name:string; mime_type:string|null; size_bytes:number|null; access_scope:Database['public']['Enums']['document_access_scope']; purpose:string; created_at:string }
-        Insert: { id?:string; owner_user_id:string; opportunity_id?:string|null; deal_room_id?:string|null; object_path:string; file_name:string; mime_type?:string|null; size_bytes?:number|null; access_scope?:Database['public']['Enums']['document_access_scope']; purpose?:string; created_at?:string }
+        Row: { id:string; extra_upload_request_id:string|null; owner_user_id:string; opportunity_id:string|null; deal_room_id:string|null; object_path:string; file_name:string; mime_type:string|null; size_bytes:number|null; access_scope:Database['public']['Enums']['document_access_scope']; purpose:string; created_at:string }
+        Insert: { id?:string; extra_upload_request_id?:string|null; owner_user_id:string; opportunity_id?:string|null; deal_room_id?:string|null; object_path:string; file_name:string; mime_type?:string|null; size_bytes?:number|null; access_scope?:Database['public']['Enums']['document_access_scope']; purpose?:string; created_at?:string }
         Update: Partial<Database['public']['Tables']['document_records']['Insert']>
         Relationships: []
       }

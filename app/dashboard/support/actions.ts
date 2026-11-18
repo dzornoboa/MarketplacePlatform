@@ -4,12 +4,13 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { allow } from '@/lib/security/throttle'
+import { EXTRA_DOCUMENT_CATEGORY } from '@/lib/document-uploads'
 
 function back(key: 'error' | 'message', message: string) {
   return `/dashboard/support?${key}=${encodeURIComponent(message)}`
 }
 
-const CATEGORIES = new Set(['general', 'verification', 'marketplace', 'billing', 'technical'])
+const CATEGORIES = new Set([EXTRA_DOCUMENT_CATEGORY, 'general', 'verification', 'marketplace', 'billing', 'technical'])
 const PRIORITIES = new Set(['low', 'normal', 'high', 'urgent'])
 
 export async function openRequest(formData: FormData) {
@@ -38,6 +39,7 @@ export async function openRequest(formData: FormData) {
   if (messageError) redirect(back('error', messageError.message))
 
   revalidatePath('/dashboard/support')
+  revalidatePath('/admin/support')
   redirect(back('message', 'Support request opened. The WTC Accra team will reply here.'))
 }
 

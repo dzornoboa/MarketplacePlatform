@@ -5,6 +5,8 @@ import { dateTime } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
 import { openRequest, replyToRequest } from './actions'
 
+import { EXTRA_DOCUMENT_CATEGORY } from '@/lib/document-uploads'
+
 export const dynamic = 'force-dynamic'
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
@@ -12,6 +14,7 @@ type Props = { searchParams: Promise<Record<string, string | string[] | undefine
 export default async function SupportPage({ searchParams }: Props) {
   const { supabase, profile } = await requireUserProfile()
   const params = await searchParams
+  const extraUpload = params.extraUpload === '1'
   const error = typeof params.error === 'string' ? params.error : null
   const message = typeof params.message === 'string' ? params.message : null
 
@@ -42,11 +45,13 @@ export default async function SupportPage({ searchParams }: Props) {
     </section>
 
     <form action={openRequest} className="card form-stack">
-      <h2>Open a request</h2>
-      <label>Subject<input name="subject" minLength={3} maxLength={180} required placeholder="Short summary" /></label>
+      <h2>{extraUpload ? 'Request an extra document upload' : 'Open a request'}</h2>
+      {extraUpload && <p>Describe the file and why you need it. WTC Accra will reply here with instructions for sharing it securely.</p>}
+      <label>{extraUpload ? 'Document name or type' : 'Subject'}<input name="subject" minLength={3} maxLength={180} required placeholder={extraUpload ? 'For example, proof of funds' : 'Short summary'} /></label>
       <div className="form-grid">
         <label>Category
-          <select name="category" defaultValue="general">
+          <select name="category" defaultValue={extraUpload ? EXTRA_DOCUMENT_CATEGORY : 'general'}>
+            <option value={EXTRA_DOCUMENT_CATEGORY}>Extra document upload</option>
             <option value="general">General</option>
             <option value="verification">Verification</option>
             <option value="marketplace">Marketplace and listings</option>
@@ -63,7 +68,7 @@ export default async function SupportPage({ searchParams }: Props) {
           </select>
         </label>
       </div>
-      <label>Details<textarea name="body" rows={5} maxLength={5000} required placeholder="What you were doing, what happened, and what you expected." /></label>
+      <label>Details<textarea name="body" rows={5} maxLength={5000} required placeholder={extraUpload ? 'Tell us what you want to upload and why.' : 'What you were doing, what happened, and what you expected.'} /></label>
       <SubmitButton>Open request</SubmitButton>
     </form>
 

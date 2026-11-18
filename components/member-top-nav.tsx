@@ -30,6 +30,7 @@ export function MemberTopNav({ profile, unreadCount = 0, hasStaffConsole = false
     { href: '/dashboard/opportunities', label: 'Listings', icon: '▣' },
     { href: '/dashboard/deal-rooms', label: 'Messages', icon: '✉' },
     { href: '/dashboard/notifications', label: 'Notifications', icon: '●', badge: unreadCount },
+    { href: '/', label: 'Back to website', icon: '↗' },
   ]
 
   return <header className="member-top-nav">
