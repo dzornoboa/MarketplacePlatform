@@ -3,7 +3,7 @@ import { PublicHeader } from '@/components/public-header'
 import { PublicFooter } from '@/components/public-footer'
 import { BrandCircle } from '@/components/brand'
 import { createClient } from '@/lib/supabase/server'
-import { humanize, labelForIntent, listingIntents, listingIntentLabels } from '@/lib/auth/access'
+import { anonymousDealTitle, canShowPublicDealDetails, humanize, labelForIntent, listingIntents, listingIntentLabels } from '@/lib/auth/access'
 import { relativeDays } from '@/lib/format'
 import { SessionCta } from '@/components/header-session'
 import { getPageBlock } from '@/lib/content/site-content'
@@ -31,7 +31,7 @@ export default async function PublicListingsPage({ searchParams }: Props) {
   const str = (k: string) => (typeof params[k] === 'string' ? (params[k] as string) : '')
   const kind = str('kind'), intent = str('intent'), category = str('category'), sector = str('sector'), country = str('country')
 
-  // Session-aware: the function returns real titles only to signed-in users.
+  // Apply marketplace access before rendering any restricted listing text.
   const supabase = await createClient()
   const [{ data: claimsData }, accessState, { data: listings }, { data: facets }] = await Promise.all([
     supabase.auth.getClaims(),
@@ -43,7 +43,7 @@ export default async function PublicListingsPage({ searchParams }: Props) {
     supabase.rpc('public_listing_facets'),
   ])
   const signedIn = !!claimsData?.claims?.sub
-  const fullAccess = !!accessState?.can_view_deal_details
+  const fullAccess = signedIn && canShowPublicDealDetails(accessState)
   const intro = await getPageBlock('listings', 'intro', { eyebrow: 'Private marketplace', heading: 'Live', heading_emphasis: 'listings', body: 'Discover reviewed investment, trade, procurement and partnership deals. Deal category, sector and market information help you find relevant opportunities while restricted figures, identities and networking remain protected.', cta_label: 'Join the network', cta_href: '/register', secondary_cta_label: 'Member sign in', secondary_cta_href: '/login', image_url: null })
   const facet = (name: string) => (facets ?? []).filter(f => f.facet === name)
   const filtered = !!(kind || intent || category || sector || country)
@@ -58,8 +58,8 @@ export default async function PublicListingsPage({ searchParams }: Props) {
       </div>
 
       {!signedIn
-        ? <div className="restriction-banner listing-access-note"><div><strong>Preview Only</strong><p>Visitors see only a small sample of live deals. Sign in or create a free account to discover more.</p></div><Link className="button button-light" href="/register">Join Free</Link></div>
-        : !fullAccess && <div className="restriction-banner listing-access-note"><div><strong>Limited Deal Discovery</strong><p>Your account can browse a limited selection while full restricted access is inactive. Complete the access requirements for your membership type to unlock the full catalogue and protected details.</p></div><Link className="button button-light" href="/dashboard/billing">View Access Plan</Link></div>}
+        ? <div className="restriction-banner listing-access-note"><div><strong>Preview Only</strong><p>Browse anonymous deal previews. Create a free account to start verification and see the access requirements for your membership type.</p></div><Link className="button button-light" href="/register">Join Free</Link></div>
+        : !fullAccess && <div className="restriction-banner listing-access-note"><div><strong>Limited Deal Discovery</strong><p>You can browse anonymous deal previews. An active account and the access requirements for your membership type are needed to see protected details.</p></div><Link className="button button-light" href="/dashboard/billing">View Access Plan</Link></div>}
 
       <form className="filter-row card" method="get">
         <label>Posted as
@@ -102,20 +102,23 @@ export default async function PublicListingsPage({ searchParams }: Props) {
             <h2>{filtered ? 'No listings match those filters' : 'No Live Deals Yet'}</h2>
             <p>{filtered ? 'Try widening the filters.' : 'Deals appear here as WTC Accra reviews and publishes them.'}</p>
           </section>
-        : <div className="article-grid">{(listings ?? []).map(item => <article className="card teaser-card" key={item.id}>
-            <div className="feed-meta">
-              <span className="eyebrow">{labelForIntent(item.intent)}</span>
-              <Stars rating={item.importance} />
-            </div>
-            <h3 className={item.title_hidden ? 'teaser-title-hidden' : undefined}><Link href={`/opportunities/${item.id}`}>{item.title}</Link></h3>
-            <p className="muted">{item.category} · {humanize(item.kind)} · {item.sector} · {item.country}{item.region ? ` · ${item.region}` : ''}</p>
-            <p>{item.teaser}</p>
-            {item.tags.length > 0 && <div className="trust-row">{item.tags.slice(0, 4).map(t => <span key={t}>{t}</span>)}</div>}
-            <div className="teaser-foot">
-              <span className="field-help">{item.deadline ? relativeDays(item.deadline) : 'Open'}</span>
-              <Link className="arrow-link" href={`/opportunities/${item.id}`}>{item.title_hidden ? 'Sign in to see this deal →' : 'View details →'}</Link>
-            </div>
-          </article>)}</div>}
+        : <div className="article-grid">{(listings ?? []).map(item => {
+          const anonymous = !fullAccess || item.title_hidden
+          return <article className="card teaser-card" key={item.id}>
+              <div className="feed-meta">
+                <span className="eyebrow">{labelForIntent(item.intent)}</span>
+                <Stars rating={item.importance} />
+              </div>
+              <h3 className={anonymous ? 'teaser-title-hidden' : undefined}><Link href={`/opportunities/${item.id}`}>{anonymous ? anonymousDealTitle(item) : item.title}</Link></h3>
+              <p className="muted">{item.category} · {humanize(item.kind)} · {item.sector} · {item.country}{item.region ? ` · ${item.region}` : ''}</p>
+              <p>{anonymous ? 'Counterparty identities and restricted deal details are available to eligible active accounts.' : item.teaser}</p>
+              {!anonymous && item.tags.length > 0 && <div className="trust-row">{item.tags.slice(0, 4).map(t => <span key={t}>{t}</span>)}</div>}
+              <div className="teaser-foot">
+                <span className="field-help">{item.deadline ? relativeDays(item.deadline) : 'Open'}</span>
+                <Link className="arrow-link" href={`/opportunities/${item.id}`}>{anonymous ? 'View anonymous preview →' : 'View details →'}</Link>
+              </div>
+            </article>
+        })}</div>}
     </section>
   </main><PublicFooter /></>
 }

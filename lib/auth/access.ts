@@ -189,6 +189,14 @@ export type AccessState = {
   support_bypass_until?: string | null
 }
 
+export function canShowPublicDealDetails(state: AccessState | null): boolean {
+  return state?.account_status === 'active' && state.can_view_opportunities && state.can_view_deal_details === true
+}
+
+export function anonymousDealTitle(deal: { kind: string; sector: string; country: string }): string {
+  return [`${humanize(deal.kind)} Deal`, deal.sector, deal.country].filter(Boolean).join(' · ')
+}
+
 /* Days until the active subscription ends; negative when expired. */
 export function subscriptionDaysLeft(state: AccessState): number | null {
   if (!state.subscription_ends_at) return null
@@ -200,13 +208,16 @@ export type MarketplaceLock =
   | { locked: false }
 
 export function marketplaceLock(state: AccessState): MarketplaceLock {
-  if (state.account_status === 'suspended' || state.account_status === 'disabled') {
+  if (state.account_status === 'pending') {
+    return { locked: true, reason: 'Complete your profile and follow the verification steps to activate your account.', action: { label: 'View Verification Status', href: '/dashboard/verification' } }
+  }
+  if (state.account_status !== 'active') {
     return { locked: true, reason: 'Your account is not active. Contact WTC Accra support.', action: { label: 'Contact Support', href: '/dashboard/support' } }
   }
   if (!state.can_view_opportunities) {
     return { locked: true, reason: 'WTC Accra has paused deal discovery on your account.', action: { label: 'Contact Support', href: '/dashboard/support' } }
   }
-  if (state.can_view_deal_details) return { locked: false }
+  if (canShowPublicDealDetails(state)) return { locked: false }
 
   if (state.participant_type === 'investor') {
     return { locked: true, reason: 'Investors can discover deal teasers for free. Restricted business and deal details unlock only after you request access and WTC Accra approves the connection.', action: { label: 'View Deal Teasers', href: '/opportunities' } }

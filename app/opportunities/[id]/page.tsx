@@ -3,12 +3,12 @@ import { VerifiedCheck } from '@/components/verified-check'
 import { ParticipantBadge } from '@/components/participant-badge'
 import { Avatar } from '@/components/avatar'
 import { SubmitButton } from '@/components/submit-button'
-import { notFound, redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { PublicHeader } from '@/components/public-header'
 import { PublicFooter } from '@/components/public-footer'
 import { createClient } from '@/lib/supabase/server'
 import { readAccessState } from '@/lib/auth/guards'
-import { humanize, labelForIntent, labelForParticipantType, marketplaceLockFor } from '@/lib/auth/access'
+import { anonymousDealTitle, humanize, labelForIntent, labelForParticipantType, marketplaceLockFor } from '@/lib/auth/access'
 import { money, date, relativeDays } from '@/lib/format'
 import { expressInterest, toggleSaved, withdrawDeal } from '@/app/dashboard/opportunities/actions'
 import { requestIntroduction } from '@/app/dashboard/introductions/actions'
@@ -21,12 +21,7 @@ function Stars({ rating }: { rating: number }) {
   return <span className="deal-rating" aria-label={`Deal rating ${rating} of 5`}>{'★'.repeat(rating)}<span className="deal-rating-dim">{'★'.repeat(5 - rating)}</span></span>
 }
 
-/* One listing. Three audiences:
-   - anonymous: the teaser and a sign-in prompt (redirected to login with
-     this page as the return address);
-   - signed-in without marketplace access: the teaser plus exactly why the
-     details are locked and what to do about it;
-   - authorised member: the full listing and the deal-request form. */
+
 export default async function ListingDetailPage({ params, searchParams }: Props) {
   const { id } = await params
   const query = await searchParams
@@ -36,24 +31,26 @@ export default async function ListingDetailPage({ params, searchParams }: Props)
   const supabase = await createClient()
   const { data: claimsData } = await supabase.auth.getClaims()
   const userId = claimsData?.claims?.sub ? String(claimsData.claims.sub) : null
-  if (!userId) redirect(`/login?next=${encodeURIComponent(`/opportunities/${id}`)}`)
-
-  // Teaser is always available to a signed-in user; it confirms the listing exists.
+  // The teaser RPC exposes the published listings available to this audience.
   const { data: teasers } = await supabase.rpc('public_listing_teasers', { max_rows: 200 })
   const teaser = (teasers ?? []).find(t => t.id === id)
   if (!teaser) notFound()
 
-  const [{ data: profile }, state] = await Promise.all([
+  const [{ data: profile }, state] = userId ? await Promise.all([
     supabase.from('profiles').select('system_role,verification_status').eq('id', userId).single(),
     readAccessState(supabase),
-  ])
-  const lock = state ? marketplaceLockFor(state, profile?.system_role ?? 'user') : { locked: true as const, reason: 'Access state unavailable.', action: null }
+  ]) : [{ data: null }, null]
+  const lock = !userId ? {
+    locked: true as const,
+    reason: 'Sign in to check your account and deal access. Creating an account is free.',
+    action: { label: 'Sign In', href: `/login?next=${encodeURIComponent(`/opportunities/${id}`)}` },
+  } : state ? marketplaceLockFor(state, profile?.system_role ?? 'user') : { locked: true as const, reason: 'Access state unavailable.', action: null }
 
   // RLS returns the row only if this member may see it; null means locked.
   const { data: full } = lock.locked ? { data: null } : await supabase.from('opportunities').select('*').eq('id', id).maybeSingle()
   const isOwner = full?.owner_user_id === userId
 
-  const [{ data: owner }, { data: myBid }, { data: saved }] = full ? await Promise.all([
+  const [{ data: owner }, { data: myBid }, { data: saved }] = full && userId ? await Promise.all([
     supabase.rpc('listing_owner_cards', { owner_ids: [full.owner_user_id] }),
     supabase.from('expressions_of_interest').select('id,status,created_at').eq('opportunity_id', id).eq('applicant_id', userId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
     supabase.from('saved_opportunities').select('opportunity_id').eq('opportunity_id', id).maybeSingle(),
@@ -67,13 +64,12 @@ export default async function ListingDetailPage({ params, searchParams }: Props)
         <span className="eyebrow">{labelForIntent(teaser.intent)}</span>
         <Stars rating={teaser.importance} />
       </div>
-      <h1 className="article-title">{teaser.title}</h1>
+      <h1 className="article-title">{full ? full.title : anonymousDealTitle(teaser)}</h1>
       <p className="muted">{humanize(teaser.kind)} · {teaser.sector} · {teaser.country}{teaser.region ? ` · ${teaser.region}` : ''}{teaser.deadline ? ` · ${relativeDays(teaser.deadline)}` : ''}</p>
       {error && <div className="alert alert-error">{error}</div>}
       {message && <div className="alert alert-success">{message}</div>}
 
       {!full && <>
-        <p className="lede">{teaser.teaser}</p>
         <section className="restriction-banner">
           <div>
             <strong>Restricted Deal Details Require Approved Access</strong>
@@ -89,7 +85,7 @@ export default async function ListingDetailPage({ params, searchParams }: Props)
             <li>Who posted it — organisation and participant type</li>
             <li>Restricted networking, meeting and Deal Room access</li>
           </ul>
-          {state?.participant_type === 'investor' && <form action={requestIntroduction} className="form-stack">
+          {state?.account_status === 'active' && state.participant_type === 'investor' && <form action={requestIntroduction} className="form-stack">
             <input type="hidden" name="opportunityId" value={id} />
             <label>Why You Want Access<textarea name="note" rows={4} maxLength={2000} placeholder="Introduce yourself, your mandate and what you want to discuss." /></label>
             <p className="field-help">WTC Accra will acknowledge the request and the Trade Officer, Verification Officer, Administrator and Super Administrator will share visibility of the workflow.</p>

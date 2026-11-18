@@ -2,6 +2,8 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   canUseVerifiedFeatures,
+  canShowPublicDealDetails,
+  type AccessState,
   dashboardRestrictionReason,
   isAdminRole,
   isKnownParticipantType,
@@ -47,4 +49,22 @@ test('staff role capabilities stay aligned with the staff console',()=>{
     assert.equal(hasCapability('admin', capability), true)
     assert.equal(hasCapability('super_admin', capability), true)
   }
+})
+
+test('public deal details require an active account and the applicable access grant', () => {
+  const active: AccessState = {
+    account_status: 'active',
+    verification_status: 'verified',
+    participant_type: 'business',
+    can_view_opportunities: true,
+    can_post_opportunities: true,
+    has_active_subscription: false,
+    subscription_ends_at: null,
+  }
+  assert.equal(canShowPublicDealDetails(null), false)
+  assert.equal(canShowPublicDealDetails({ ...active, account_status: 'pending', verification_status: 'pending_review', can_view_deal_details: true }), false)
+  assert.equal(canShowPublicDealDetails(active), false)
+  assert.equal(canShowPublicDealDetails({ ...active, has_active_subscription: true }), false)
+  assert.equal(canShowPublicDealDetails({ ...active, has_active_subscription: true, can_view_deal_details: true }), true)
+  assert.equal(canShowPublicDealDetails({ ...active, can_view_opportunities: false, can_view_deal_details: true }), false)
 })

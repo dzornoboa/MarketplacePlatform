@@ -56,7 +56,7 @@ export const HOME_FALLBACK: HomeContent = {
   hero_card: section('hero_card', 'hero_card', 'navy', {
     eyebrow: 'Private marketplace',
     heading: 'Opportunities Stay Protected',
-    body: 'The public website explains the network. Actual investment and trade opportunities become visible only after authentication and WTC Accra verification.',
+    body: 'Anyone can browse anonymous deal previews. Counterparty identities and restricted details require an active account with the applicable verification and access approvals.',
     items: [
       item('identity', 'Identity'),
       item('verification', 'Verification', { accent: 'orange' }),
@@ -70,7 +70,7 @@ export const HOME_FALLBACK: HomeContent = {
     body: 'The WTCA is a worldwide network of business centres, professionals and organisations across all industries, supporting one another for the betterment of global commerce. WTC Accra brings that network to Ghana.',
     items: [
       item('verified-participants', 'Verified participants', { body: 'Buyers, investors, businesses and WTC members use one common dashboard, with privileges assigned only after review.' }),
-      item('protected-opportunities', 'Protected opportunities', { body: 'No public deal catalogue. Opportunity records, documents and matching tools sit behind verified access.', accent: 'orange' }),
+      item('protected-opportunities', 'Protected opportunities', { body: 'Browse anonymous previews. Restricted records, documents and matching tools require approved access.', accent: 'orange' }),
       item('wtc-oversight', 'WTC Accra oversight', { body: 'Administrators review membership claims, participant type and verification status before enabling private functions.', accent: 'teal' }),
     ],
   }),
@@ -167,6 +167,9 @@ export async function getHomeContent(): Promise<HomeContent> {
 export type NavLink = { label: string; href: string }
 export type SiteChrome = { header: NavLink[]; footerPlatform: NavLink[]; legal: NavLink[]; settings: Record<string, string> }
 
+const LEGACY_FOOTER_ACCESS = 'Private opportunities are available only to authenticated and WTC Accra-verified users. The public site explains the network; it never lists deals.'
+const FOOTER_ACCESS = 'Anyone can browse anonymous deal previews. Counterparty identities and restricted details require an active account with the applicable verification and access approvals.'
+
 export const CHROME_FALLBACK: SiteChrome = {
   header: [
     { label: 'About', href: '/#about' },
@@ -191,7 +194,7 @@ export const CHROME_FALLBACK: SiteChrome = {
   settings: {
     site_tagline: 'Connecting Businesses, Globally.',
     footer_intro: 'A trusted digital gateway connecting Ghanaian businesses, buyers and investors to the worldwide World Trade Centers Association network.',
-    footer_access: 'Private opportunities are available only to authenticated and WTC Accra-verified users. The public site explains the network; it never lists deals.',
+    footer_access: FOOTER_ACCESS,
     footer_copyright: '© 2026 World Trade Centre Accra. All rights reserved.',
     contact_email: 'membership@wtcaccra.com',
     contact_phone: '+233 302 631 437',
@@ -219,7 +222,7 @@ async function loadSiteChrome(): Promise<SiteChrome> {
       header: header.length ? header : CHROME_FALLBACK.header,
       footerPlatform: footerPlatform.length ? footerPlatform : CHROME_FALLBACK.footerPlatform,
       legal: legal.length ? legal : CHROME_FALLBACK.legal,
-      settings: { ...CHROME_FALLBACK.settings, ...Object.fromEntries((settings ?? []).map(s => [s.key, s.value])) },
+      settings: { ...CHROME_FALLBACK.settings, ...Object.fromEntries((settings ?? []).map(s => [s.key, s.key === 'footer_access' && s.value === LEGACY_FOOTER_ACCESS ? FOOTER_ACCESS : s.value])) },
     }
   } catch {
     return CHROME_FALLBACK
@@ -256,7 +259,15 @@ export async function getPageContent(slug: string): Promise<PageContent> {
         const { id, ...rest } = block
         return {
           ...rest,
-          items: (items ?? []).filter(row => row.block_id === id).map(({ block_id: _b, ...entry }) => entry),
+          items: (items ?? []).filter(row => row.block_id === id).map(({ block_id: _b, ...entry }) => {
+            if (slug === 'how-it-works' && entry.heading?.trim().toLowerCase() === 'who can see an opportunity i post?') {
+              return { ...entry, body: FOOTER_ACCESS }
+            }
+            if (slug === 'how-it-works' && entry.heading?.trim().toLowerCase() === 'subscription') {
+              return { ...entry, body: 'Some membership types require an active access plan for restricted deal details. Eligible verified members can post for free.' }
+            }
+            return entry
+          }),
         }
       }),
     }
