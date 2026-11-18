@@ -1677,3 +1677,16 @@ h1,h2,h3,h4,
   .member-profile-head{grid-template-columns:auto minmax(0,1fr);gap:12px}
   .member-profile-actions{grid-column:1 / -1;min-width:0}
 }
+
+.member-global-search:focus-within{outline:2px solid var(--wtc-navy);outline-offset:2px}
+.member-global-search button{border:0;background:transparent;color:var(--wtc-navy);font:inherit;font-size:13px;font-weight:700;cursor:pointer;padding:6px 0}
+.member-global-search input{min-width:0}
+.member-search-mobile{display:none}
+.dashboard-search-form label:first-child{flex:2 1 16rem}
+.search-results{list-style:none;padding:0;margin:0;display:grid;gap:12px}
+.search-results li{display:grid;gap:4px;justify-items:start}
+.search-results :is(h3,p){margin:0}
+@media(max-width:900px){
+  .member-search-mobile{display:inline-block;font-size:12px;font-weight:700}
+  .member-top-brand{gap:8px}
+}

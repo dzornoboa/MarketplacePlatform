@@ -114,6 +114,7 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, a
       </div>}
     </nav>
     <div className="sidebar-bottom">
+      <Link href="/dashboard/search">Search the hub</Link>
       <Link href="/">Back to website</Link>
       <span className={`status-dot status-${profile.verification_status}`}>{profile.verification_status === 'verified' ? 'Verified check' : profile.verification_status.replaceAll('_', ' ')}</span>
       <SignOutButton />

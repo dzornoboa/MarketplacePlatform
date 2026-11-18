@@ -37,10 +37,11 @@ export function MemberTopNav({ profile, unreadCount = 0, hasStaffConsole = false
     <div className="member-top-nav-inner">
       <div className="member-top-brand">
         <LogoLink href="/dashboard" />
-        <form className="member-global-search" action="/dashboard/network" method="get">
-          <span aria-hidden="true">⌕</span>
-          <input name="q" type="search" placeholder="Search Members And Network" aria-label="Search members and network" />
+        <form className="member-global-search" action="/dashboard/search" method="get" role="search" aria-label="Dashboard search">
+          <input name="q" type="search" maxLength={120} placeholder="Members, listings, news" aria-label="Search the hub" />
+          <button type="submit">Search</button>
         </form>
+        <Link className="member-search-mobile" href="/dashboard/search">Search</Link>
       </div>
 
       <nav className="member-top-links" aria-label="Member Dashboard">
