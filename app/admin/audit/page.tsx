@@ -1,3 +1,4 @@
+import { containsPattern } from '@/lib/filters'
 import { requireAdminProfile } from '@/lib/auth/guards'
 import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { dateTime } from '@/lib/format'
@@ -19,9 +20,11 @@ export default async function AdminAuditPage({ searchParams }: Props) {
 
   let query = supabase.from('audit_events').select('*').order('created_at', { ascending: sort === 'oldest' }).limit(5000)
   if (entity) query = query.eq('entity_type', entity)
-  if (q) query = query.ilike('action', `%${q}%`)
+  if (q) query = query.ilike('action', containsPattern(q))
   if (actor) query = query.eq('actor_id', actor)
-  if (since) query = query.gte('created_at', new Date(since).toISOString())
+  if (/^\d{4}-\d{2}-\d{2}$/.test(since) && Number.isFinite(Date.parse(since))) {
+    query = query.gte('created_at', new Date(since).toISOString())
+  }
   const [{ data: events }, { data: allActors }, { data: typeRows }] = await Promise.all([
     query,
     supabase.from('profiles').select('id,full_name').neq('system_role', 'user').order('full_name'),

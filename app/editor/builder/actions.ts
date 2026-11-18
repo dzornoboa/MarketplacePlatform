@@ -1,5 +1,7 @@
 'use server'
 
+import { moderationError } from '@/lib/ai/content-moderation'
+
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import type { SiteContentBlock, SiteContentItem } from '@/lib/database.types'
@@ -118,10 +120,12 @@ export async function setVisibility(table: 'site_content_blocks' | 'site_content
 export async function uploadSiteImage(formData: FormData): Promise<Result<{ url: string }>> {
   const file = formData.get('file')
   if (!(file instanceof File) || file.size === 0) return { ok: false, error: 'Choose an image first.' }
-  if (file.size > 8 * 1024 * 1024) return { ok: false, error: 'Images must be 8 MB or smaller.' }
-  if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'].includes(file.type)) return { ok: false, error: 'Use a JPG, PNG, WebP, GIF or SVG.' }
+  if (file.size > 1024 * 1024) return { ok: false, error: 'Images must be 1 MB or smaller.' }
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) return { ok: false, error: 'Use a JPG, PNG or WebP so the image can be screened.' }
   const { supabase } = await who()
-  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '')
+  const screening = await moderationError('public site image', '', { image: file })
+  if (screening) return { ok: false, error: screening }
+  const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg'
   const path = `${new Date().getFullYear()}/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}.${ext}`
   const { error } = await supabase.storage.from('site-assets').upload(path, file, { contentType: file.type, upsert: false })
   if (error) return { ok: false, error: error.message }

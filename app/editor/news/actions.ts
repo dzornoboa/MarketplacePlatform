@@ -1,5 +1,6 @@
 'use server'
 
+import { moderationError } from '@/lib/ai/content-moderation'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -47,6 +48,9 @@ export async function createPost(formData: FormData) {
   const { data: claimsData } = await supabase.auth.getClaims()
   const publish = String(formData.get('intent') ?? '') === 'publish'
 
+  const screening = await moderationError('news article', [post.title, post.excerpt, post.body, post.externalUrl].join('\n'), { allowUnavailable: formData.get('manualReview') === 'on' || !publish })
+  if (screening) redirect(back('/editor/news/new', 'error', screening))
+
   const { data, error } = await supabase.from('content_posts').insert({
     title: post.title, category: post.category, slug: post.slug,
     excerpt: post.excerpt || null, body: post.body,
@@ -80,6 +84,10 @@ export async function updatePost(formData: FormData) {
   if (intent === 'unpublish') { patch.status = 'draft' }
   if (intent === 'archive') { patch.status = 'archived' }
 
+  if (intent !== 'unpublish' && intent !== 'archive') {
+    const screening = await moderationError('news article edit', [post.title, post.excerpt, post.body, post.externalUrl].join('\n'), { allowUnavailable: formData.get('manualReview') === 'on' })
+    if (screening) redirect(back(target, 'error', screening))
+  }
   const { error } = await supabase.from('content_posts').update(patch).eq('id', id)
   if (error) redirect(back(target, 'error', error.message))
   revalidatePath('/editor/news'); revalidatePath('/news'); revalidatePath(`/news/${post.slug}`)

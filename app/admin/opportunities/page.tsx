@@ -1,3 +1,4 @@
+import { searchColumns } from '@/lib/filters'
 import { requireCapability } from '@/lib/auth/guards'
 import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { humanize, labelForIntent } from '@/lib/auth/access'
@@ -22,7 +23,7 @@ export default async function AdminOpportunitiesPage({ searchParams }: Props) {
   const sort = typeof params.sort === 'string' && ['newest', 'oldest', 'title', 'amount'].includes(params.sort) ? params.sort : 'oldest'
 
   let query = supabase.from('opportunities').select('*').eq('status', status as 'submitted').limit(1000)
-  if (q) query = query.or(`title.ilike.%${q}%,sector.ilike.%${q}%,country.ilike.%${q}%`)
+  if (q) query = query.or(searchColumns(q, ['title', 'sector', 'country']))
   if (intent) query = query.eq('intent', intent as 'seeking_investment')
   query = sort === 'title' ? query.order('title')
     : sort === 'amount' ? query.order('capital_required', { ascending: false, nullsFirst: false })
@@ -98,6 +99,7 @@ export default async function AdminOpportunitiesPage({ searchParams }: Props) {
               <input type="hidden" name="opportunityId" value={item.id} />
               <label>Reviewer note</label>
               <textarea name="reviewerNote" rows={2} placeholder="Shown to the owner for changes and rejections." />
+                <label className="switch"><input type="checkbox" name="manualReview" /> I reviewed this listing for prohibited content if AI screening is unavailable.</label>
               <div className="button-row">
                 <button className="button button-primary" name="decision" value="publish">Publish</button>
                 <button className="button button-secondary" name="decision" value="changes">Request changes</button>

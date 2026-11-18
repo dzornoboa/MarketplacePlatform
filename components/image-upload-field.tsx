@@ -28,7 +28,7 @@ export function ImageUploadField({ name, defaultValue, label = 'Picture' }: { na
   return <div className="form-stack">
     <label>{label}
       <input type="hidden" name={name} value={url} />
-      <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={busy}
+      <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" disabled={busy}
         onChange={event => { const file = event.target.files?.[0]; if (file) upload(file) }} />
     </label>
     {busy && <p className="field-help">Uploading…</p>}
@@ -40,6 +40,6 @@ export function ImageUploadField({ name, defaultValue, label = 'Picture' }: { na
       {usable && <img src={url} alt="" style={{ maxHeight: 96, borderRadius: 8 }} />}
       <button className="button button-outline" type="button" onClick={() => { setUrl(''); setError(null); if (fileRef.current) fileRef.current.value = '' }}>Remove picture</button>
     </div>}
-    <p className="field-help">JPG, PNG, WebP or GIF, up to 8 MB. The picture is stored on WTC Accra&rsquo;s own servers.</p>
+    <p className="field-help">JPG, PNG or WebP, up to 1 MB. Images are screened before upload.</p>
   </div>
 }

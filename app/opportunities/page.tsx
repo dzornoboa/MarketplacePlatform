@@ -1,3 +1,4 @@
+import { opportunityKind } from '@/lib/filters'
 import Link from 'next/link'
 import { PublicHeader } from '@/components/public-header'
 import { PublicFooter } from '@/components/public-footer'
@@ -29,7 +30,7 @@ function Stars({ rating }: { rating: number }) {
 export default async function PublicListingsPage({ searchParams }: Props) {
   const params = await searchParams
   const str = (k: string) => (typeof params[k] === 'string' ? (params[k] as string) : '')
-  const kind = str('kind'), intent = str('intent'), category = str('category'), sector = str('sector'), country = str('country')
+  const kind = opportunityKind(str('kind')), intent = listingIntents.find(value => value === str('intent')) ?? '', category = str('category'), sector = str('sector'), country = str('country')
 
   // Apply marketplace access before rendering any restricted listing text.
   const supabase = await createClient()

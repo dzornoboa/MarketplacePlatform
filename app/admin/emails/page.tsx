@@ -1,3 +1,4 @@
+import { searchColumns } from '@/lib/filters'
 import { requireAdminProfile } from '@/lib/auth/guards'
 import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { humanize } from '@/lib/auth/access'
@@ -27,7 +28,7 @@ export default async function AdminEmailsPage({ searchParams }: Props) {
   const message = typeof params.message === 'string' ? params.message : null
 
   let query = supabase.from('outbound_emails').select('*').eq('status', status).limit(200)
-  if (q) query = query.or(`to_email.ilike.%${q}%,subject.ilike.%${q}%`)
+  if (q) query = query.or(searchColumns(q, ['to_email', 'subject']))
   if (kind) query = query.eq('kind', kind)
   const [{ data: emails }, { data: kindRows }] = await Promise.all([query.order('created_at', { ascending: sort === 'oldest' }), supabase.from('outbound_emails').select('kind').limit(2000)])
   const kinds = [...new Set((kindRows ?? []).map(k => k.kind))].sort()

@@ -1,10 +1,11 @@
+import { filterOptions, opportunityKind, searchColumns } from '@/lib/filters'
 import Link from 'next/link'
 import { SubmitButton } from '@/components/submit-button'
 import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
 import { marketplaceLockFor, postingLockFor, humanize, labelForIntent } from '@/lib/auth/access'
 import { money, date, relativeDays } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
-import { investmentBands, investmentBandTag } from '@/lib/deals/investment-bands'
+import { investmentBands } from '@/lib/deals/investment-bands'
 import { submitOpportunity, expressInterest, toggleSaved, withdrawOpportunity, deleteOpportunity, withdrawDeal } from './actions'
 
 export const dynamic = 'force-dynamic'
@@ -18,7 +19,7 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
   const message = typeof params.message === 'string' ? params.message : null
   const sector = typeof params.sector === 'string' ? params.sector : ''
   const investmentBand = typeof params.band === 'string' && investmentBands.some(b => b.code === params.band) ? params.band : ''
-  const kind = typeof params.kind === 'string' ? params.kind : ''
+  const kind = opportunityKind(params.kind)
   const q = typeof params.q === 'string' ? params.q.trim() : ''
   const sort = typeof params.sort === 'string' && ['newest', 'oldest', 'amount', 'deadline'].includes(params.sort) ? params.sort : 'newest'
   const mineSort = typeof params.mine === 'string' && ['updated', 'status', 'title'].includes(params.mine) ? params.mine : 'updated'
@@ -30,23 +31,28 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
   // RLS returns only what this member may see; the filters are UX, not security.
   let query = supabase.from('opportunities').select('*').eq('status', 'published').limit(100)
   if (sector) query = query.eq('sector', sector)
-  if (kind) query = query.eq('kind', kind as 'investment')
-  if (investmentBand) query = query.contains('tags', [investmentBandTag(investmentBand as (typeof investmentBands)[number]['code'])])
-  if (q) query = query.or(`title.ilike.%${q}%,summary.ilike.%${q}%,country.ilike.%${q}%`)
-  query = sort === 'amount' ? query.order('capital_required', { ascending: false, nullsFirst: false })
+  if (kind) query = query.eq('kind', kind)
+  const band = investmentBands.find(option => option.code === investmentBand)
+  if (band) {
+    query = query.eq('kind', 'investment').gt('capital_required_usd', band.minExclusive)
+    if (band.maxInclusive !== null) query = query.lte('capital_required_usd', band.maxInclusive)
+  }
+  if (q) query = query.or(searchColumns(q, ['title', 'summary', 'country']))
+  query = sort === 'amount' ? query.order('capital_required_usd', { ascending: false, nullsFirst: false })
     : sort === 'deadline' ? query.order('deadline', { ascending: true, nullsFirst: false })
     : query.order('published_at', { ascending: sort === 'oldest' })
-  const [{ data: published }, { data: mine }, { data: sentInterests }, { data: savedRows }] = await Promise.all([
+  const [{ data: published }, { data: mine }, { data: sentInterests }, { data: savedRows }, { data: facets }] = await Promise.all([
     browseLock.locked ? Promise.resolve({ data: [] }) : query,
     supabase.from('opportunities').select('*').eq('owner_user_id', profile.id).order(mineSort === 'title' ? 'title' : mineSort === 'status' ? 'status' : 'updated_at', { ascending: mineSort !== 'updated' }),
     supabase.from('expressions_of_interest').select('id,opportunity_id,status').eq('applicant_id', profile.id),
     supabase.from('saved_opportunities').select('opportunity_id'),
+    browseLock.locked ? Promise.resolve({ data: [] }) : supabase.rpc('public_listing_facets'),
   ])
   const interestByOpportunity = new Map((sentInterests ?? []).map(e => [e.opportunity_id, e]))
   const savedIds = new Set((savedRows ?? []).map(r => r.opportunity_id))
   const requestLabel = (status: string) => status === 'submitted' ? 'Processing' : status === 'under_review' ? 'Processed' : status === 'accepted' ? 'Connected' : status === 'declined' ? 'Declined' : 'Withdrawn'
   const displayTags = (tags: string[]) => tags.map(tag => tag.replace(/^category:/i,'').replaceAll('-', ' ')).filter(Boolean).join(', ')
-  const sectors = [...new Set((published ?? []).map(o => o.sector))].sort()
+  const sectors = filterOptions((facets ?? []).filter(f => f.facet === 'sector').map(f => f.value), sector)
 
   return <div className="page-stack">
     <div>
@@ -73,7 +79,7 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
     </section>
 
     {(mine ?? []).length > 1 && <form className="filter-row" method="get">
-      {sector && <input type="hidden" name="sector" value={sector} />}{kind && <input type="hidden" name="kind" value={kind} />}{q && <input type="hidden" name="q" value={q} />}{sort !== 'newest' && <input type="hidden" name="sort" value={sort} />}
+      {investmentBand && <input type="hidden" name="band" value={investmentBand} />}{sector && <input type="hidden" name="sector" value={sector} />}{kind && <input type="hidden" name="kind" value={kind} />}{q && <input type="hidden" name="q" value={q} />}{sort !== 'newest' && <input type="hidden" name="sort" value={sort} />}
       <label>Sort your listings<select name="mine" defaultValue={mineSort}><option value="updated">Recently updated</option><option value="status">By status</option><option value="title">Title A–Z</option></select></label>
       <button className="button button-outline" type="submit">Apply</button>
     </form>}
@@ -142,6 +148,7 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
           </select>
         </label>
         <button className="button button-outline" type="submit">Filter</button>
+        {(q || investmentBand || sector || kind || sort !== 'newest') && <Link className="text-link" href={mineSort === 'updated' ? '/dashboard/opportunities' : `?mine=${mineSort}`}>Reset filters</Link>}
       </form>
 
       {(published ?? []).length === 0

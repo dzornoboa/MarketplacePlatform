@@ -1,3 +1,4 @@
+import { searchColumns } from '@/lib/filters'
 import { requireCapability } from '@/lib/auth/guards'
 import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { humanize } from '@/lib/auth/access'
@@ -20,7 +21,7 @@ export default async function AdminPaymentsPage({ searchParams }: Props) {
   const sort = str('sort') === 'oldest' ? 'oldest' : 'newest'
 
   let query = supabase.from('payments').select('*').eq('status', status as 'pending').order('created_at', { ascending: sort === 'oldest' }).limit(1000)
-  if (q) query = query.or(`reference.ilike.%${q}%,provider_reference.ilike.%${q}%`)
+  if (q) query = query.or(searchColumns(q, ['reference', 'provider_reference']))
   const { data: payments } = await query
 
   const userIds = [...new Set((payments ?? []).map(p => p.user_id))]

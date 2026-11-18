@@ -1,7 +1,10 @@
 'use server'
 
+import { moderationError } from '@/lib/ai/content-moderation'
+
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { requireCapability } from '@/lib/auth/guards'
 import { createClient } from '@/lib/supabase/server'
 
 const DECISIONS = new Set(['publish', 'changes', 'reject'])
@@ -14,7 +17,15 @@ export async function reviewOpportunity(formData: FormData) {
   if (!opportunityId || !DECISIONS.has(decision)) {
     redirect(`${target}?error=${encodeURIComponent('Invalid review decision.')}`)
   }
-  const supabase = await createClient()
+  const { supabase } = await requireCapability('opportunities')
+  if (decision === 'publish') {
+    const { data: listing } = await supabase.from('opportunities')
+      .select('owner_user_id,title,summary,description,sector,country,city,region,tags').eq('id', opportunityId).maybeSingle()
+    if (!listing) redirect(`${target}?error=Opportunity%20not%20found.`)
+    const { owner_user_id, ...content } = listing
+    const screening = await moderationError('opportunity publication', Object.values(content).flat().join('\n'), { submittedBy: owner_user_id, allowUnavailable: formData.get('manualReview') === 'on' })
+    if (screening) redirect(`${target}?error=${encodeURIComponent(screening)}`)
+  }
   const { error } = await supabase.rpc('review_opportunity', {
     opportunity_id: opportunityId, decision, reviewer_note: note || null,
   })

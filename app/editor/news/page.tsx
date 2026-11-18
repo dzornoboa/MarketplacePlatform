@@ -1,3 +1,4 @@
+import { searchColumns } from '@/lib/filters'
 import Link from 'next/link'
 import { requireCapability } from '@/lib/auth/guards'
 import { humanize } from '@/lib/auth/access'
@@ -24,7 +25,7 @@ export default async function EditorNewsPage({ searchParams }: Props) {
   let query = supabase.from('content_posts').select('*').limit(1000)
   if (status) query = query.eq('status', status as 'draft')
   if (category) query = query.eq('category', category)
-  if (q) query = query.or(`title.ilike.%${q}%,slug.ilike.%${q}%`)
+  if (q) query = query.or(searchColumns(q, ['title', 'slug']))
   query = sort === 'title' ? query.order('title')
     : sort === 'updated' ? query.order('updated_at', { ascending: false })
     : query.order('created_at', { ascending: sort === 'oldest' })

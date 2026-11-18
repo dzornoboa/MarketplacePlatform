@@ -1,5 +1,7 @@
 'use server'
 
+import { moderationError } from '@/lib/ai/content-moderation'
+
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -31,6 +33,8 @@ export async function requestConnection(formData: FormData) {
   if (note.length > 2000) redirect(back(returnTo, 'error', 'Keep your message under 2000 characters.'))
 
   const supabase = await createClient()
+  const screening = await moderationError('connection request', note, { localOnly: true })
+  if (screening) redirect(back(returnTo, 'error', screening))
   const { error } = await supabase.rpc('request_connection', {
     addressee, connection_intent: intent, opportunity: opportunityId, note: note || null,
   })
@@ -50,6 +54,8 @@ export async function respondToConnection(formData: FormData) {
     redirect(back(returnTo, 'error', 'Invalid response.'))
   }
   const supabase = await createClient()
+  const screening = await moderationError('connection reply', note, { localOnly: true })
+  if (screening) redirect(back(returnTo, 'error', screening))
   const { error } = await supabase.rpc('respond_to_connection', {
     connection_id: connectionId, decision, response_note: note || null,
   })

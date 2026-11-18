@@ -1,3 +1,4 @@
+import { containsPattern } from '@/lib/filters'
 import Link from 'next/link'
 import { requireCapability } from '@/lib/auth/guards'
 import { RealtimeRefresh } from '@/components/realtime-refresh'
@@ -22,14 +23,18 @@ export default async function AdminSupportPage({ searchParams }: Props) {
   const message = typeof params.message === 'string' ? params.message : null
   const status = typeof params.status === 'string' && TABS.includes(params.status as 'open') ? params.status : 'open'
   const q = typeof params.q === 'string' ? params.q.trim() : ''
-  const priority = typeof params.priority === 'string' ? params.priority : ''
+  const priority = ['low', 'normal', 'high', 'urgent'].find(value => value === params.priority) ?? ''
+  const category = ['content_moderation', EXTRA_DOCUMENT_CATEGORY].find(value => value === params.category) ?? ''
+  const priorityOrder = ['urgent', 'high', 'normal', 'low']
   const sort = typeof params.sort === 'string' && ['oldest', 'newest', 'priority'].includes(params.sort) ? params.sort : 'oldest'
 
   let query = supabase.from('support_requests').select('*').eq('status', status as 'open').limit(1000)
-  if (q) query = query.ilike('subject', `%${q}%`)
+  if (q) query = query.ilike('subject', containsPattern(q))
+  if (category) query = query.eq('category', category)
   if (priority) query = query.eq('priority', priority)
-  query = sort === 'priority' ? query.order('priority').order('created_at') : query.order('created_at', { ascending: sort === 'oldest' })
-  const { data: requests } = await query
+  query = query.order('created_at', { ascending: sort !== 'newest' })
+  const { data } = await query
+  const requests = sort === 'priority' ? data?.sort((a, b) => priorityOrder.indexOf(a.priority) - priorityOrder.indexOf(b.priority)) : data
 
   const requestIds = (requests ?? []).map(r => r.id)
   const { data: messages } = requestIds.length
@@ -69,6 +74,7 @@ export default async function AdminSupportPage({ searchParams }: Props) {
     <form className="filter-row card" method="get">
       <input type="hidden" name="status" value={status} />
       <label>Subject<input name="q" defaultValue={q} placeholder="Search subjects" /></label>
+      <label>Category<select name="category" defaultValue={category}><option value="">All categories</option><option value="content_moderation">Content moderation</option><option value={EXTRA_DOCUMENT_CATEGORY}>Extra document upload</option></select></label>
       <label>Priority<select name="priority" defaultValue={priority}><option value="">All</option><option value="urgent">Urgent</option><option value="high">High</option><option value="normal">Normal</option><option value="low">Low</option></select></label>
       <label>Sort<select name="sort" defaultValue={sort}><option value="oldest">Oldest first</option><option value="newest">Newest first</option><option value="priority">By priority</option></select></label>
       <button className="button button-outline" type="submit">Apply</button>
@@ -79,7 +85,7 @@ export default async function AdminSupportPage({ searchParams }: Props) {
       : <div className="review-list">{(requests ?? []).map(request => {
           const member = personById.get(request.user_id)
           const thread = (messages ?? []).filter(m => m.support_request_id === request.id)
-          return <article className="card review-card" key={request.id}>
+          return <article className="card review-card" id={`request-${request.id}`} key={request.id}>
             <div className="review-head">
               <div>
                 <h2>{request.subject}</h2>

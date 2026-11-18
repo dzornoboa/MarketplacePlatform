@@ -67,7 +67,7 @@ export default async function DocumentsPage({ searchParams }: Props) {
           <h2>Upload a document</h2>
           {profile.system_role === 'user' && <p className="field-help">{requirementNote(myType, hasOrg)} Still needed: {requiredDocuments(myType, hasOrg).filter(r => !(documents ?? []).some(d => d.purpose === r)).map(purposeLabel).join(', ') || 'nothing — all required documents are uploaded'}.</p>}
           <label>File<input name="file" type="file" required accept={DOCUMENT_ACCEPT} /></label>
-          <p className="field-help">PDF, PNG, JPEG, DOCX or XLSX. Maximum 1 MB per file. {ownedCount} of {DOCUMENT_LIMIT} self-service slots in use.</p>
+          <p className="field-help">PDF, PNG, JPEG, DOCX or XLSX. Maximum 1 MB per file. {ownedCount} of {DOCUMENT_LIMIT} self-service slots in use. Images shared with other members are screened before upload.</p>
           <div className="form-grid">
             <label>What is this document
               <select name="purpose" defaultValue={wanted ?? 'general'}>

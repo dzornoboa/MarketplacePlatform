@@ -23,6 +23,7 @@ export function PostForm({ post, action }: { post?: ContentPost; action: (formDa
       <ImageUploadField name="imageUrl" defaultValue={post?.image_url} label="Article picture" />
       <label>External link<input name="externalUrl" defaultValue={post?.external_url ?? ''} placeholder="https://… (optional)" /></label>
     </div>
+    <label className="switch"><input type="checkbox" name="manualReview" /> I reviewed this article for prohibited content if AI screening is unavailable.</label>
     <div className="button-row">
       <button className="button button-secondary" name="intent" value="save" type="submit">{post ? 'Save changes' : 'Save draft'}</button>
       {(!post || post.status !== 'published') && <button className="button button-primary" name="intent" value="publish" type="submit">Publish</button>}

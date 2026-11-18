@@ -1,5 +1,7 @@
 'use server'
 
+import { moderationError } from '@/lib/ai/content-moderation'
+
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { requireUserProfile } from '@/lib/auth/guards'
@@ -67,8 +69,10 @@ export async function uploadAvatar(formData: FormData) {
   const { supabase, profile } = await requireUserProfile()
   const file = formData.get('avatar')
   if (!(file instanceof File) || file.size === 0) redirect('/dashboard/profile?error=Choose%20an%20image%20first.')
-  if (file.size > 5 * 1024 * 1024) redirect('/dashboard/profile?error=Images%20must%20be%205MB%20or%20smaller.')
+  if (file.size > 1024 * 1024) redirect('/dashboard/profile?error=Images%20must%20be%201%20MB%20or%20smaller.')
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) redirect('/dashboard/profile?error=Use%20a%20JPG%2C%20PNG%20or%20WebP%20image.')
+  const screening = await moderationError('public profile photo', '', { image: file })
+  if (screening) redirect(`/dashboard/profile?error=${encodeURIComponent(screening)}`)
   const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg'
   const path = `${profile.id}/avatar-${Date.now().toString(36)}.${ext}`
   const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { contentType: file.type, upsert: true })

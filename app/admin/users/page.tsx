@@ -1,3 +1,4 @@
+import { containsPattern } from '@/lib/filters'
 import Link from 'next/link'
 import { VerifiedCheck } from '@/components/verified-check'
 import { ParticipantBadge } from '@/components/participant-badge'
@@ -24,7 +25,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
   if (me.system_role === 'admin') query = query.neq('system_role', 'super_admin')
   else if (me.system_role !== 'super_admin') query = query.eq('system_role', 'user')
   if (filter) query = query.eq('verification_status', filter as 'verified')
-  if (search) query = query.ilike('full_name', `%${search}%`)
+  if (search) query = query.ilike('full_name', containsPattern(search))
   const { data: profiles } = await query
 
   const ids = (profiles ?? []).map(p => p.id)

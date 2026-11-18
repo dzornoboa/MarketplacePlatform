@@ -1,3 +1,4 @@
+import { filterOptions, opportunityKind } from '@/lib/filters'
 import Link from 'next/link'
 import { VerifiedCheck } from '@/components/verified-check'
 import { Avatar } from '@/components/avatar'
@@ -18,7 +19,7 @@ const SORTS = {
   recent: { label: 'Newest first', column: 'published_at', ascending: false },
   importance: { label: 'Most significant', column: 'importance', ascending: false },
   closing: { label: 'Closing soonest', column: 'deadline', ascending: true },
-  capital: { label: 'Largest capital', column: 'capital_required', ascending: false },
+  capital: { label: 'Largest capital', column: 'capital_required_usd', ascending: false },
 } as const
 
 function Stars({ rating }: { rating: number }) {
@@ -34,10 +35,10 @@ export default async function FeedPage({ searchParams }: Props) {
   const error = str('error') || null
   const message = str('message') || null
 
-  const sortKey = (str('sort') in SORTS ? str('sort') : 'recent') as keyof typeof SORTS
+  const sortKey = (Object.hasOwn(SORTS, str('sort')) ? str('sort') : 'recent') as keyof typeof SORTS
   const sort = SORTS[sortKey]
   const category = str('category'), sector = str('sector'), country = str('country'), region = str('region')
-  const intent = str('intent'), kind = str('kind'), followed = str('followed') === '1'
+  const intent = listingIntents.find(value => value === str('intent')) ?? '', kind = opportunityKind(str('kind')), followed = str('followed') === '1'
   const filtersApplied = !!(category || sector || country || region || intent || kind || followed)
 
   const state = await readAccessState(supabase)
@@ -50,29 +51,32 @@ export default async function FeedPage({ searchParams }: Props) {
     .select('id,title,slug,excerpt,category,image_url,published_at')
     .eq('status', 'published').order('published_at', { ascending: false }).limit(6)
 
-  let listingQuery = supabase.from('opportunities').select('*').eq('status', 'published').limit(200)
+  const { data: followRows } = await supabase.from('follows').select('following_id').eq('follower_id', profile.id)
+  const followingIds = (followRows ?? []).map(row => row.following_id)
+  let listingQuery = supabase.from('opportunities').select('*').eq('status', 'published').neq('owner_user_id', profile.id).limit(200)
+  if (followed && followingIds.length) listingQuery = listingQuery.in('owner_user_id', followingIds)
   if (category) listingQuery = listingQuery.eq('category', category)
   if (sector) listingQuery = listingQuery.eq('sector', sector)
   if (country) listingQuery = listingQuery.eq('country', country)
   if (region) listingQuery = listingQuery.eq('region', region)
-  if (kind) listingQuery = listingQuery.eq('kind', kind as 'investment')
-  if (intent) listingQuery = listingQuery.eq('intent', intent as 'seeking_investment')
+  if (kind) listingQuery = listingQuery.eq('kind', kind)
+  if (intent) listingQuery = listingQuery.eq('intent', intent)
   listingQuery = listingQuery.order(sort.column, { ascending: sort.ascending, nullsFirst: false })
 
-  const [{ data: news }, { data: listings }, { data: followRows }, { data: savedRows }, { data: outgoingConnections }] = await Promise.all([
+  const [{ data: news }, { data: listings }, { data: facets }, { data: regions }, { data: savedRows }, { data: outgoingConnections }] = await Promise.all([
     newsPromise,
-    lock.locked ? Promise.resolve({ data: [] }) : listingQuery,
-    supabase.from('follows').select('following_id').eq('follower_id', profile.id),
+    lock.locked || (followed && !followingIds.length) ? Promise.resolve({ data: [] }) : listingQuery,
+    lock.locked ? Promise.resolve({ data: [] }) : supabase.rpc('public_listing_facets'),
+    lock.locked ? Promise.resolve({ data: [] }) : supabase.from('opportunities').select('region').eq('status', 'published').not('region', 'is', null).limit(1000),
     supabase.from('saved_opportunities').select('opportunity_id').eq('user_id', profile.id),
     supabase.from('connections').select('id,addressee_id,opportunity_id,status,staff_approved_at').eq('requester_id', profile.id),
   ])
 
-  const followingIds = new Set((followRows ?? []).map(f => f.following_id))
+  const followingSet = new Set(followingIds)
   const savedIds = new Set((savedRows ?? []).map(row => row.opportunity_id))
   const connectionByDeal = new Map((outgoingConnections ?? []).filter(row => row.opportunity_id).map(row => [`${row.opportunity_id}:${row.addressee_id}`, row]))
   const displayTags = (tags: string[]) => tags.map(tag => tag.replace(/^category:/i,'').replaceAll('-', ' ')).filter(Boolean).join(', ')
-  let visible = (listings ?? []).filter(o => o.owner_user_id !== profile.id)
-  if (followed) visible = visible.filter(o => followingIds.has(o.owner_user_id))
+  const visible = listings ?? []
 
   const ownerIds = [...new Set(visible.map(o => o.owner_user_id))]
   const { data: owners } = ownerIds.length
@@ -80,8 +84,10 @@ export default async function FeedPage({ searchParams }: Props) {
     : { data: [] }
   const ownerById = new Map((owners ?? []).map(o => [o.id, o]))
 
-  const facet = (key: keyof typeof visible[number]) =>
-    [...new Set((listings ?? []).map(o => o[key]).filter((v): v is string => typeof v === 'string' && v.length > 0))].sort()
+  const facet = (key: string, selected: string) => filterOptions(
+    key === 'region' ? (regions ?? []).map(row => row.region) : (facets ?? []).filter(row => row.facet === key).map(row => row.value),
+    selected,
+  )
 
   return <div className="page-stack">
     <div>
@@ -129,7 +135,7 @@ export default async function FeedPage({ searchParams }: Props) {
         <label>Deal Category
           <select name="category" defaultValue={category}>
             <option value="">All Deal Categories</option>
-            {facet('category').map(value => <option key={value} value={value}>{value}</option>)}
+            {facet('category', category).map(value => <option key={value} value={value}>{value}</option>)}
           </select>
         </label>
         <label>Deal Type
@@ -144,24 +150,24 @@ export default async function FeedPage({ searchParams }: Props) {
         <label>Sector
           <select name="sector" defaultValue={sector}>
             <option value="">All sectors</option>
-            {facet('sector').map(s => <option key={s} value={s}>{s}</option>)}
+            {facet('sector', sector).map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </label>
         <label>Region
           <select name="region" defaultValue={region}>
             <option value="">All regions</option>
-            {facet('region').map(r => <option key={r} value={r}>{r}</option>)}
+            {facet('region', region).map(r => <option key={r} value={r}>{r}</option>)}
           </select>
         </label>
         <label>Country
           <select name="country" defaultValue={country}>
             <option value="">All countries</option>
-            {facet('country').map(c => <option key={c} value={c}>{c}</option>)}
+            {facet('country', country).map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </label>
         <label className="switch"><input type="checkbox" name="followed" value="1" defaultChecked={followed} /> Only members I follow</label>
         <button className="button button-outline" type="submit">Apply</button>
-        <Link className="text-link" href="/dashboard/opportunities">Reset</Link>
+        <Link className="text-link" href="/dashboard/feed">Reset</Link>
       </form>
 
       {visible.length === 0
@@ -172,7 +178,7 @@ export default async function FeedPage({ searchParams }: Props) {
           </section>
         : <div className="opportunity-list">{visible.map(item => {
             const owner = ownerById.get(item.owner_user_id)
-            const following = followingIds.has(item.owner_user_id)
+            const following = followingSet.has(item.owner_user_id)
             return <article className="card opportunity-card feed-card" key={item.id}>
               <div className="opportunity-head">
                 <div>

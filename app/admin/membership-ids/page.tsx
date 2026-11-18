@@ -1,3 +1,4 @@
+import { searchColumns } from '@/lib/filters'
 import Link from 'next/link'
 import { requireCapability } from '@/lib/auth/guards'
 import { dateTime, date } from '@/lib/format'
@@ -25,7 +26,7 @@ export default async function MembershipIdsPage({ searchParams }: Props) {
   let query = supabase.from('membership_access_ids').select('*').order('created_at',{ascending:false}).limit(1000)
   if (status) query = query.eq('status', status)
   if (type) query = query.eq('membership_type_code', type)
-  if (q) query = query.or(`code.ilike.%${q}%,assigned_email.ilike.%${q}%`)
+  if (q) query = query.or(searchColumns(q, ['code', 'assigned_email']))
   const { data: ids } = await query
 
   const userIds = [...new Set((ids ?? []).map(row => row.assigned_user_id).filter((id): id is string => !!id))]

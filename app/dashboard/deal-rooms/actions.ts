@@ -1,5 +1,7 @@
 'use server'
 
+import { moderationError } from '@/lib/ai/content-moderation'
+
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -14,6 +16,8 @@ export async function postMessage(formData: FormData) {
   if (!roomId) redirect('/dashboard/deal-rooms')
   if (!body) redirect(`${target}?error=${encodeURIComponent('Write a message first.')}`)
   const supabase = await createClient()
+  const screening = await moderationError('deal room message', body.slice(0, 5000), { localOnly: true })
+  if (screening) redirect(`${target}?error=${encodeURIComponent(screening)}`)
   const { error } = await supabase.rpc('post_deal_room_message', { room: roomId, message_body: body.slice(0, 5000) })
   if (error) redirect(`${target}?error=${encodeURIComponent(error.message)}`)
   revalidatePath(target)

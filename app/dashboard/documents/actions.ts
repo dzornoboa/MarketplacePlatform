@@ -1,5 +1,6 @@
 'use server'
 
+import { moderationError } from '@/lib/ai/content-moderation'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -41,6 +42,12 @@ export async function uploadDocument(formData: FormData) {
   const purpose = String(formData.get('purpose') ?? 'general')
   const returnTo = String(formData.get('returnTo') ?? '/dashboard/documents')
   if (!(DOCUMENT_PURPOSES as readonly string[]).includes(purpose)) redirect(back('error', 'Choose what this document is.'))
+
+  const shared = Boolean(dealRoomId) || (scope !== 'private' && Boolean(opportunityId))
+  if (shared && file.type.startsWith('image/')) {
+    const screening = await moderationError('shared document image', '', { image: file })
+    if (screening) redirect(back('error', screening))
+  }
 
   const objectPath = documentObjectPath(userId, file.name)
   const { error: uploadError } = await supabase.storage.from(BUCKET)

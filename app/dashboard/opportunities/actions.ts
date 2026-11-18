@@ -1,5 +1,7 @@
 'use server'
 
+import { moderationError } from '@/lib/ai/content-moderation'
+
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -56,7 +58,7 @@ export async function createOpportunity(formData: FormData) {
   const intent = String(formData.get('intent') ?? '')
   const currency = String(formData.get('currency') ?? 'USD').trim().toUpperCase()
   const deadline = String(formData.get('deadline') ?? '').trim()
-  const userTags = String(formData.get('tags') ?? '').split(',').map(t => t.trim()).filter(Boolean)
+  const userTags = String(formData.get('tags') ?? '').split(',').map(t => t.trim()).filter(t => t && !/^(?:category|investment-band):/i.test(t))
   // Searchable investment-size tags are assigned from the verified USD amount below.
   const tags = [...new Set([`category:${categoryTag(category)}`, ...userTags])].slice(0, 11)
 
@@ -69,6 +71,9 @@ export async function createOpportunity(formData: FormData) {
   if (!INTENTS.has(intent)) redirect(to('/dashboard/opportunities/new', 'error', 'Select what you are posting as.'))
   if (!/^[A-Z]{3}$/.test(currency)) redirect(to('/dashboard/opportunities/new', 'error', 'Currency must be a 3-letter code such as USD or GHS.'))
   rejectDirectContact('/dashboard/opportunities/new', [title, summary, description, ...userTags])
+
+  const screening = await moderationError('new opportunity', [title, summary, description, sector, country, city, ...userTags].join('\n'), { allowUnavailable: true })
+  if (screening) redirect(to('/dashboard/opportunities/new', 'error', screening))
 
   const capitalRequired = optionalNumber(formData.get('capitalRequired'))
   const minimumTicket = optionalNumber(formData.get('minimumTicket'))
@@ -110,6 +115,11 @@ export async function submitOpportunity(formData: FormData) {
   const id = String(formData.get('opportunityId') ?? '')
   if (!id) redirect(to('/dashboard/opportunities', 'error', 'Opportunity not found.'))
   const supabase = await createClient()
+  const { data: listing } = await supabase.from('opportunities')
+    .select('title,summary,description,sector,country,city,tags').eq('id', id).maybeSingle()
+  if (!listing) redirect(to('/dashboard/opportunities', 'error', 'Opportunity not found.'))
+  const screening = await moderationError('opportunity submission', Object.values(listing).flat().join('\n'), { allowUnavailable: true })
+  if (screening) redirect(to('/dashboard/opportunities', 'error', screening))
   const { error } = await supabase.rpc('submit_opportunity', { opportunity_id: id })
   if (error) redirect(to('/dashboard/opportunities', 'error', error.message))
   revalidatePath('/dashboard/opportunities')
@@ -127,6 +137,8 @@ export async function expressInterest(formData: FormData) {
   if (message.length < 20 || message.length > 3000) redirect(to(returnTo, 'error', 'Your deal request must be between 20 and 3000 characters.'))
 
   const supabase = await createClient()
+  const screening = await moderationError('deal request', message, { localOnly: true })
+  if (screening) redirect(to(returnTo, 'error', screening))
   const { error } = await supabase.rpc('submit_deal_request', {
     opportunity_id: opportunityId,
     request_message: message,
@@ -199,6 +211,8 @@ export async function updateOpportunity(formData: FormData) {
   const description = String(formData.get('description') ?? '').trim()
   const category = String(formData.get('category') ?? '').trim()
   const sector = String(formData.get('sector') ?? '').trim()
+  const city = String(formData.get('city') ?? '').trim()
+  const region = String(formData.get('region') ?? '').trim()
   const country = String(formData.get('country') ?? '').trim()
   const countryCode = String(formData.get('countryCode') ?? '').trim().toUpperCase()
   const kind = String(formData.get('kind') ?? '')
@@ -215,7 +229,7 @@ export async function updateOpportunity(formData: FormData) {
   if (!INTENTS.has(intent)) redirect(to(target, 'error', 'Select what you are posting as.'))
   if (!/^[A-Z]{3}$/.test(currency)) redirect(to(target, 'error', 'Currency must be a 3-letter code such as USD or GHS.'))
 
-  const userTags = String(formData.get('tags') ?? '').split(',').map(t => t.trim()).filter(Boolean)
+  const userTags = String(formData.get('tags') ?? '').split(',').map(t => t.trim()).filter(t => t && !/^(?:category|investment-band):/i.test(t))
   rejectDirectContact(target, [title, summary, description, ...userTags])
 
   const supabase = await createClient()
@@ -224,11 +238,15 @@ export async function updateOpportunity(formData: FormData) {
   const capitalUsd = await convertCurrency(capitalRequired, currency, 'USD')
   const ticketUsd = await convertCurrency(minimumTicket, currency, 'USD')
   const fxRate = capitalUsd?.rate ?? ticketUsd?.rate ?? (currency === 'USD' ? 1 : null)
-  const tags = [...new Set([`category:${categoryTag(category)}`, ...userTags])].slice(0, 12)
+  const tags = [...new Set([`category:${categoryTag(category)}`, ...userTags])].slice(0, 11)
+  const band = kind === 'investment' ? investmentBandForUsd(capitalUsd?.converted ?? (currency === 'USD' ? capitalRequired : null)) : null
+  if (band) tags.push(investmentBandTag(band))
+  const screening = await moderationError('opportunity edit', [title, summary, description, sector, country, city, region, ...userTags].join('\n'), { allowUnavailable: true })
+  if (screening) redirect(to(target, 'error', screening))
   const { error } = await supabase.from('opportunities').update({
     title, summary, description, category, sector, country, country_code: countryCode,
-    city: String(formData.get('city') ?? '').trim() || null,
-    region: String(formData.get('region') ?? '').trim() || null,
+    city: city || null,
+    region: region || null,
     kind: kind as 'investment',
     intent: intent as 'seeking_investment',
     capital_required: capitalRequired,
