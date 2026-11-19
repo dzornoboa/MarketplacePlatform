@@ -79,24 +79,6 @@ export async function uploadDocument(formData: FormData) {
   redirect(`${returnTo}${returnTo.includes('?') ? '&' : '?'}message=${encodeURIComponent('Document uploaded.')}`)
 }
 
-/* Signed URLs are short-lived and generated per request, so a link cannot be
-   forwarded and reused indefinitely. */
-export async function openDocument(formData: FormData) {
-  const documentId = String(formData.get('documentId') ?? '')
-  if (!documentId) redirect(back('error', 'Document not found.'))
-  const supabase = await createClient()
-
-  const { data: record, error } = await supabase.from('document_records')
-    .select('object_path').eq('id', documentId).maybeSingle()
-  if (error || !record) redirect(back('error', 'You do not have access to that document.'))
-
-  const { data: signed, error: signError } = await supabase.storage.from(BUCKET)
-    .createSignedUrl(record.object_path, 120)
-  if (signError || !signed) redirect(back('error', 'Unable to open the document.'))
-
-  redirect(signed.signedUrl)
-}
-
 export async function deleteDocument(formData: FormData) {
   const documentId = String(formData.get('documentId') ?? '')
   if (!documentId) redirect(back('error', 'Document not found.'))

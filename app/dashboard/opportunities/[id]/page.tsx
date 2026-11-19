@@ -8,7 +8,6 @@ import { money, date, dateTime, relativeDays } from '@/lib/format'
 import { submitOpportunity, expressInterest, toggleSaved, withdrawOpportunity, deleteOpportunity, withdrawDeal } from '../actions'
 import { SubmitButton } from '@/components/submit-button'
 import { requestConnection, respondToConnection, toggleFollow } from '../../feed/actions'
-import { openDocument } from '../../documents/actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -94,10 +93,7 @@ export default async function OpportunityDetailPage({ params, searchParams }: Pr
       <div className="history-list">{(documents ?? []).map(doc => <div key={doc.id}>
         <strong>{doc.file_name}</strong>
         <span>{dateTime(doc.created_at)}</span>
-        <form action={openDocument}>
-          <input type="hidden" name="documentId" value={doc.id} />
-          <button className="button button-outline" type="submit">Open</button>
-        </form>
+        <a className="button button-outline" href={`/api/documents/${doc.id}`} target="_blank" rel="noopener">Open</a>
       </div>)}</div>
       <p className="field-help">Links are signed and expire after two minutes.</p>
     </section>}
