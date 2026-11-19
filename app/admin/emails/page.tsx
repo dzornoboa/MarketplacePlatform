@@ -30,12 +30,15 @@ export default async function AdminEmailsPage({ searchParams }: Props) {
   let query = supabase.from('outbound_emails').select('*').eq('status', status).limit(200)
   if (q) query = query.or(searchColumns(q, ['to_email', 'subject']))
   if (kind) query = query.eq('kind', kind)
-  const [{ data: emails }, { data: kindRows }] = await Promise.all([query.order('created_at', { ascending: sort === 'oldest' }), supabase.from('outbound_emails').select('kind').limit(2000)])
+  const [{ data: emails, error: emailsError }, { data: kindRows, error: kindsError }] = await Promise.all([
+    query.order('created_at', { ascending: sort === 'oldest' }),
+    supabase.from('outbound_emails').select('kind').limit(2000),
+  ])
   const kinds = [...new Set((kindRows ?? []).map(k => k.kind))].sort()
 
   const counts = await Promise.all(TABS.map(async tab => {
-    const { count } = await supabase.from('outbound_emails').select('*', { count: 'exact', head: true }).eq('status', tab)
-    return { status: tab, count: count ?? 0 }
+    const { count, error: countError } = await supabase.from('outbound_emails').select('*', { count: 'exact', head: true }).eq('status', tab)
+    return { status: tab, count: countError ? null : count }
   }))
   const queued = counts.find(c => c.status === 'queued')?.count ?? 0
 
@@ -86,19 +89,22 @@ export default async function AdminEmailsPage({ searchParams }: Props) {
 
     <nav className="queue-tabs">
       {counts.map(tab => <a key={tab.status} className={tab.status === status ? 'queue-tab queue-tab-active' : 'queue-tab'} href={`/admin/emails?status=${tab.status}`}>
-        {humanize(tab.status)}<span>{tab.count}</span>
+        {humanize(tab.status)}<span>{tab.count ?? 'Count unavailable'}</span>
       </a>)}
     </nav>
 
+    {kindsError && <p className="alert alert-error" role="alert">Could not load email kinds. Refresh to try again.</p>}
     <form className="filter-row card" method="get">
       <input type="hidden" name="status" value={status} />
       <label>Recipient or subject<input name="q" defaultValue={q} placeholder="email or subject" /></label>
-      <label>Kind<select name="kind" defaultValue={kind}><option value="">All kinds</option>{kinds.map(k => <option key={k} value={k}>{humanize(k)}</option>)}</select></label>
+      <label>Kind<select name="kind" defaultValue={kind}><option value="">All kinds</option>{kindsError && kind && <option value={kind}>{humanize(kind)}</option>}{kinds.map(k => <option key={k} value={k}>{humanize(k)}</option>)}</select></label>
       <label>Sort<select name="sort" defaultValue={sort}><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select></label>
       <button className="button button-outline" type="submit">Apply</button>
     </form>
 
-    {(emails ?? []).length === 0
+    {emailsError
+      ? <p className="alert alert-error" role="alert">Could not load email messages. Refresh to try again.</p>
+      : (emails ?? []).length === 0
       ? <section className="card empty-state"><BrandCircle /><h2>Nothing {humanize(status)}</h2><p>Messages appear here as members and staff act.</p></section>
       : <div className="review-list">{(emails ?? []).map(mail => <article className="card review-card" key={mail.id}>
           <div className="review-head">
