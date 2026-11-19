@@ -28,5 +28,5 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
     document_id: record.id, user_id: String(claimsData.claims.sub), event_type: 'signed_url',
   })
 
-  return NextResponse.redirect(signed.signedUrl, { status: 302 })
+  return NextResponse.redirect(signed.signedUrl, { status: 302, headers: { 'cache-control': 'private, no-store', 'referrer-policy': 'no-referrer' } })
 }

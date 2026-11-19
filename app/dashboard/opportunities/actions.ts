@@ -1,5 +1,7 @@
 'use server'
 
+import { safeNextPath } from '@/lib/auth/redirects'
+
 import { moderationError } from '@/lib/ai/content-moderation'
 
 import { revalidatePath } from 'next/cache'
@@ -132,7 +134,7 @@ export async function submitOpportunity(formData: FormData) {
 export async function expressInterest(formData: FormData) {
   const opportunityId = String(formData.get('opportunityId') ?? '')
   const message = String(formData.get('message') ?? '').trim()
-  const returnTo = String(formData.get('returnTo') ?? '/dashboard/opportunities')
+  const returnTo = safeNextPath(String(formData.get('returnTo') ?? ''), '/dashboard/opportunities')
   if (!opportunityId) redirect(to(returnTo, 'error', 'Opportunity not found.'))
   if (message.length < 20 || message.length > 3000) redirect(to(returnTo, 'error', 'Your deal request must be between 20 and 3000 characters.'))
 
@@ -174,7 +176,7 @@ export async function respondToInterest(formData: FormData) {
 export async function toggleSaved(formData: FormData) {
   const opportunityId = String(formData.get('opportunityId') ?? '')
   const saved = String(formData.get('saved') ?? '') === '1'
-  const returnTo = String(formData.get('returnTo') ?? '/dashboard/opportunities')
+  const returnTo = safeNextPath(String(formData.get('returnTo') ?? ''), '/dashboard/opportunities')
   if (!opportunityId) redirect(to('/dashboard/opportunities', 'error', 'Opportunity not found.'))
 
   const supabase = await createClient()

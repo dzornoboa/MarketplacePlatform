@@ -40,11 +40,14 @@ export async function requestConnection(formData: FormData) {
   })
   if (error || !requestId) redirect(back(returnTo, 'error', error?.message ?? 'Your request could not be saved. Please try again.'))
 
+  const { data: request } = await supabase.from('connections').select('status').eq('id', requestId).maybeSingle()
   revalidatePath('/dashboard')
   revalidatePath('/dashboard/members/[id]', 'page')
   revalidatePath('/dashboard/network')
   revalidatePath('/dashboard/feed')
-  redirect(back(returnTo, 'message', 'Request received. WTC Accra is reviewing it before it is released to the other member.'))
+  redirect(back(returnTo, 'message', request?.status === 'accepted'
+    ? 'Connected. Both accounts are verified.'
+    : 'Request received. Check Network for its current status.'))
 }
 
 export async function respondToConnection(formData: FormData) {

@@ -41,6 +41,7 @@ export async function updateSession(request: NextRequest) {
   const { url, publishableKey } = getSupabasePublicConfig()
   const supabaseHost = new URL(url).host
   const requestHeaders = new Headers(request.headers)
+  const protectedPage = SIGNED_IN_ONLY.test(request.nextUrl.pathname)
 
   const makeResponse = () => {
     const next = NextResponse.next({ request: { headers: requestHeaders } })
@@ -68,16 +69,18 @@ export async function updateSession(request: NextRequest) {
      that leaves the member watching the loading skeleton with nothing to show
      for it. Turning it away here answers with a plain redirect before any
      rendering starts. The guards on each page remain the authority. */
-  if (!claimsData?.claims?.sub && SIGNED_IN_ONLY.test(request.nextUrl.pathname)) {
+  if (protectedPage) response.headers.set('Cache-Control', 'private, no-store')
+  if (!claimsData?.claims?.sub && protectedPage) {
     const login = request.nextUrl.clone()
     login.pathname = '/login'
     login.search = ''
-    login.searchParams.set('next', request.nextUrl.pathname)
+    login.searchParams.set('next', request.nextUrl.pathname + (request.method === 'GET' ? request.nextUrl.search : ''))
     /* 303 for a form post or a server action, so the browser asks for the
        sign-in page with a GET instead of replaying the submission at it. */
     const away = NextResponse.redirect(login, request.method === 'GET' ? 307 : 303)
     // Keep the cookies this request refreshed, and the policy header.
     response.cookies.getAll().forEach(cookie => away.cookies.set(cookie))
+    away.headers.set('Cache-Control', 'private, no-store')
     away.headers.set('Content-Security-Policy', buildCsp(supabaseHost))
     return away
   }

@@ -136,6 +136,10 @@ export async function adminReport(supabase: Supabase, kind: AdminReport, params:
 }
 
 export function toCsv(report: Report): string {
-  const esc = (v: unknown) => { const s = v === null || v === undefined ? '' : String(v); return /[",\n]/.test(s) ? `"${s.replaceAll('"', '""')}"` : s }
+  const esc = (value: unknown) => {
+    const raw = value == null ? '' : String(value)
+    const cell = typeof value === 'string' && /^(?:[\s\uFEFF]*[=+@-]|[\t\r\n])/.test(raw) ? "'" + raw : raw
+    return /[",\r\n]/.test(cell) ? `"${cell.replaceAll('"', '""')}"` : cell
+  }
   return [report.columns.map(c => esc(c.label)).join(','), ...report.rows.map(r => report.columns.map(c => esc(r[c.key])).join(','))].join('\r\n')
 }

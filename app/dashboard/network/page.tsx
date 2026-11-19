@@ -69,7 +69,7 @@ export default async function NetworkPage({ searchParams }: Props) {
     <div>
       <p className="eyebrow">Your network</p>
       <h1>Network</h1>
-      <p className="muted">Connect with verified investors, buyers, businesses and project sponsors. Every request is copied to WTC Accra with the deal and the process attached.</p>
+      <p className="muted">Connect with verified investors, buyers, businesses and project sponsors. General networking connects active, verified members instantly. Investment, buying, selling, partnership and deal-related requests go to WTC Accra for approval.</p>
     </div>
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
@@ -133,7 +133,7 @@ export default async function NetworkPage({ searchParams }: Props) {
 
     <section>
       <h2>Member directory</h2>
-      <p className="muted">Verified members only. Contact details stay private until a connection is accepted.</p>
+      <p className="muted">Verified members only. Only share messages and contact details you are comfortable providing to a connection.</p>
       <form className="filter-row card" method="get">
         <label>Name<input name="q" defaultValue={search} placeholder="Search members" /></label>
         <label>Participant type

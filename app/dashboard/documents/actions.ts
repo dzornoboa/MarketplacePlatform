@@ -1,5 +1,7 @@
 'use server'
 
+import { safeNextPath } from '@/lib/auth/redirects'
+
 import { moderationError } from '@/lib/ai/content-moderation'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
@@ -40,7 +42,7 @@ export async function uploadDocument(formData: FormData) {
   const opportunityId = String(formData.get('opportunityId') ?? '').trim() || null
   const dealRoomId = String(formData.get('dealRoomId') ?? '').trim() || null
   const purpose = String(formData.get('purpose') ?? 'general')
-  const returnTo = String(formData.get('returnTo') ?? '/dashboard/documents')
+  const returnTo = safeNextPath(String(formData.get('returnTo') ?? ''), '/dashboard/documents')
   if (!(DOCUMENT_PURPOSES as readonly string[]).includes(purpose)) redirect(back('error', 'Choose what this document is.'))
 
   const shared = Boolean(dealRoomId) || (scope !== 'private' && Boolean(opportunityId))

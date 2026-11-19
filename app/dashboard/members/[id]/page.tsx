@@ -135,6 +135,7 @@ export default async function MemberProfilePage({ params, searchParams }: Props)
               </select>
             </label>
             <label>Message<textarea name="note" rows={3} maxLength={2000} /></label>
+            <p className="field-help">General networking connects verified members immediately. Commercial requests require staff review.</p>
             <SubmitButton>Send request</SubmitButton>
           </form>
         </details>}
