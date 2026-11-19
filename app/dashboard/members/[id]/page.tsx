@@ -1,3 +1,6 @@
+import { ConnectionStatus } from '@/components/connection-status'
+import { connectionByMember, connectionColumns } from '@/lib/connections'
+import { RealtimeRefresh } from '@/components/realtime-refresh'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Avatar } from '@/components/avatar'
@@ -59,12 +62,12 @@ export default async function MemberProfilePage({ params, searchParams }: Props)
   }
 
   const returnTo = `/dashboard/members/${id}`
-  const [{ data: people }, { data: cards }, { data: listings }, { data: follows }, { data: connections }] = await Promise.all([
+  const [{ data: people }, { data: cards }, { data: listings }, { data: follows }, { data: connections, error: connectionError }] = await Promise.all([
     query(supabase.rpc('member_directory', { search: null, participant: null, member_country: null, only_ids: [id], max_rows: 200 }), 'member'),
     query(supabase.rpc('listing_owner_cards', { owner_ids: [id] }), 'member card'),
     query(supabase.from('opportunities').select('*').eq('owner_user_id', id).eq('status', 'published').order('published_at', { ascending: false }).limit(60), 'member listings'),
     query(supabase.from('follows').select('following_id').eq('follower_id', profile.id).eq('following_id', id), 'following'),
-    query(supabase.from('connections').select('status').or(`requester_id.eq.${id},addressee_id.eq.${id}`), 'connection'),
+    supabase.from('connections').select(connectionColumns).or(`and(requester_id.eq.${profile.id},addressee_id.eq.${id}),and(requester_id.eq.${id},addressee_id.eq.${profile.id})`),
   ])
 
   /* The directory is the richer source, but it is a search function: the row is
@@ -85,15 +88,14 @@ export default async function MemberProfilePage({ params, searchParams }: Props)
     is_verified: listed?.is_verified ?? card?.is_verified ?? false,
     is_staff: listed?.is_staff ?? false,
     is_following: (follows ?? []).length > 0,
-    connection_status: listed?.connection_status
-      ?? (connections ?? []).map(c => c.status).find(s => s === 'accepted' || s === 'pending')
-      ?? null,
   }
+  const connection = connectionByMember(connections ?? [], profile.id).get(id)
 
   const place = [person.city, person.country].filter(Boolean).join(', ')
   const role = [person.job_title, person.organisation].filter(Boolean).join(' · ')
 
   return <div className="page-stack list-content">
+    <RealtimeRefresh tables={['connections']} channel="member-connections" />
     <p><Link className="arrow-link" href="/dashboard/network">← Back to network</Link></p>
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
@@ -105,8 +107,6 @@ export default async function MemberProfilePage({ params, searchParams }: Props)
         <p className="avatar-stack">
           <ParticipantBadge type={person.participant_type} size="md" />
           {person.is_staff && <span className="status-dot status-verified">WTC Accra staff</span>}
-          {person.connection_status === 'accepted' && <span className="status-dot status-verified">Connected</span>}
-          {person.connection_status === 'pending' && <span className="status-dot">Request pending</span>}
         </p>
         <p className="muted">{role || labelForParticipantType(person.participant_type)}</p>
         <p className="field-help">{place || 'Location not set'}</p>
@@ -119,7 +119,9 @@ export default async function MemberProfilePage({ params, searchParams }: Props)
             {person.is_following ? '✓ Following' : '+ Follow'}
           </button>
         </form>
-        {!person.connection_status && <details className="eoi-block connect-block">
+        {connection && <ConnectionStatus row={connection} viewer={profile.id} returnTo={returnTo} />}
+        {connectionError && <p className="field-help">Connection status unavailable. Refresh to try again.</p>}
+        {!connectionError && (!connection || connection.status === 'declined' || connection.status === 'withdrawn') && <details className="eoi-block connect-block">
           <summary>Connect</summary>
           <form action={requestConnection} className="form-stack">
             <input type="hidden" name="addressee" value={person.id} />

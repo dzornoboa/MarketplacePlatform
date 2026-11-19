@@ -1,3 +1,5 @@
+import { connectionByMember, connectionColumns, connectionLabel } from '@/lib/connections'
+import { RealtimeRefresh } from '@/components/realtime-refresh'
 import Link from 'next/link'
 import { VerifiedCheck } from '@/components/verified-check'
 import { ParticipantBadge } from '@/components/participant-badge'
@@ -24,16 +26,17 @@ export default async function DashboardPage() {
     supabase.from('subscriptions').select('plan_code,ends_at').eq('status', 'active').limit(1).maybeSingle(),
   ])
   // Deal-flow KPIs: the member's listings, deals placed and received, matches and connections.
-  const [{ data: myOpps }, { data: myDeals }, { data: recvDeals }, { data: myMatches }, { data: myConns }, { data: mySaved }] = await Promise.all([
+  const [{ data: myOpps }, { data: myDeals }, { data: recvDeals }, { data: myMatches }, { data: myConns, error: connectionError }, { data: mySaved }] = await Promise.all([
     supabase.from('opportunities').select('id,status,capital_required').eq('owner_user_id', profile.id),
     supabase.from('expressions_of_interest').select('status').eq('applicant_id', profile.id),
     supabase.from('expressions_of_interest').select('status,opportunity_id').neq('applicant_id', profile.id),
     supabase.from('matches').select('status').eq('user_id', profile.id),
-    supabase.from('connections').select('status'),
+    supabase.from('connections').select(connectionColumns).or(`requester_id.eq.${profile.id},addressee_id.eq.${profile.id}`),
     supabase.from('saved_opportunities').select('opportunity_id'),
   ])
   const tally = (rows: Array<{ status: string }> | null) => { const o: Record<string, number> = {}; for (const r of rows ?? []) o[r.status] = (o[r.status] ?? 0) + 1; return o }
-  const oppT = tally(myOpps), dealT = tally(myDeals), recvT = tally(recvDeals), matchT = tally(myMatches), connT = tally(myConns)
+  const relationships = connectionByMember(myConns ?? [], profile.id)
+  const oppT = tally(myOpps), dealT = tally(myDeals), recvT = tally(recvDeals), matchT = tally(myMatches), connT = tally([...relationships.values()])
   const savedIds = new Set((mySaved ?? []).map(row => row.opportunity_id))
   const capitalSought = (myOpps ?? []).filter(o => o.status === 'published').reduce((sum, o) => sum + Number(o.capital_required ?? 0), 0)
   const hasDealActivity = (myOpps ?? []).length + (myDeals ?? []).length + (recvDeals ?? []).length + (myMatches ?? []).length > 0
@@ -189,10 +192,11 @@ export default async function DashboardPage() {
 
         <aside className="member-home-right">
           <section className="member-right-card">
+            <RealtimeRefresh tables={['connections']} channel="member-connections" />
             <div className="member-section-title"><h2>People To Connect With</h2><Link href="/dashboard/network">See All</Link></div>
             {suggestedMembers.length === 0 ? <p className="muted">More verified members will appear as your network grows.</p> : suggestedMembers.map(person => <div className="member-suggestion" key={person.id}>
               <Avatar src={person.avatar_url} name={person.full_name} size={44} />
-              <div><strong>{person.full_name}<VerifiedCheck verified={person.is_verified} size={12} /></strong><span>{[person.job_title, person.organisation].filter(Boolean).join(' · ') || labelForParticipantType(person.participant_type)}</span><small>{person.country || 'WTC Network'}</small><Link href="/dashboard/network">+ Connect</Link></div>
+              <div><strong>{person.full_name}<VerifiedCheck verified={person.is_verified} size={12} /></strong><span>{[person.job_title, person.organisation].filter(Boolean).join(' · ') || labelForParticipantType(person.participant_type)}</span><small>{person.country || 'WTC Network'}</small><Link href={`/dashboard/members/${person.id}`}>{relationships.has(person.id) ? connectionLabel(relationships.get(person.id)!, profile.id) : connectionError ? 'View profile' : 'View profile to connect'}</Link></div>
             </div>)}
           </section>
 

@@ -1,3 +1,6 @@
+import { ConnectionStatus } from '@/components/connection-status'
+import { connectionColumns } from '@/lib/connections'
+import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { filterOptions, opportunityKind } from '@/lib/filters'
 import Link from 'next/link'
 import { VerifiedCheck } from '@/components/verified-check'
@@ -8,7 +11,7 @@ import { marketplaceLockFor, humanize, labelForIntent, labelForParticipantType, 
 import { money, date, relativeDays } from '@/lib/format'
 import { displayImage } from '@/lib/media/image'
 import { BrandCircle } from '@/components/brand'
-import { requestConnection, respondToConnection, toggleFollow } from './actions'
+import { requestConnection, toggleFollow } from './actions'
 import { toggleSaved } from '../opportunities/actions'
 
 export const dynamic = 'force-dynamic'
@@ -69,7 +72,7 @@ export default async function FeedPage({ searchParams }: Props) {
     lock.locked ? Promise.resolve({ data: [] }) : supabase.rpc('public_listing_facets'),
     lock.locked ? Promise.resolve({ data: [] }) : supabase.from('opportunities').select('region').eq('status', 'published').not('region', 'is', null).limit(1000),
     supabase.from('saved_opportunities').select('opportunity_id').eq('user_id', profile.id),
-    supabase.from('connections').select('id,addressee_id,opportunity_id,status,staff_approved_at').eq('requester_id', profile.id),
+    supabase.from('connections').select(`${connectionColumns},opportunity_id`).eq('requester_id', profile.id),
   ])
 
   const followingSet = new Set(followingIds)
@@ -90,6 +93,7 @@ export default async function FeedPage({ searchParams }: Props) {
   )
 
   return <div className="page-stack">
+    <RealtimeRefresh tables={['connections']} channel="member-connections" />
     <div>
       <p className="eyebrow">Your network</p>
       <h1>Home</h1>
@@ -221,15 +225,9 @@ export default async function FeedPage({ searchParams }: Props) {
                 </form>
                 {(() => {
                   const request = connectionByDeal.get(`${item.id}:${item.owner_user_id}`)
-                  if (request?.status === 'accepted') return <span className="status-dot status-verified">Connected</span>
-                  if (request?.status === 'pending') return <div className="request-state-row">
-                    <span className="status-dot status-pending">{request.staff_approved_at ? 'Approved · Awaiting Recipient' : 'Processing · WTC Accra Review'}</span>
-                    <form action={respondToConnection}>
-                      <input type="hidden" name="connectionId" value={request.id} />
-                      <input type="hidden" name="returnTo" value="/dashboard/feed" />
-                      <button className="link-button link-button-danger" name="decision" value="withdraw">Withdraw Request</button>
-                    </form>
-                  </div>
+                  if (request?.status === 'accepted' || request?.status === 'pending') {
+                    return <ConnectionStatus row={request} viewer={profile.id} returnTo="/dashboard/feed" />
+                  }
                   return <details className="eoi-block connect-block">
                     <summary>Request Connection About This Deal</summary>
                     <form action={requestConnection} className="form-stack">

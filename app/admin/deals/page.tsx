@@ -53,12 +53,23 @@ export default async function AdminDealsPage({ searchParams }: Props) {
     || (oppById.get(row.opportunity_id)?.title ?? '').toLowerCase().includes(needle)
     || (applicantById.get(row.applicant_id)?.full_name ?? '').toLowerCase().includes(needle))
 
-  const { data: connectionQueue } = await supabase.from('connections')
+  const connectionStates = { review: 'Awaiting staff review', awaiting: 'Awaiting recipient', accepted: 'Connected', declined: 'Declined', withdrawn: 'Withdrawn' } as const
+  const rawConnectionState = params.connectionStatus
+  const connectionState = typeof rawConnectionState === 'string' && Object.hasOwn(connectionStates, rawConnectionState)
+    ? rawConnectionState as keyof typeof connectionStates : 'review'
+  const pendingApproval = supabase.from('connections').select('id', { count: 'exact', head: true })
+    .eq('status', 'pending').is('staff_approved_at', null)
+  let connectionQuery = supabase.from('connections')
     .select('id,requester_id,addressee_id,opportunity_id,intent,message,status,staff_approved_at,created_at')
-    .eq('status','pending')
-    .is('staff_approved_at',null)
-    .order('created_at',{ascending:true})
+    .eq('status', connectionState === 'review' || connectionState === 'awaiting' ? 'pending' : connectionState)
+    .order('updated_at', { ascending: connectionState === 'review' })
     .limit(1000)
+  if (connectionState === 'review') connectionQuery = connectionQuery.is('staff_approved_at', null)
+  if (connectionState === 'awaiting') connectionQuery = connectionQuery.not('staff_approved_at', 'is', null)
+  const [{ data: connectionQueue, error: connectionError }, { count: approvalCount }] = await Promise.all([
+    section === 'connections' ? connectionQuery : { data: [], error: null },
+    pendingApproval,
+  ])
 
   const connectionPeopleIds = [...new Set((connectionQueue ?? []).flatMap(row => [row.requester_id,row.addressee_id]))]
   const connectionOppIds = [...new Set((connectionQueue ?? []).map(row => row.opportunity_id).filter((id): id is string => !!id))]
@@ -75,7 +86,7 @@ export default async function AdminDealsPage({ searchParams }: Props) {
   })))
 
   return <div className="page-stack">
-    <RealtimeRefresh tables={['expressions_of_interest']} />
+    <RealtimeRefresh tables={['expressions_of_interest', 'connections']} />
     <div>
       <p className="eyebrow">Monitored Deal Workflow</p>
       <h1>Deals</h1>
@@ -86,12 +97,17 @@ export default async function AdminDealsPage({ searchParams }: Props) {
 
     <nav className="queue-tabs">
       <a className={section === 'deals' ? 'queue-tab queue-tab-active' : 'queue-tab'} href="/admin/deals">Deal Requests</a>
-      <a className={section === 'connections' ? 'queue-tab queue-tab-active' : 'queue-tab'} href="/admin/deals?section=connections">Connection Approvals<span>{(connectionQueue ?? []).length}</span></a>
+      <a className={section === 'connections' ? 'queue-tab queue-tab-active' : 'queue-tab'} href="/admin/deals?section=connections">Connection Requests<span>{approvalCount ?? '—'}</span></a>
     </nav>
 
     {section === 'connections' && <section className="page-stack">
-      {(connectionQueue ?? []).length === 0
-        ? <section className="card empty-state"><BrandCircle /><h2>Connection Queue Is Clear</h2><p>No member-to-member connection requests are waiting for WTC Accra approval.</p></section>
+      <nav className="queue-tabs" aria-label="Connection status">
+        {Object.entries(connectionStates).map(([key, label]) => <a key={key} className={connectionState === key ? 'queue-tab queue-tab-active' : 'queue-tab'} href={`?section=connections&connectionStatus=${key}`}>{label}</a>)}
+      </nav>
+      {connectionError
+        ? <p className="alert alert-error">Could not load connection requests. Refresh to try again.</p>
+        : (connectionQueue ?? []).length === 0
+        ? <section className="card empty-state"><BrandCircle /><h2>No connection requests in this status</h2></section>
         : <div className="review-list">{(connectionQueue ?? []).map(request => {
             const from = connectionPersonById.get(request.requester_id)
             const to = connectionPersonById.get(request.addressee_id)
@@ -102,7 +118,7 @@ export default async function AdminDealsPage({ searchParams }: Props) {
                   <h2>{from?.full_name ?? 'Member'} → {to?.full_name ?? 'Member'}</h2>
                   <p>{humanize(request.intent)} request{opp ? ` · ${opp.title}` : ' · General connection'}</p>
                 </div>
-                <span>{dateTime(request.created_at)}</span>
+                <span>{connectionStates[connectionState]} · {dateTime(request.created_at)}</span>
               </div>
               <dl className="detail-grid">
                 <div><dt>Requester</dt><dd>{from?.full_name ?? '—'} · {labelForParticipantType(from?.participant_type)}</dd></div>
@@ -112,14 +128,14 @@ export default async function AdminDealsPage({ searchParams }: Props) {
               </dl>
               {opp && <p className="muted">{opp.sector} · {opp.country}</p>}
               {request.message && <p className="prose">{request.message}</p>}
-              <form action={reviewConnectionRequest} className="review-form">
+              {connectionState === 'review' && <form action={reviewConnectionRequest} className="review-form">
                 <input type="hidden" name="connectionId" value={request.id} />
                 <label>Review Note<textarea name="reviewNote" rows={2} placeholder="Optional audit note" /></label>
                 <div className="button-row">
                   <button className="button button-primary" name="decision" value="approve">Approve Connection Request</button>
                   <button className="button button-danger" name="decision" value="decline">Decline</button>
                 </div>
-              </form>
+              </form>}
             </article>
           })}</div>}
     </section>}

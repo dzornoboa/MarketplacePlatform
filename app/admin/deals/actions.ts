@@ -37,6 +37,8 @@ export async function reviewConnectionRequest(formData: FormData) {
   })
   if (error) redirect(`${target}&error=${encodeURIComponent(error.message)}`)
   revalidatePath('/admin/deals')
+  revalidatePath('/dashboard')
+  revalidatePath('/dashboard/members/[id]', 'page')
   revalidatePath('/dashboard/network')
   revalidatePath('/dashboard/feed')
   redirect(`${target}&message=${encodeURIComponent(decision === 'approve' ? 'Connection request approved and released to the recipient.' : 'Connection request declined.')}`)

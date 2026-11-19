@@ -40,6 +40,8 @@ export async function requestConnection(formData: FormData) {
   })
   if (error || !requestId) redirect(back(returnTo, 'error', error?.message ?? 'Your request could not be saved. Please try again.'))
 
+  revalidatePath('/dashboard')
+  revalidatePath('/dashboard/members/[id]', 'page')
   revalidatePath('/dashboard/network')
   revalidatePath('/dashboard/feed')
   redirect(back(returnTo, 'message', 'Request received. WTC Accra is reviewing it before it is released to the other member.'))
@@ -60,6 +62,8 @@ export async function respondToConnection(formData: FormData) {
     connection_id: connectionId, decision, response_note: note || null,
   })
   if (error) redirect(back(returnTo, 'error', error.message))
+  revalidatePath('/dashboard')
+  revalidatePath('/dashboard/members/[id]', 'page')
   revalidatePath('/dashboard/network')
   revalidatePath('/dashboard/feed')
   redirect(back(returnTo, 'message', decision === 'withdraw' ? 'Request withdrawn.' : 'Response recorded.'))
@@ -73,6 +77,17 @@ export async function toggleFollow(formData: FormData) {
   const { data, error } = await supabase.rpc('toggle_follow', { target_user: target })
   if (error) redirect(back(returnTo, 'error', error.message))
   revalidatePath('/dashboard/feed')
+  revalidatePath('/dashboard')
+  revalidatePath('/dashboard/members/[id]', 'page')
   revalidatePath('/dashboard/network')
   redirect(back(returnTo, 'message', data ? 'Following. Their listings will appear in your feed.' : 'Unfollowed.'))
+}
+
+export async function remindConnection(formData: FormData) {
+  const returnTo = String(formData.get('returnTo') ?? '/dashboard/network')
+  const connectionId = String(formData.get('connectionId') ?? '')
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('remind_connection', { connection_id: connectionId })
+  if (error) redirect(back(returnTo, 'error', error.message))
+  redirect(back(returnTo, 'message', 'Reminder sent to the recipient.'))
 }

@@ -1,3 +1,6 @@
+import { ConnectionStatus } from '@/components/connection-status'
+import { connectionByMember } from '@/lib/connections'
+import { RealtimeRefresh } from '@/components/realtime-refresh'
 import Link from 'next/link'
 import { VerifiedCheck } from '@/components/verified-check'
 import { ParticipantBadge } from '@/components/participant-badge'
@@ -58,9 +61,11 @@ export default async function NetworkPage({ searchParams }: Props) {
 
   const incoming = (connections ?? []).filter(c => c.addressee_id === profile.id && c.status === 'pending' && c.staff_approved_at)
   const outgoing = (connections ?? []).filter(c => c.requester_id === profile.id)
-  const accepted = (connections ?? []).filter(c => c.status === 'accepted')
+  const relationship = connectionByMember(connections ?? [], profile.id)
+  const accepted = [...relationship.values()].filter(c => c.status === 'accepted')
 
   return <div className="page-stack">
+    <RealtimeRefresh tables={['connections']} channel="member-connections" />
     <div>
       <p className="eyebrow">Your network</p>
       <h1>Network</h1>
@@ -74,7 +79,7 @@ export default async function NetworkPage({ searchParams }: Props) {
       <h2>Requests for you ({incoming.length})</h2>
       <div className="opportunity-list">{incoming.map(item => {
         const person = personById.get(item.requester_id)
-        return <article className="card opportunity-card" key={item.id}>
+        return <article className="card opportunity-card" id={`request-${item.id}`} key={item.id}>
           <div className="opportunity-head">
             <div>
               <span className={`status-dot status-conn-${item.status}`}>{humanize(item.intent)} request</span>
@@ -119,14 +124,8 @@ export default async function NetworkPage({ searchParams }: Props) {
               const person = personById.get(item.addressee_id)
               return <div key={item.id}>
                 <strong>{person ? <Link href={`/dashboard/members/${item.addressee_id}`}>{person.full_name}</Link> : 'Member'}</strong>
-                <span>{item.status === 'pending'
-                  ? item.staff_approved_at ? 'Approved · Awaiting recipient' : 'Processing · WTC Accra review'
-                  : humanize(item.status)} · {humanize(item.intent)}</span>
-                <p className="muted">Sent {dateTime(item.created_at)}</p>
-                {item.status === 'pending' && <form action={respondToConnection}>
-                  <input type="hidden" name="connectionId" value={item.id} />
-                  <button className="link-button link-button-danger" name="decision" value="withdraw">Withdraw request</button>
-                </form>}
+                <p className="muted">{humanize(item.intent)} · Sent {dateTime(item.created_at)}</p>
+                <ConnectionStatus row={item} viewer={profile.id} returnTo="/dashboard/network" />
               </div>
             })}</div>}
       </div>
@@ -149,7 +148,9 @@ export default async function NetworkPage({ searchParams }: Props) {
 
       {(directory ?? []).length === 0
         ? <section className="card empty-state"><BrandCircle /><h2>No members match</h2><p>Widen your search, or check back as WTC Accra verifies more participants.</p></section>
-        : <div className="member-grid">{(directory ?? []).map(person => <article className="card member-card" key={person.id}>
+        : <div className="member-grid">{(directory ?? []).map(person => {
+          const connection = relationship.get(person.id)
+          return <article className="card member-card" key={person.id}>
             <Link className="member-identity member-identity-link" href={`/dashboard/members/${person.id}`}>
               <Avatar src={person.avatar_url} name={person.full_name} size={44} />
               <div>
@@ -160,11 +161,9 @@ export default async function NetworkPage({ searchParams }: Props) {
             <p className="muted">{[person.job_title, person.organisation].filter(Boolean).join(' · ') || 'WTC Accra member'}</p>
             <p className="field-help">{[person.city, person.country].filter(Boolean).join(', ') || 'Location not set'}</p>
 
-            {person.connection_status === 'accepted'
-              ? <span className="status-dot status-verified">Connected</span>
-              : person.connection_status === 'pending'
-                ? <span className="status-dot">Request pending</span>
-                : <details className="eoi-block connect-block">
+            {connection && <ConnectionStatus row={connection} viewer={profile.id} returnTo="/dashboard/network" />}
+            {!connectionsError && (!connection || connection.status === 'declined' || connection.status === 'withdrawn')
+                ? <details className="eoi-block connect-block">
                     <summary>Connect</summary>
                     <form action={requestConnection} className="form-stack">
                       <input type="hidden" name="addressee" value={person.id} />
@@ -180,7 +179,7 @@ export default async function NetworkPage({ searchParams }: Props) {
                       <label>Message<textarea name="note" rows={3} maxLength={2000} /></label>
                       <SubmitButton>Send request</SubmitButton>
                     </form>
-                  </details>}
+                  </details> : null}
 
             <form action={toggleFollow}>
               <input type="hidden" name="target" value={person.id} />
@@ -189,7 +188,8 @@ export default async function NetworkPage({ searchParams }: Props) {
                 {person.is_following ? '✓ Following' : '+ Follow'}
               </button>
             </form>
-          </article>)}</div>}
+          </article>
+        })}</div>}
     </section>
   </div>
 }
