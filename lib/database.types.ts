@@ -226,14 +226,14 @@ export type Database = {
         Relationships: []
       }
       outbound_emails: {
-        Row: { id:string; to_email:string; to_user_id:string|null; subject:string; body:string; kind:string; related_id:string|null; status:string; error:string|null; sent_at:string|null; created_at:string }
-        Insert: { id?:string; to_email:string; to_user_id?:string|null; subject:string; body:string; kind?:string; related_id?:string|null; status?:string; error?:string|null; sent_at?:string|null; created_at?:string }
+        Row: { id:string; delivery_lease_until:string|null; to_email:string; to_user_id:string|null; subject:string; body:string; kind:string; related_id:string|null; status:string; error:string|null; sent_at:string|null; created_at:string }
+        Insert: { id?:string; delivery_lease_until?:string|null; to_email:string; to_user_id?:string|null; subject:string; body:string; kind?:string; related_id?:string|null; status?:string; error?:string|null; sent_at?:string|null; created_at?:string }
         Update: Partial<Database['public']['Tables']['outbound_emails']['Insert']>
         Relationships: []
       }
       outbound_pushes: {
-        Row: { id:string; user_id:string; title:string; body:string|null; href:string|null; status:string; error:string|null; sent_at:string|null; created_at:string }
-        Insert: { id?:string; user_id:string; title:string; body?:string|null; href?:string|null; status?:string; error?:string|null; sent_at?:string|null; created_at?:string }
+        Row: { id:string; delivery_lease_until:string|null; user_id:string; title:string; body:string|null; href:string|null; status:string; error:string|null; sent_at:string|null; created_at:string }
+        Insert: { id?:string; delivery_lease_until?:string|null; user_id:string; title:string; body?:string|null; href?:string|null; status?:string; error?:string|null; sent_at?:string|null; created_at?:string }
         Update: Partial<Database['public']['Tables']['outbound_pushes']['Insert']>
         Relationships: []
       }

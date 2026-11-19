@@ -10,6 +10,30 @@ const BATCH_SIZE = 25
 // gives the call, so the queue is always written back before anything gives up.
 const SEND_BUDGET_MS = 40_000
 
+const DELIVERY_LEASE_MS = 5 * 60_000
+type QueueTable = 'outbound_emails' | 'outbound_pushes'
+
+function availableLease(now: string) {
+  return `delivery_lease_until.is.null,delivery_lease_until.lt.${now}`
+}
+
+async function claimDelivery(admin: SupabaseClient<Database>, table: QueueTable, id: string) {
+  const now = Date.now()
+  const lease = new Date(now + DELIVERY_LEASE_MS).toISOString()
+  const { data, error } = await admin.from(table).update({ delivery_lease_until: lease })
+    .eq('id', id).eq('status', 'queued').or(availableLease(new Date(now).toISOString())).select('id').maybeSingle()
+  if (error) console.error('Notification claim failed', table, error.code)
+  return data ? lease : null
+}
+
+async function finishDelivery(admin: SupabaseClient<Database>, table: QueueTable, id: string, lease: string,
+  result: { status?: string; sent_at?: string; error?: string | null }) {
+  const { data, error } = await admin.from(table).update({ ...result, delivery_lease_until: null })
+    .eq('id', id).eq('status', 'queued').eq('delivery_lease_until', lease).select('id').maybeSingle()
+  if (error) console.error('Notification status update failed', table, error.code)
+  return Boolean(data)
+}
+
 /* Queued bodies are plain text; wrap them in the WTC Accra shell so members
    receive a branded message with the contact line on every email. */
 function brandedHtml(subject: string, body: string, unsubscribeUrl?: string | null): string {
@@ -81,6 +105,7 @@ export async function drainEmails(admin: SupabaseClient<Database>) {
   const mailer = transport()
 
   const { data: rows } = await admin.from('outbound_emails').select('*').eq('status', 'queued')
+    .or(availableLease(new Date().toISOString()))
     .order('created_at', { ascending: true }).limit(BATCH_SIZE)
   let sent = 0
   let ranOut = false
@@ -91,6 +116,8 @@ export async function drainEmails(admin: SupabaseClient<Database>) {
   const deadline = Date.now() + SEND_BUDGET_MS
   for (const row of rows ?? []) {
     if (Date.now() > deadline) { ranOut = true; break }
+    const lease = await claimDelivery(admin, 'outbound_emails', row.id)
+    if (!lease) continue
     try {
       const marketing = /^(marketing|waitlist|newsletter|campaign)/i.test(row.kind)
       const unsubscribeUrl = marketing && row.to_user_id
@@ -105,11 +132,10 @@ export async function drainEmails(admin: SupabaseClient<Database>) {
         html: brandedHtml(row.subject, row.body, unsubscribeUrl),
         ...(unsubscribeUrl ? { headers: { 'List-Unsubscribe': `<${unsubscribeUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } } : {}),
       })
-      await admin.from('outbound_emails').update({ status: 'sent', sent_at: new Date().toISOString(), error: null }).eq('id', row.id)
-      sent += 1
+      if (await finishDelivery(admin, 'outbound_emails', row.id, lease, { status: 'sent', sent_at: new Date().toISOString(), error: null })) sent += 1
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Send failed'
-      await admin.from('outbound_emails').update({ status: 'failed', error: message }).eq('id', row.id)
+      await finishDelivery(admin, 'outbound_emails', row.id, lease, { status: 'failed', error: message })
     }
   }
   mailer.close()
@@ -126,6 +152,7 @@ export async function drainPushes(admin: SupabaseClient<Database>) {
   webpush.setVapidDetails(process.env.VAPID_SUBJECT || 'mailto:membership@wtcaccra.com', publicKey, privateKey)
 
   const { data: rows } = await admin.from('outbound_pushes').select('*').eq('status', 'queued')
+    .or(availableLease(new Date().toISOString()))
     .order('created_at', { ascending: true }).limit(BATCH_SIZE)
   let sent = 0
   let ranOut = false
@@ -133,13 +160,16 @@ export async function drainPushes(admin: SupabaseClient<Database>) {
   const deadline = Date.now() + SEND_BUDGET_MS
   for (const row of rows ?? []) {
     if (Date.now() > deadline) { ranOut = true; break }
+    const lease = await claimDelivery(admin, 'outbound_pushes', row.id)
+    if (!lease) continue
     const { data: subs, error: subscriptionError } = await admin.from('push_subscriptions').select('*').eq('user_id', row.user_id)
     if (subscriptionError) {
       console.error('Push subscription lookup failed; notification remains queued', subscriptionError.code)
+      await finishDelivery(admin, 'outbound_pushes', row.id, lease, {})
       continue
     }
     if (!subs || subs.length === 0) {
-      await admin.from('outbound_pushes').update({ status: 'no_subscription' }).eq('id', row.id)
+      await finishDelivery(admin, 'outbound_pushes', row.id, lease, { status: 'no_subscription' })
       continue
     }
     const payload = JSON.stringify({ title: row.title, body: row.body ?? '', href: row.href ?? '/dashboard/notifications' })
@@ -159,10 +189,9 @@ export async function drainPushes(admin: SupabaseClient<Database>) {
       }
     }
     if (delivered) {
-      await admin.from('outbound_pushes').update({ status: 'sent', sent_at: new Date().toISOString() }).eq('id', row.id)
-      sent += 1
+      if (await finishDelivery(admin, 'outbound_pushes', row.id, lease, { status: 'sent', sent_at: new Date().toISOString(), error: null })) sent += 1
     } else {
-      await admin.from('outbound_pushes').update({ status: 'failed', error: lastError || 'No subscription accepted the push.' }).eq('id', row.id)
+      await finishDelivery(admin, 'outbound_pushes', row.id, lease, { status: 'failed', error: lastError || 'No subscription accepted the push.' })
     }
   }
   return { attempted: rows?.length ?? 0, sent, ...(ranOut ? { note: 'Time ran out — the rest stay queued for the next pass' } : {}) }
