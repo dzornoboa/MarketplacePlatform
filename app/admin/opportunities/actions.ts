@@ -5,7 +5,6 @@ import { moderationError } from '@/lib/ai/content-moderation'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { requireCapability } from '@/lib/auth/guards'
-import { createClient } from '@/lib/supabase/server'
 
 const DECISIONS = new Set(['publish', 'changes', 'reject'])
 
@@ -48,7 +47,7 @@ export async function setDealGrading(formData: FormData) {
     redirect(`${target}?error=${encodeURIComponent('Rating must be between 1 and 5.')}`)
   }
 
-  const supabase = await createClient()
+  const { supabase } = await requireCapability('opportunities')
   const { error } = await supabase.from('opportunities')
     .update({ importance, region: region || null }).eq('id', opportunityId)
   if (error) redirect(`${target}?error=${encodeURIComponent(error.message)}`)
@@ -64,17 +63,17 @@ export async function openDealRoom(formData: FormData) {
   const target = '/admin/opportunities'
   if (!opportunityId) redirect(`${target}?error=${encodeURIComponent('Opportunity not found.')}`)
 
-  const supabase = await createClient()
-  const { data: claimsData } = await supabase.auth.getClaims()
-  const userId = claimsData?.claims?.sub
-  if (!userId) redirect('/login')
+  const { supabase, profile } = await requireCapability('opportunities')
+  const { data: listing, error: lookupError } = await supabase.from('opportunities')
+    .select('id').eq('id', opportunityId).eq('status', 'published').maybeSingle()
+  if (lookupError || !listing) redirect(`${target}?error=${encodeURIComponent('Choose a published opportunity to open a deal room.')}`)
 
   const { data: existing } = await supabase.from('deal_rooms')
     .select('id').eq('opportunity_id', opportunityId).maybeSingle()
   if (existing) redirect(`${target}?message=${encodeURIComponent('A deal room is already open for this listing.')}`)
 
   const { error } = await supabase.from('deal_rooms')
-    .insert({ opportunity_id: opportunityId, created_by: String(userId) })
+    .insert({ opportunity_id: opportunityId, created_by: profile.id })
   if (error) redirect(`${target}?error=${encodeURIComponent(error.message)}`)
   revalidatePath('/admin/opportunities')
   revalidatePath('/dashboard/deal-rooms')
