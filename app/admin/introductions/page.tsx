@@ -81,7 +81,7 @@ export default async function AdminIntroductionsPage({ searchParams }: Props) {
               <input type="hidden" name="introductionId" value={item.id} />
               <input type="hidden" name="status" value={status} />
               <div className="form-grid">
-                <label>Meeting date/time<input type="datetime-local" name="meetingAt" /></label>
+                <label>Meeting date and time (UTC)<input type="datetime-local" name="meetingAt" /></label>
                 <label>Meeting link<input name="meetingUrl" placeholder="https://meet…" /></label>
               </div>
               <textarea name="note" rows={2} placeholder="Note shown to both parties" />
