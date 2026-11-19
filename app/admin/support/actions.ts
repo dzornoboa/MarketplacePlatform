@@ -2,9 +2,8 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { requireAdminProfile } from '@/lib/auth/guards'
+import { requireAdminProfile, requireCapability } from '@/lib/auth/guards'
 import { DOCUMENT_BUCKET, EXTRA_DOCUMENT_CATEGORY, documentObjectPath, documentUploadError } from '@/lib/document-uploads'
 import { DOCUMENT_PURPOSES } from '@/lib/kyc'
 
@@ -21,13 +20,10 @@ export async function replyAsStaff(formData: FormData) {
   if (!requestId) redirect(back('error', 'Request not found.'))
   if (body.length < 1 || body.length > 5000) redirect(back('error', 'Write a reply of up to 5000 characters.'))
 
-  const supabase = await createClient()
-  const { data: claimsData } = await supabase.auth.getClaims()
-  const userId = claimsData?.claims?.sub
-  if (!userId) redirect('/login')
+  const { supabase, profile } = await requireCapability('support')
 
   const { error } = await supabase.from('support_messages')
-    .insert({ support_request_id: requestId, author_id: String(userId), body })
+    .insert({ support_request_id: requestId, author_id: profile.id, body })
   if (error) redirect(back('error', error.message))
 
   if (status && STATUSES.has(status)) {
@@ -44,13 +40,10 @@ export async function replyAsStaff(formData: FormData) {
 export async function assignToMe(formData: FormData) {
   const requestId = String(formData.get('requestId') ?? '')
   if (!requestId) redirect(back('error', 'Request not found.'))
-  const supabase = await createClient()
-  const { data: claimsData } = await supabase.auth.getClaims()
-  const userId = claimsData?.claims?.sub
-  if (!userId) redirect('/login')
+  const { supabase, profile } = await requireCapability('support')
 
   const { error } = await supabase.from('support_requests')
-    .update({ assigned_to: String(userId), status: 'in_progress' }).eq('id', requestId)
+    .update({ assigned_to: profile.id, status: 'in_progress' }).eq('id', requestId)
   if (error) redirect(back('error', error.message))
   revalidatePath('/admin/support')
   redirect(back('message', 'Request assigned to you.'))
