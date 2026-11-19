@@ -19,18 +19,36 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(billing)
   }
 
-  const result = await verifyTransaction(reference)
   const { url } = getSupabasePublicConfig()
   const admin = createSupabaseClient<Database>(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } })
-  const { error: persistenceError } = await admin.rpc('record_provider_payment', { payment_reference: reference, provider_ref: result.providerReference, succeeded: result.succeeded })
+  const { data: payment, error: lookupError } = await admin.from('payments')
+    .select('amount,currency').eq('reference', reference).eq('provider', 'paystack').maybeSingle()
+  if (lookupError || !payment) {
+    billing.searchParams.set('error', 'Unable to locate this online payment. Contact WTC Accra finance for help.')
+    return NextResponse.redirect(billing)
+  }
 
+  const result = await verifyTransaction(reference).catch(() => null)
+  if (!result || !['success', 'failed', 'abandoned'].includes(result.status)) {
+    billing.searchParams.set('message', 'Payment confirmation is pending. Check your billing status before paying again.')
+    return NextResponse.redirect(billing)
+  }
+
+  const expectedAmount = Math.round(Number(payment.amount) * 100)
+  if (!Number.isSafeInteger(expectedAmount) || expectedAmount <= 0 || result.amountMinor !== expectedAmount
+    || result.currency !== payment.currency || !/^\d+$/.test(result.providerReference)) {
+    billing.searchParams.set('error', 'The provider payment details could not be matched. Contact WTC Accra finance before paying again.')
+    return NextResponse.redirect(billing)
+  }
+  const succeeded = result.status === 'success'
+  const { error: persistenceError } = await admin.rpc('record_provider_payment', { payment_reference: reference, provider_ref: result.providerReference, succeeded })
   if (persistenceError) {
     console.error('Could not record verified provider payment', persistenceError.code)
     billing.searchParams.set('error', 'We could not update the payment status. Contact WTC Accra finance before trying another payment.')
     return NextResponse.redirect(billing)
   }
 
-  billing.searchParams.set(result.succeeded ? 'message' : 'error',
-    result.succeeded ? 'Payment received. Your subscription is now active.' : 'The payment was not completed. You can try again or pay by bank transfer.')
+  billing.searchParams.set(succeeded ? 'message' : 'error',
+    succeeded ? 'Payment received. Your subscription is now active.' : 'The payment was not completed. You can try again or pay by bank transfer.')
   return NextResponse.redirect(billing)
 }

@@ -33,18 +33,18 @@ export async function initializeTransaction(input: {
   return { authorizationUrl: json.data.authorization_url, accessCode: json.data.access_code, reference: json.data.reference }
 }
 
-export async function verifyTransaction(reference: string): Promise<{ succeeded: boolean; providerReference: string; amount: number; currency: string }> {
+export async function verifyTransaction(reference: string): Promise<{ status: string; providerReference: string; amountMinor: number; currency: string } | null> {
   const res = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
     headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` },
     cache: 'no-store',
     signal: AbortSignal.timeout(20_000),
   })
   const json = await res.json() as { status: boolean; data?: { status: string; id: number; amount: number; currency: string; reference: string } }
-  if (!res.ok || !json.status || !json.data) return { succeeded: false, providerReference: reference, amount: 0, currency: '' }
+  if (!res.ok || !json.status || !json.data || json.data.reference !== reference) return null
   return {
-    succeeded: json.data.status === 'success',
+    status: json.data.status,
     providerReference: String(json.data.id),
-    amount: json.data.amount / 100,
+    amountMinor: json.data.amount,
     currency: json.data.currency,
   }
 }
