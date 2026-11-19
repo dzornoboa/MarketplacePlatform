@@ -3,7 +3,7 @@
 import { moderationError } from '@/lib/ai/content-moderation'
 
 import { revalidatePath, revalidateTag } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
+import { requireCapability } from '@/lib/auth/guards'
 import type { SiteContentBlock, SiteContentItem } from '@/lib/database.types'
 
 /* JSON-returning actions for the visual site builder. Each one re-checks
@@ -24,9 +24,8 @@ function revalidate(pageSlug: string) {
 }
 
 async function who() {
-  const supabase = await createClient()
-  const { data } = await supabase.auth.getClaims()
-  return { supabase, userId: data?.claims?.sub ? String(data.claims.sub) : null }
+  const { supabase, profile } = await requireCapability('content')
+  return { supabase, userId: profile.id }
 }
 
 export async function saveBlock(input: Partial<SiteContentBlock> & { id: string; page_slug: string }): Promise<Result> {

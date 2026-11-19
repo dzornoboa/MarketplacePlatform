@@ -3,7 +3,7 @@
 import { moderationError } from '@/lib/ai/content-moderation'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { requireCapability } from '@/lib/auth/guards'
 import { slugify } from '@/lib/format'
 import { isUsableImage } from '@/lib/media/image'
 import type { Database } from '@/lib/database.types'
@@ -44,8 +44,7 @@ export async function createPost(formData: FormData) {
   const post = readPost(formData)
   const problem = validate(post)
   if (problem) redirect(back('/editor/news/new', 'error', problem))
-  const supabase = await createClient()
-  const { data: claimsData } = await supabase.auth.getClaims()
+  const { supabase, profile } = await requireCapability('content')
   const publish = String(formData.get('intent') ?? '') === 'publish'
 
   const screening = await moderationError('news article', [post.title, post.excerpt, post.body, post.externalUrl].join('\n'), { allowUnavailable: formData.get('manualReview') === 'on' || !publish })
@@ -57,7 +56,7 @@ export async function createPost(formData: FormData) {
     image_url: post.imageUrl || null, external_url: post.externalUrl || null,
     status: publish ? 'published' : 'draft',
     published_at: publish ? new Date().toISOString() : null,
-    author_id: claimsData?.claims?.sub ? String(claimsData.claims.sub) : null,
+    author_id: profile.id,
   }).select('id').single()
 
   if (error || !data) redirect(back('/editor/news/new', 'error', error?.message ?? 'Unable to save the article.'))
@@ -74,7 +73,7 @@ export async function updatePost(formData: FormData) {
   if (problem) redirect(back(target, 'error', problem))
 
   const intent = String(formData.get('intent') ?? 'save')
-  const supabase = await createClient()
+  const { supabase } = await requireCapability('content')
   const patch: Database['public']['Tables']['content_posts']['Update'] = {
     title: post.title, category: post.category, slug: post.slug,
     excerpt: post.excerpt || null, body: post.body,
@@ -97,7 +96,7 @@ export async function updatePost(formData: FormData) {
 export async function deletePost(formData: FormData) {
   const id = String(formData.get('postId') ?? '')
   if (!id) redirect(back('/editor/news', 'error', 'Article not found.'))
-  const supabase = await createClient()
+  const { supabase } = await requireCapability('content')
   const { error } = await supabase.from('content_posts').delete().eq('id', id)
   if (error) redirect(back('/editor/news', 'error', error.message))
   revalidatePath('/editor/news'); revalidatePath('/news')
