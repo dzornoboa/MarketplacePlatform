@@ -35,10 +35,10 @@ export async function requestConnection(formData: FormData) {
   const supabase = await createClient()
   const screening = await moderationError('connection request', note, { localOnly: true })
   if (screening) redirect(back(returnTo, 'error', screening))
-  const { error } = await supabase.rpc('request_connection', {
+  const { data: requestId, error } = await supabase.rpc('request_connection', {
     addressee, connection_intent: intent, opportunity: opportunityId, note: note || null,
   })
-  if (error) redirect(back(returnTo, 'error', error.message))
+  if (error || !requestId) redirect(back(returnTo, 'error', error?.message ?? 'Your request could not be saved. Please try again.'))
 
   revalidatePath('/dashboard/network')
   revalidatePath('/dashboard/feed')

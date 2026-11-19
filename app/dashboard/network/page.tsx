@@ -38,7 +38,7 @@ export default async function NetworkPage({ searchParams }: Props) {
 
   const search = str('q'), participant = str('participant'), memberCountry = str('country')
 
-  const [{ data: directory }, { data: connections }] = await Promise.all([
+  const [{ data: directory }, { data: connections, error: connectionsError }] = await Promise.all([
     supabase.rpc('member_directory', {
       search: search || null,
       participant: participant || null,
@@ -46,7 +46,7 @@ export default async function NetworkPage({ searchParams }: Props) {
       only_ids: null,
       max_rows: 200,
     }),
-    supabase.from('connections').select('*').order('created_at', { ascending: false }),
+    supabase.from('connections').select('*').or(`requester_id.eq.${profile.id},addressee_id.eq.${profile.id}`).order('created_at', { ascending: false }),
   ])
 
   const counterpartIds = [...new Set((connections ?? []).flatMap(c => [c.requester_id, c.addressee_id]))]
@@ -57,7 +57,7 @@ export default async function NetworkPage({ searchParams }: Props) {
   const personById = new Map((counterparts ?? []).map(p => [p.id, p]))
 
   const incoming = (connections ?? []).filter(c => c.addressee_id === profile.id && c.status === 'pending' && c.staff_approved_at)
-  const outgoing = (connections ?? []).filter(c => c.requester_id === profile.id && c.status === 'pending')
+  const outgoing = (connections ?? []).filter(c => c.requester_id === profile.id)
   const accepted = (connections ?? []).filter(c => c.status === 'accepted')
 
   return <div className="page-stack">
@@ -68,6 +68,7 @@ export default async function NetworkPage({ searchParams }: Props) {
     </div>
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
+    {connectionsError && <div className="alert alert-error">Could not load connection requests. Refresh the page to try again.</div>}
 
     {incoming.length > 0 && <section>
       <h2>Requests for you ({incoming.length})</h2>
@@ -95,7 +96,7 @@ export default async function NetworkPage({ searchParams }: Props) {
       })}</div>
     </section>}
 
-    <section className="split-grid">
+    {!connectionsError && <section className="split-grid">
       <div className="card">
         <h2>Connected ({accepted.length})</h2>
         {accepted.length === 0
@@ -105,7 +106,7 @@ export default async function NetworkPage({ searchParams }: Props) {
               const person = personById.get(otherId)
               return <div key={item.id}>
                 <strong>{person ? <Link href={`/dashboard/members/${otherId}`}>{person.full_name}</Link> : 'Member'}</strong>
-                <span>{item.staff_approved_at ? 'Approved · Awaiting Recipient' : 'Processing · WTC Accra Review'} · {humanize(item.intent)}</span>
+                <span>Accepted · {humanize(item.intent)}</span>
                 <p className="muted">{person ? labelForParticipantType(person.participant_type) : ''} · connected {dateTime(item.responded_at ?? item.created_at)}</p>
               </div>
             })}</div>}
@@ -113,20 +114,23 @@ export default async function NetworkPage({ searchParams }: Props) {
       <div className="card">
         <h2>Requests You Sent ({outgoing.length})</h2>
         {outgoing.length === 0
-          ? <p className="muted">No pending requests.</p>
+          ? <p className="muted">You haven’t sent any connection requests yet.</p>
           : <div className="history-list">{outgoing.map(item => {
               const person = personById.get(item.addressee_id)
               return <div key={item.id}>
                 <strong>{person ? <Link href={`/dashboard/members/${item.addressee_id}`}>{person.full_name}</Link> : 'Member'}</strong>
-                <span>{humanize(item.intent)}</span>
-                <form action={respondToConnection}>
+                <span>{item.status === 'pending'
+                  ? item.staff_approved_at ? 'Approved · Awaiting recipient' : 'Processing · WTC Accra review'
+                  : humanize(item.status)} · {humanize(item.intent)}</span>
+                <p className="muted">Sent {dateTime(item.created_at)}</p>
+                {item.status === 'pending' && <form action={respondToConnection}>
                   <input type="hidden" name="connectionId" value={item.id} />
                   <button className="link-button link-button-danger" name="decision" value="withdraw">Withdraw request</button>
-                </form>
+                </form>}
               </div>
             })}</div>}
       </div>
-    </section>
+    </section>}
 
     <section>
       <h2>Member directory</h2>
