@@ -133,7 +133,11 @@ export async function drainPushes(admin: SupabaseClient<Database>) {
   const deadline = Date.now() + SEND_BUDGET_MS
   for (const row of rows ?? []) {
     if (Date.now() > deadline) { ranOut = true; break }
-    const { data: subs } = await admin.from('push_subscriptions').select('*').eq('user_id', row.user_id)
+    const { data: subs, error: subscriptionError } = await admin.from('push_subscriptions').select('*').eq('user_id', row.user_id)
+    if (subscriptionError) {
+      console.error('Push subscription lookup failed; notification remains queued', subscriptionError.code)
+      continue
+    }
     if (!subs || subs.length === 0) {
       await admin.from('outbound_pushes').update({ status: 'no_subscription' }).eq('id', row.id)
       continue
