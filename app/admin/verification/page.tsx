@@ -21,22 +21,22 @@ export default async function AdminVerificationPage({ searchParams }: Props) {
   const type = str('type')
   const sort = str('sort') === 'newest' ? 'newest' : 'oldest'
 
-  const { data: requests } = await supabase.from('verification_requests').select('*')
+  const { data: requests, error: requestsError } = await supabase.from('verification_requests').select('*')
     .eq('status', status as 'pending_review').order('submitted_at', { ascending: sort === 'oldest' }).limit(1000)
   const userIds = [...new Set((requests ?? []).map(r => r.user_id))]
 
-  const [{ data: profiles }, { data: documents }, { data: orgMembers }, { data: plans }] = await Promise.all([
-    userIds.length ? supabase.from('profiles').select('*').in('id', userIds) : Promise.resolve({ data: [] }),
-    userIds.length ? supabase.from('document_records').select('id,owner_user_id,file_name,purpose,created_at').in('owner_user_id', userIds).is('opportunity_id', null).in('purpose', ['identity', 'business_certificate', 'tax_document', 'proof_of_address', 'proof_of_funds', 'profile']) : Promise.resolve({ data: [] }),
-    userIds.length ? supabase.from('organization_members').select('user_id,organization_id').in('user_id', userIds) : Promise.resolve({ data: [] }),
+  const [{ data: profiles, error: profilesError }, { data: documents, error: documentsError }, { data: orgMembers, error: orgMembersError }, { data: plans, error: plansError }] = await Promise.all([
+    userIds.length ? supabase.from('profiles').select('*').in('id', userIds) : Promise.resolve({ data: [], error: null }),
+    userIds.length ? supabase.from('document_records').select('id,owner_user_id,file_name,purpose,created_at').in('owner_user_id', userIds).is('opportunity_id', null).in('purpose', ['identity', 'business_certificate', 'tax_document', 'proof_of_address', 'proof_of_funds', 'profile']) : Promise.resolve({ data: [], error: null }),
+    userIds.length ? supabase.from('organization_members').select('user_id,organization_id').in('user_id', userIds) : Promise.resolve({ data: [], error: null }),
     supabase.from('subscription_plans').select('code,name,price_usd'),
   ])
   const orgIds = [...new Set((orgMembers ?? []).map(m => m.organization_id))]
-  const { data: orgs } = orgIds.length ? await supabase.from('organizations').select('id,name,registration_number,website,country,is_verified').in('id', orgIds) : { data: [] }
+  const { data: orgs, error: orgsError } = orgIds.length ? await supabase.from('organizations').select('id,name,registration_number,website,country,is_verified').in('id', orgIds) : { data: [], error: null }
   const orgByUser = new Map((orgMembers ?? []).map(m => [m.user_id, (orgs ?? []).find(o => o.id === m.organization_id)]))
   const profileMap = new Map((profiles ?? []).map(p => [p.id, p]))
   const planByCode = new Map((plans ?? []).map(p => [p.code, p]))
-  const counts = await Promise.all(QUEUES.map(async s => ({ s, n: (await supabase.from('verification_requests').select('*', { count: 'exact', head: true }).eq('status', s)).count ?? 0 })))
+  const counts = await Promise.all(QUEUES.map(async s => ({ s, n: (await supabase.from('verification_requests').select('*', { count: 'exact', head: true }).eq('status', s)).count })))
 
   const visible = (requests ?? []).filter(r => {
     const p = profileMap.get(r.user_id)
@@ -56,7 +56,7 @@ export default async function AdminVerificationPage({ searchParams }: Props) {
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
 
-    <nav className="queue-tabs">{counts.map(c => <a key={c.s} className={c.s === status ? 'queue-tab queue-tab-active' : 'queue-tab'} href={`/admin/verification?status=${c.s}`}>{humanize(c.s)}<span>{c.n}</span></a>)}</nav>
+    <nav className="queue-tabs">{counts.map(c => <a key={c.s} className={c.s === status ? 'queue-tab queue-tab-active' : 'queue-tab'} href={`/admin/verification?status=${c.s}`}>{humanize(c.s)}<span>{c.n ?? 'Count unavailable'}</span></a>)}</nav>
 
     <form className="filter-row card" method="get">
       <input type="hidden" name="status" value={status} />
@@ -71,7 +71,9 @@ export default async function AdminVerificationPage({ searchParams }: Props) {
       <button className="button button-outline" type="submit">Apply</button>
     </form>
 
-    {visible.length === 0
+    {requestsError || profilesError || documentsError || orgMembersError || plansError || orgsError
+      ? <p className="alert alert-error" role="alert">Could not load verification applications. Refresh the page to try again.</p>
+      : visible.length === 0
       ? <section className="card empty-state"><BrandCircle /><h2>{q || type ? 'No applications match' : 'Queue is clear'}</h2><p>{q || type ? 'Widen the filters.' : `No applications with status “${humanize(status)}”.`}</p></section>
       : <div className="review-list">{visible.map(request => {
           const profile = profileMap.get(request.user_id)!
