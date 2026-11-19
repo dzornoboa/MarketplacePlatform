@@ -22,12 +22,12 @@ export default async function AdminPaymentsPage({ searchParams }: Props) {
 
   let query = supabase.from('payments').select('*').eq('status', status as 'pending').order('created_at', { ascending: sort === 'oldest' }).limit(1000)
   if (q) query = query.or(searchColumns(q, ['reference', 'provider_reference']))
-  const { data: payments } = await query
+  const { data: payments, error: paymentsError } = await query
 
   const userIds = [...new Set((payments ?? []).map(p => p.user_id))]
   const { data: members } = userIds.length ? await supabase.from('profiles').select('id,full_name,participant_type,country').in('id', userIds) : { data: [] }
   const memberById = new Map((members ?? []).map(m => [m.id, m]))
-  const counts = await Promise.all(STATUSES.map(async s => ({ s, n: (await supabase.from('payments').select('*', { count: 'exact', head: true }).eq('status', s)).count ?? 0 })))
+  const counts = await Promise.all(STATUSES.map(async s => ({ s, n: (await supabase.from('payments').select('*', { count: 'exact', head: true }).eq('status', s)).count })))
   const total = (payments ?? []).reduce((sum, p) => sum + Number(p.amount), 0)
 
   return <div className="page-stack">
@@ -40,7 +40,7 @@ export default async function AdminPaymentsPage({ searchParams }: Props) {
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
 
-    <nav className="queue-tabs">{counts.map(c => <a key={c.s} className={c.s === status ? 'queue-tab queue-tab-active' : 'queue-tab'} href={`/admin/payments?status=${c.s}`}>{humanize(c.s)}<span>{c.n}</span></a>)}</nav>
+    <nav className="queue-tabs">{counts.map(c => <a key={c.s} className={c.s === status ? 'queue-tab queue-tab-active' : 'queue-tab'} href={`/admin/payments?status=${c.s}`}>{humanize(c.s)}<span>{c.n ?? 'Count unavailable'}</span></a>)}</nav>
 
     <form className="filter-row card" method="get">
       <input type="hidden" name="status" value={status} />
@@ -49,12 +49,14 @@ export default async function AdminPaymentsPage({ searchParams }: Props) {
       <button className="button button-outline" type="submit">Apply</button>
     </form>
 
-    <section className="dashboard-grid">
+    {!paymentsError && <section className="dashboard-grid">
       <article className="metric-card"><span>In this queue</span><strong>{(payments ?? []).length}</strong><p>Payments with status “{humanize(status)}”.</p></article>
       <article className="metric-card"><span>Value shown</span><strong>{money(total)}</strong><p>Sum of the payments listed.</p></article>
-    </section>
+    </section>}
 
-    {(payments ?? []).length === 0
+    {paymentsError
+      ? <p className="alert alert-error" role="alert">Could not load payments. Refresh the page to try again.</p>
+      : (payments ?? []).length === 0
       ? <section className="card empty-state"><BrandCircle /><h2>Nothing here</h2><p>No {humanize(status)} payments.</p></section>
       : <div className="review-list">{(payments ?? []).map(p => {
           const member = memberById.get(p.user_id)
