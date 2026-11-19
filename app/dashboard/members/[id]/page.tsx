@@ -10,7 +10,7 @@ import { ParticipantBadge } from '@/components/participant-badge'
 import { SubmitButton } from '@/components/submit-button'
 import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
 import { marketplaceLock, humanize, labelForParticipantType } from '@/lib/auth/access'
-import { money, date } from '@/lib/format'
+import { money } from '@/lib/format'
 import { query } from '@/lib/data/timeout'
 import { requestConnection, toggleFollow } from '../../feed/actions'
 
@@ -150,21 +150,16 @@ export default async function MemberProfilePage({ params, searchParams }: Props)
             <h2>Nothing published yet</h2>
             <p>{person.full_name} has not published a deal on the marketplace. Following them means new ones reach your home feed.</p>
           </section>
-        : <div className="opportunity-list">{(listings ?? []).map(listing => <article className="card opportunity-card" key={listing.id}>
+        : <div className="opportunity-list">{(listings ?? []).map(listing => <article className="card opportunity-card listing-preview" key={listing.id}>
             <div className="opportunity-head">
               <div>
                 <span className="status-dot">{humanize(listing.kind)}</span>
                 <h3><Link href={`/dashboard/opportunities/${listing.id}`}>{listing.title}</Link></h3>
               </div>
             </div>
-            <p className="muted">{listing.summary ?? ''}</p>
-            <dl className="detail-grid">
-              <div><dt>Capital</dt><dd>{listing.capital_required != null ? money(listing.capital_required, listing.currency ?? 'USD') : '—'}</dd></div>
-              <div><dt>Sector</dt><dd>{listing.sector ?? '—'}</dd></div>
-              <div><dt>Country</dt><dd>{listing.country ?? '—'}</dd></div>
-              <div><dt>Published</dt><dd>{date(listing.published_at)}</dd></div>
-            </dl>
-            <p><Link className="arrow-link" href={`/dashboard/opportunities/${listing.id}`}>Open the deal →</Link></p>
+            <p className="muted listing-preview-meta">{[listing.sector, listing.country, money(listing.capital_required, listing.currency)].filter(Boolean).join(' · ')}</p>
+            <p className="listing-preview-summary">{listing.summary}</p>
+            <Link className="arrow-link" href={`/dashboard/opportunities/${listing.id}`} aria-label={`See more about ${listing.title}`}>See more →</Link>
           </article>)}</div>}
     </section>
   </div>

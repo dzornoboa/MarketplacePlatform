@@ -1525,16 +1525,30 @@ h1,h2,h3,h4,
 .pagination-jump select{height:38px;padding:0 28px 0 10px;border:1px solid var(--line-strong);border-radius:7px;background:#fff}
 .pagination-meta{width:100%;font-size:10px;color:var(--muted);text-align:right}
 
-/* Listing/posting collections use a maximum of four cards per desktop row.
-   AutoPagination limits each page to 40 items (10 desktop rows). */
-.opportunity-list,.member-grid{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:18px;align-items:stretch}
-.opportunity-list>.opportunity-card,.member-grid>.member-card{min-width:0;height:100%}
-@media(min-width:720px){
-  .opportunity-list,.member-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+/* Size cards against the space available beside the dashboard sidebar. */
+.opportunity-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,max(24rem,calc((100% - 18px)/2))),1fr));gap:18px;align-items:start}
+.opportunity-list>.opportunity-card{min-width:0}
+.member-grid{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:18px;align-items:stretch}
+.member-grid>.member-card{min-width:0;height:100%}
+@media(min-width:720px){.member-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:1080px){.member-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+.listing-preview{gap:10px}
+.listing-preview .opportunity-head{gap:8px 20px;align-items:start}
+.listing-preview .opportunity-head>div:first-child{flex:1 1 17rem;min-width:0}
+.listing-preview :is(h3,.listing-preview-summary,.listing-preview-meta){display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere}
+.listing-preview h3 a:focus-visible{outline-offset:-2px}
+.listing-preview .listing-preview-summary,.listing-preview .listing-preview-meta{margin:0}
+.listing-preview .listing-preview-owner{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:4px 0;font-size:.9em;overflow-wrap:anywhere}
+.listing-preview .listing-preview-owner img{flex:none}
+.listing-preview .opportunity-figures{text-align:left}
+.listing-preview .feed-actions{flex-direction:row;align-items:center;flex-wrap:wrap;gap:8px 12px;padding-top:10px}
+.listing-preview .feed-actions details[open]{flex-basis:100%}
+@media(max-width:720px){
+  .listing-preview .opportunity-head>div:first-child{flex-basis:auto}
+  .listing-preview .opportunity-head{gap:8px}
 }
-@media(min-width:1080px){
-  .opportunity-list,.member-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
-}
+
 @media(max-width:720px){
   .pagination-jump{margin-left:0}
   .pagination-meta{text-align:left}

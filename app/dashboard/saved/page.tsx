@@ -45,7 +45,7 @@ export default async function SavedPage({ searchParams }: Props) {
           <p>Save a listing from your home feed and it will wait for you here.</p>
           <Link className="button button-primary" href="/dashboard/feed">Open your feed</Link>
         </section>
-      : <div className="opportunity-list">{visible.map(item => <article className="card opportunity-card" key={item.id}>
+      : <div className="opportunity-list">{visible.map(item => <article className="card opportunity-card listing-preview" key={item.id}>
           <div className="opportunity-head">
             <div>
               <span className="eyebrow">{labelForIntent(item.intent)} · {humanize(item.kind)}</span>
@@ -60,9 +60,9 @@ export default async function SavedPage({ searchParams }: Props) {
               <span>{item.minimum_ticket ? `Min ${money(item.minimum_ticket, item.currency)}` : humanize(item.kind)}</span>
             </div>
           </div>
-          <p>{item.summary}</p>
+          <p className="listing-preview-summary">{item.summary}</p>
           <div className="button-row">
-            <Link className="button button-outline" href={`/dashboard/opportunities/${item.id}`}>View listing</Link>
+            <Link className="button button-outline" href={`/dashboard/opportunities/${item.id}`} aria-label={`See more about ${item.title}`}>See more →</Link>
             <form action={toggleSaved}>
               <input type="hidden" name="opportunityId" value={item.id} />
               <input type="hidden" name="saved" value="1" />

@@ -105,18 +105,18 @@ export default async function PublicListingsPage({ searchParams }: Props) {
           </section>
         : <div className="article-grid">{(listings ?? []).map(item => {
           const anonymous = !fullAccess || item.title_hidden
-          return <article className="card teaser-card" key={item.id}>
+          return <article className="card teaser-card listing-preview" key={item.id}>
               <div className="feed-meta">
                 <span className="eyebrow">{labelForIntent(item.intent)}</span>
                 <Stars rating={item.importance} />
               </div>
               <h3 className={anonymous ? 'teaser-title-hidden' : undefined}><Link href={`/opportunities/${item.id}`}>{anonymous ? anonymousDealTitle(item) : item.title}</Link></h3>
               <p className="muted">{item.category} · {humanize(item.kind)} · {item.sector} · {item.country}{item.region ? ` · ${item.region}` : ''}</p>
-              <p>{anonymous ? 'Counterparty identities and restricted deal details are available to eligible active accounts.' : item.teaser}</p>
+              <p className="listing-preview-summary">{anonymous ? 'Counterparty identities and restricted deal details are available to eligible active accounts.' : item.teaser}</p>
               {!anonymous && item.tags.length > 0 && <div className="trust-row">{item.tags.slice(0, 4).map(t => <span key={t}>{t}</span>)}</div>}
               <div className="teaser-foot">
                 <span className="field-help">{item.deadline ? relativeDays(item.deadline) : 'Open'}</span>
-                <Link className="arrow-link" href={`/opportunities/${item.id}`}>{anonymous ? 'View anonymous preview →' : 'View details →'}</Link>
+                <Link className="arrow-link" href={`/opportunities/${item.id}`}>{anonymous ? 'View anonymous preview →' : 'See more →'}</Link>
               </div>
             </article>
         })}</div>}

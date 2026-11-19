@@ -59,7 +59,6 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
   const interestByOpportunity = new Map((sentInterests ?? []).map(e => [e.opportunity_id, e]))
   const savedIds = new Set((savedRows ?? []).map(r => r.opportunity_id))
   const requestLabel = (status: string) => status === 'submitted' ? 'Processing' : status === 'under_review' ? 'Processed' : status === 'accepted' ? 'Connected' : status === 'declined' ? 'Declined' : 'Withdrawn'
-  const displayTags = (tags: string[]) => tags.map(tag => tag.replace(/^category:/i,'').replaceAll('-', ' ')).filter(Boolean).join(', ')
   const sectors = filterOptions((facets ?? []).filter(f => f.facet === 'sector').map(f => f.value), sector)
 
   const countByType = new Map(typeCounts)
@@ -104,7 +103,7 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
     </form>}
 
     {(mine ?? []).length > 0 && <div className="opportunity-list">
-      {(mine ?? []).map(item => <article className="card opportunity-card" key={item.id}>
+      {(mine ?? []).map(item => <article className="card opportunity-card listing-preview" key={item.id}>
         <div className="opportunity-head">
           <div>
             <span className={`status-dot status-opp-${item.status}`}>{humanize(item.status)}</span>
@@ -116,10 +115,10 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
             <span>{item.minimum_ticket ? `Min ${money(item.minimum_ticket, item.currency)}` : 'No minimum set'}</span>
           </div>
         </div>
-        <p>{item.summary}</p>
+        <p className="listing-preview-summary">{item.summary}</p>
         {item.review_note && <p className="field-help">Reviewer note: {item.review_note}</p>}
         <div className="button-row listing-actions">
-          <Link className="button button-outline" href={`/dashboard/opportunities/${item.id}`}>View</Link>
+          <Link className="button button-outline" href={`/dashboard/opportunities/${item.id}`}>See more →</Link>
           {['draft', 'changes_requested', 'rejected'].includes(item.status) && <Link className="button button-outline" href={`/dashboard/opportunities/${item.id}/edit`}>Edit</Link>}
           {(item.status === 'draft' || item.status === 'changes_requested') && !postLock.locked &&
             <form action={submitOpportunity}>
@@ -182,7 +181,7 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
             {otherTypesAvailable && <Link className="button button-outline" href={clearTypeHref}>Show all matching types</Link>}
           </section>
         : <div className="opportunity-list">{(published ?? []).map(item => { const own = item.owner_user_id === profile.id; return (
-            <article className={own ? 'card opportunity-card opportunity-own' : 'card opportunity-card'} key={item.id}>
+            <article className={own ? 'card opportunity-card listing-preview opportunity-own' : 'card opportunity-card listing-preview'} key={item.id}>
               <div className="opportunity-head">
                 <div>
                   <span className="eyebrow">{labelForIntent(item.intent)} · {humanize(item.kind)}{own && <span className="own-badge">Yours</span>}</span>
@@ -194,8 +193,8 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
                   <span>{item.minimum_ticket ? `Min ${money(item.minimum_ticket, item.currency)}` : 'No minimum set'}</span>
                 </div>
               </div>
-              <p>{item.summary}</p>
-              {item.tags.length > 0 && <p className="compact-tags"><strong>Tags:</strong> {displayTags(item.tags)}</p>}
+              <p className="listing-preview-summary">{item.summary}</p>
+              <Link className="arrow-link" href={`/dashboard/opportunities/${item.id}`} aria-label={`See more about ${item.title}`}>See more →</Link>
               {!own && <form action={toggleSaved} className="save-row">
                 <input type="hidden" name="opportunityId" value={item.id} />
                 <input type="hidden" name="saved" value={savedIds.has(item.id) ? '1' : '0'} />

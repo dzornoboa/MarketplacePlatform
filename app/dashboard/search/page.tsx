@@ -14,11 +14,12 @@ type Props = { searchParams: Promise<Record<string, string | string[] | undefine
 
 function ResultList({ results }: { results: Result[] }) {
   return <ul className="search-results">
-    {results.map(result => <li className="card" key={`${result.type}-${result.id}`}>
+    {results.map(result => <li className="card listing-preview" key={`${result.type}-${result.id}`}>
       <p className="eyebrow">{resultTypes[result.type]}</p>
       <h3><Link href={result.href}>{result.title}</Link></h3>
-      {result.detail && <p className="muted">{result.detail}</p>}
-      {result.excerpt && <p>{result.excerpt}</p>}
+      {result.detail && <p className="muted listing-preview-meta">{result.detail}</p>}
+      {result.excerpt && <p className="listing-preview-summary">{result.excerpt}</p>}
+      <Link className="arrow-link" href={result.href} aria-label={`See more about ${result.title}`}>See more →</Link>
     </li>)}
   </ul>
 }

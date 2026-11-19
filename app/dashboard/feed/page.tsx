@@ -7,7 +7,7 @@ import { VerifiedCheck } from '@/components/verified-check'
 import { Avatar } from '@/components/avatar'
 import { SubmitButton } from '@/components/submit-button'
 import { requireUserProfile, readAccessState } from '@/lib/auth/guards'
-import { marketplaceLockFor, humanize, labelForIntent, labelForParticipantType, listingIntents, listingIntentLabels } from '@/lib/auth/access'
+import { marketplaceLockFor, humanize, labelForIntent, listingIntents, listingIntentLabels } from '@/lib/auth/access'
 import { money, date, relativeDays } from '@/lib/format'
 import { displayImage } from '@/lib/media/image'
 import { BrandCircle } from '@/components/brand'
@@ -78,7 +78,6 @@ export default async function FeedPage({ searchParams }: Props) {
   const followingSet = new Set(followingIds)
   const savedIds = new Set((savedRows ?? []).map(row => row.opportunity_id))
   const connectionByDeal = new Map((outgoingConnections ?? []).filter(row => row.opportunity_id).map(row => [`${row.opportunity_id}:${row.addressee_id}`, row]))
-  const displayTags = (tags: string[]) => tags.map(tag => tag.replace(/^category:/i,'').replaceAll('-', ' ')).filter(Boolean).join(', ')
   const visible = listings ?? []
 
   const ownerIds = [...new Set(visible.map(o => o.owner_user_id))]
@@ -183,7 +182,7 @@ export default async function FeedPage({ searchParams }: Props) {
         : <div className="opportunity-list">{visible.map(item => {
             const owner = ownerById.get(item.owner_user_id)
             const following = followingSet.has(item.owner_user_id)
-            return <article className="card opportunity-card feed-card" key={item.id}>
+            return <article className="card opportunity-card listing-preview feed-card" key={item.id}>
               <div className="opportunity-head">
                 <div>
                   <div className="feed-meta">
@@ -191,23 +190,22 @@ export default async function FeedPage({ searchParams }: Props) {
                     <Stars rating={item.importance} />
                   </div>
                   <h3><Link href={`/dashboard/opportunities/${item.id}`}>{item.title}</Link></h3>
-                  <p className="muted avatar-stack">
-                    {owner && <Link href={`/dashboard/members/${item.owner_user_id}`}><Avatar src={owner.avatar_url} name={owner.full_name} size={22} /></Link>}
-                    {owner ? <><Link href={`/dashboard/members/${item.owner_user_id}`}>{owner.organisation ?? owner.full_name}</Link><VerifiedCheck verified={owner.is_verified} size={14} /> · {labelForParticipantType(owner.participant_type)} · </> : ''}
-                    {item.category ? `${item.category} · ` : ''}{item.sector} · {item.city ? `${item.city}, ` : ''}{item.country}
-                    {item.region ? ` · ${item.region}` : ''}
-                    {item.deadline ? ` · ${relativeDays(item.deadline)}` : ''}
-                  </p>
+                  {owner && <div className="listing-preview-owner">
+                    <Avatar src={owner.avatar_url} name={owner.full_name} size={22} />
+                    <Link href={`/dashboard/members/${item.owner_user_id}`}>{owner.organisation ?? owner.full_name}</Link>
+                    <VerifiedCheck verified={owner.is_verified} size={14} />
+                  </div>}
+                  <p className="muted listing-preview-meta">{[item.sector, item.country, item.deadline ? relativeDays(item.deadline) : null].filter(Boolean).join(' · ')}</p>
                 </div>
                 <div className="opportunity-figures">
                   <strong>{money(item.capital_required, item.currency)}</strong>
                   <span>{item.minimum_ticket ? `Min ${money(item.minimum_ticket, item.currency)}` : humanize(item.kind)}</span>
                 </div>
               </div>
-              <p>{item.summary}</p>
-              {item.tags.length > 0 && <p className="compact-tags"><strong>Tags:</strong> {displayTags(item.tags)}</p>}
+              <p className="listing-preview-summary">{item.summary}</p>
 
               <div className="feed-actions">
+                <Link className="arrow-link" href={`/dashboard/opportunities/${item.id}`} aria-label={`See more about ${item.title}`}>See more →</Link>
                 <form action={toggleSaved}>
                   <input type="hidden" name="opportunityId" value={item.id} />
                   <input type="hidden" name="saved" value={savedIds.has(item.id) ? '1' : '0'} />
