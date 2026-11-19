@@ -10,24 +10,25 @@ export const dynamic = 'force-dynamic'
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
 export default async function SavedPage({ searchParams }: Props) {
-  const { supabase } = await requireUserProfile()
+  const { supabase, profile } = await requireUserProfile()
   const params = await searchParams
   const error = typeof params.error === 'string' ? params.error : null
   const message = typeof params.message === 'string' ? params.message : null
 
-  const { data: savedRows } = await supabase.from('saved_opportunities')
-    .select('opportunity_id,created_at').order('created_at', { ascending: false })
+  const { data: savedRows, error: savedError } = await supabase.from('saved_opportunities')
+    .select('opportunity_id,created_at').eq('user_id', profile.id).order('created_at', { ascending: false })
   const ids = (savedRows ?? []).map(r => r.opportunity_id)
 
   /* RLS still applies: a listing that was unpublished, or that you lost access
      to, simply stops coming back — the shortlist row is harmless on its own. */
-  const { data: listings } = ids.length
-    ? await supabase.from('opportunities').select('*').in('id', ids)
-    : { data: [] }
+  const { data: listings, error: listingsError } = ids.length
+    ? await supabase.from('opportunities').select('*').eq('status', 'published').in('id', ids)
+    : { data: [], error: null }
   const byId = new Map((listings ?? []).map(o => [o.id, o]))
   const savedAt = new Map((savedRows ?? []).map(r => [r.opportunity_id, r.created_at]))
   const visible = ids.map(id => byId.get(id)).filter((o): o is NonNullable<typeof o> => !!o)
-  const unavailable = ids.length - visible.length
+  const loadFailed = Boolean(savedError || listingsError)
+  const unavailable = loadFailed ? 0 : ids.length - visible.length
 
   return <div className="page-stack">
     <div>
@@ -38,7 +39,9 @@ export default async function SavedPage({ searchParams }: Props) {
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
 
-    {visible.length === 0
+    {loadFailed
+      ? <p className="alert alert-error" role="status">Could not load your saved opportunities. Refresh the page to try again.</p>
+      : visible.length === 0
       ? <section className="card empty-state">
           <BrandCircle />
           <h2>Nothing saved yet</h2>
