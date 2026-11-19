@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { requireAnyCapability } from '@/lib/auth/guards'
 
 export async function reviewDeal(formData: FormData) {
   const dealId = String(formData.get('dealId') ?? '')
@@ -12,7 +12,7 @@ export async function reviewDeal(formData: FormData) {
   if (!dealId || !['clear', 'reject'].includes(decision)) {
     redirect(`${target}?error=${encodeURIComponent('Invalid deal decision.')}`)
   }
-  const supabase = await createClient()
+  const { supabase } = await requireAnyCapability(['opportunities', 'verification'])
   const { error } = await supabase.rpc('review_deal_request', { deal_id: dealId, decision, review_note: note || null })
   if (error) redirect(`${target}?error=${encodeURIComponent(error.message)}`)
   revalidatePath('/admin/deals')
@@ -29,7 +29,7 @@ export async function reviewConnectionRequest(formData: FormData) {
   if (!connectionId || !['approve','decline'].includes(decision)) {
     redirect(`${target}&error=${encodeURIComponent('Invalid connection decision.')}`)
   }
-  const supabase = await createClient()
+  const { supabase } = await requireAnyCapability(['opportunities', 'verification'])
   const { error } = await supabase.rpc('review_connection_request', {
     connection_id: connectionId,
     decision,
