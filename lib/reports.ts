@@ -1,5 +1,5 @@
 import type { createClient } from '@/lib/supabase/server'
-import { humanize, labelForParticipantType } from '@/lib/auth/access'
+import { humanize, isKnownParticipantType, labelForParticipantType } from '@/lib/auth/access'
 
 type Supabase = Awaited<ReturnType<typeof createClient>>
 type Row = Record<string, string | number | null>
@@ -23,7 +23,7 @@ const day = (v: string | null | undefined) => v ? new Date(v).toISOString().slic
    because the row sets are small (per member) or capped (console, 2000). */
 function finish(rows: Row[], params: ReportParams, defaultSort: string): Row[] {
   const from = params.from ? new Date(params.from) : null
-  const to = params.to ? new Date(params.to + 'T23:59:59') : null
+  const to = params.to ? new Date(params.to + 'T23:59:59.999Z') : null
   let out = rows.filter(r => {
     const d = r.date ? new Date(String(r.date)) : null
     if (from && d && d < from) return false
@@ -87,7 +87,8 @@ export async function adminReport(supabase: Supabase, kind: AdminReport, params:
   }
   if (kind === 'members') {
     let q = supabase.from('profiles').select('id,full_name,participant_type,requested_participant_type,verification_status,account_status,system_role,country,created_at,verified_at').limit(2000)
-    if (params.type) q = q.or(`participant_type.eq.${params.type},requested_participant_type.eq.${params.type}`)
+    if (isKnownParticipantType(params.type)) q = q.or(`participant_type.eq.${params.type},requested_participant_type.eq.${params.type}`)
+    else if (params.type) q = q.is('id', null)
     if (params.status) q = q.eq('verification_status', params.status as 'verified')
     if (params.account) q = q.eq('account_status', params.account as 'active')
     const [{ data }, { data: subs }, { data: emails }] = await Promise.all([q, supabase.from('subscriptions').select('user_id,plan_code,status,ends_at').eq('status', 'active'), supabase.rpc('member_emails')])
