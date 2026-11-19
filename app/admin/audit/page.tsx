@@ -25,7 +25,7 @@ export default async function AdminAuditPage({ searchParams }: Props) {
   if (/^\d{4}-\d{2}-\d{2}$/.test(since) && Number.isFinite(Date.parse(since))) {
     query = query.gte('created_at', new Date(since).toISOString())
   }
-  const [{ data: events }, { data: allActors }, { data: typeRows }] = await Promise.all([
+  const [{ data: events, error: eventsError }, { data: allActors }, { data: typeRows }] = await Promise.all([
     query,
     supabase.from('profiles').select('id,full_name').neq('system_role', 'user').order('full_name'),
     supabase.from('audit_events').select('entity_type').limit(3000),
@@ -60,7 +60,9 @@ export default async function AdminAuditPage({ searchParams }: Props) {
       <button className="button button-outline" type="submit">Apply</button>
     </form>
 
-    {(events ?? []).length === 0
+    {eventsError
+      ? <p className="alert alert-error" role="alert">Could not load audit events. Refresh the page to try again.</p>
+      : (events ?? []).length === 0
       ? <section className="card empty-state"><BrandCircle /><h2>No audit events</h2><p>Administrative actions will appear here as they happen.</p></section>
       : <section className="card table-wrap">
           <table className="data-table">
