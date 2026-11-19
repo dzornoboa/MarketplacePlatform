@@ -36,8 +36,7 @@ export async function GET(request: NextRequest) {
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      redirectTo.pathname = next || destinationForOtpType(type)
-      return NextResponse.redirect(redirectTo)
+      return NextResponse.redirect(new URL(next || destinationForOtpType(type), request.nextUrl.origin))
     }
     const { message, path } = friendlyAuthError('exchange_failed', error.message, type)
     redirectTo.pathname = path
@@ -48,8 +47,7 @@ export async function GET(request: NextRequest) {
   if (tokenHash && type) {
     const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type })
     if (!error) {
-      redirectTo.pathname = next || destinationForOtpType(type)
-      return NextResponse.redirect(redirectTo)
+      return NextResponse.redirect(new URL(next || destinationForOtpType(type), request.nextUrl.origin))
     }
     const { message, path } = friendlyAuthError('otp_expired', error.message, type)
     redirectTo.pathname = path

@@ -19,7 +19,8 @@ export async function login(formData: FormData) {
   const email = String(formData.get('email') ?? '').trim()
   const password = String(formData.get('password') ?? '')
   const next = safeNextPath(String(formData.get('next') ?? '/dashboard'))
-  if (validateEmail(email) || !password) redirect(withMessage('/login', 'error', 'Enter a valid email address and password.'))
+  const retryPath = `/login?${new URLSearchParams({ next })}`
+  if (validateEmail(email) || !password) redirect(withMessage(retryPath, 'error', 'Enter a valid email address and password.'))
   // Only failed password attempts consume the limiter. The old implementation
   // counted every sign-in, including successful ones, which could lock legitimate
   // members out. A limiter infrastructure fault now falls back to Supabase Auth
@@ -29,7 +30,7 @@ export async function login(formData: FormData) {
     checkAllowed('login_ip', 120, 900),
   ])
   if (accountAllowed === false || ipAllowed === false) {
-    redirect(withMessage('/login', 'error', 'Too many failed sign-in attempts. Wait 15 minutes and try again, or reset your password.'))
+    redirect(withMessage(retryPath, 'error', 'Too many failed sign-in attempts. Wait 15 minutes and try again, or reset your password.'))
   }
 
   const supabase = await createClient()
@@ -39,7 +40,7 @@ export async function login(formData: FormData) {
       allow('login', 10, 900, email),
       allow('login_ip', 120, 900),
     ])
-    redirect(withMessage('/login', 'error', 'Invalid email or password.'))
+    redirect(withMessage(retryPath, 'error', 'Invalid email or password.'))
   }
 
   await Promise.allSettled([resetLimit('login', email), resetLimit('login_ip')])
