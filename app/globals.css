@@ -1545,6 +1545,12 @@ h1,h2,h3,h4,
 .listing-preview .feed-actions{flex-direction:row;align-items:center;flex-wrap:wrap;gap:8px 12px;padding-top:10px}
 .listing-preview .feed-actions details[open]{flex-basis:100%}
 @media(max-width:720px){
+  .listing-preview.card{padding:14px;gap:8px}
+  .listing-preview .opportunity-head h3{font-size:17px;line-height:1.3}
+  .listing-preview .feed-meta{gap:4px 8px}
+  .listing-preview .feed-meta .eyebrow{font-size:10px;letter-spacing:.1em}
+  .listing-preview .listing-preview-meta,.listing-preview .listing-preview-owner{font-size:13px;line-height:1.4}
+  .listing-preview .opportunity-figures{flex-direction:row;align-items:baseline;flex-wrap:wrap;gap:4px 8px}
   .listing-preview .opportunity-head>div:first-child{flex-basis:auto}
   .listing-preview .opportunity-head{gap:8px}
 }
