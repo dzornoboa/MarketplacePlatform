@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { requireCapability } from '@/lib/auth/guards'
 
 /* Finance confirms a manual payment against its reference. Marking it paid
    fires the trigger that activates the subscription for a year. */
@@ -14,7 +14,7 @@ export async function confirmPayment(formData: FormData) {
   if (!paymentId || !['paid', 'failed', 'cancelled', 'refunded'].includes(decision)) {
     redirect(`${target}?error=${encodeURIComponent('Invalid payment decision.')}`)
   }
-  const supabase = await createClient()
+  const { supabase } = await requireCapability('finance')
   const { error } = await supabase.rpc('confirm_payment', { payment_id: paymentId, decision, note: note || null })
   if (error) redirect(`${target}?error=${encodeURIComponent(error.message)}`)
   revalidatePath('/admin/payments'); revalidatePath('/admin/subscriptions'); revalidatePath('/dashboard/billing')
