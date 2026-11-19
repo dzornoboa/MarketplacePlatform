@@ -8,11 +8,11 @@ export const dynamic = 'force-dynamic'
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
 export default async function NotificationsPage({ searchParams }: Props) {
-  const { supabase } = await requireUserProfile()
+  const { supabase, profile } = await requireUserProfile()
   const params = await searchParams
   const error = typeof params.error === 'string' ? params.error : null
   const message = typeof params.message === 'string' ? params.message : null
-  const { data: notifications } = await supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(1000)
+  const { data: notifications, error: loadError } = await supabase.from('notifications').select('*').eq('user_id', profile.id).order('created_at', { ascending: false }).limit(1000)
   const unread = (notifications ?? []).filter(n => !n.read_at).length
 
   return <div className="page-stack list-content">
@@ -29,7 +29,9 @@ export default async function NotificationsPage({ searchParams }: Props) {
       <form action={markAllRead}><button className="button button-outline" type="submit">Mark all read</button></form>
     </section>}
 
-    {(notifications ?? []).length === 0
+    {loadError
+      ? <p className="alert alert-error" role="status">Could not load your notifications. Refresh the page to try again.</p>
+      : (notifications ?? []).length === 0
       ? <section className="card empty-state"><BrandCircle /><h2>Nothing yet</h2><p>Account and deal-flow activity will appear here.</p></section>
       : <NotificationList items={notifications ?? []} />}
   </div>

@@ -13,9 +13,14 @@ async function me() {
 }
 const done = (msg: string) => { revalidatePath('/dashboard/notifications'); revalidatePath('/dashboard'); redirect(`/dashboard/notifications?message=${encodeURIComponent(msg)}`) }
 
+function updateFailed() {
+  redirect('/dashboard/notifications?error=' + encodeURIComponent('Could not update notifications. Try again.'))
+}
+
 export async function markAllRead() {
   const { supabase, userId } = await me()
-  await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('user_id', userId).is('read_at', null)
+  const { error } = await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('user_id', userId).is('read_at', null)
+  if (error) updateFailed()
   done('All notifications marked as read.')
 }
 
@@ -35,13 +40,12 @@ export async function bulkNotifications(formData: FormData) {
     if (error) redirect(`/dashboard/notifications?error=${encodeURIComponent(error.message)}`)
     done(`${ids.length} notification${ids.length === 1 ? '' : 's'} deleted.`)
   }
-  if (action === 'read') {
-    await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('user_id', userId).in('id', ids)
-    done(`${ids.length} marked as read.`)
-  }
-  if (action === 'unread') {
-    await supabase.from('notifications').update({ read_at: null }).eq('user_id', userId).in('id', ids)
-    done(`${ids.length} marked as unread.`)
+  if (action === 'read' || action === 'unread') {
+    const { count, error } = await supabase.from('notifications')
+      .update({ read_at: action === 'read' ? new Date().toISOString() : null }, { count: 'exact' })
+      .eq('user_id', userId).in('id', ids)
+    if (error || count === null) updateFailed()
+    done(`${count} marked as ${action}.`)
   }
   redirect('/dashboard/notifications')
 }
