@@ -33,7 +33,7 @@ export default async function VerificationPage({ searchParams }: Props) {
     supabase.from('document_records').select('id,file_name,purpose,created_at').eq('owner_user_id', profile.id).is('opportunity_id', null).is('deal_room_id', null),
     supabase.from('organization_members').select('*', { count: 'exact', head: true }).eq('user_id', profile.id),
     supabase.from('subscription_plans').select('*').eq('active', true).order('price_usd'),
-    supabase.from('subscriptions').select('plan_code,status,ends_at').in('status', ['pending', 'active']).limit(1).maybeSingle(),
+    supabase.from('subscriptions').select('plan_code,status,ends_at').eq('user_id', profile.id).in('status', ['pending', 'active']).order('created_at', { ascending: false }).limit(1).maybeSingle(),
     supabase.from('billing_addresses').select('user_id').eq('user_id', profile.id).maybeSingle(),
   ])
 
@@ -41,7 +41,7 @@ export default async function VerificationPage({ searchParams }: Props) {
   const hasOrg = (orgCount ?? 0) > 0
   const profileDone = profile.profile_completed && !!type && profile.full_name.trim().length >= 2
   const eligiblePlans = (plans ?? []).filter(p => !type || p.target_participant_types.length === 0 || p.target_participant_types.includes(type))
-  const chosenPlan = (plans ?? []).find(p => p.code === profile.requested_plan_code)
+  const chosenPlan = eligiblePlans.find(p => p.code === profile.requested_plan_code)
 
   const kyc = kycChecklist({ type, purposes: (documents ?? []).map(d => d.purpose), hasBillingAddress: !!billingAddress, hasOrganisation: hasOrg, verified: profile.verification_status === 'verified' })
   const steps = [
@@ -156,7 +156,7 @@ export default async function VerificationPage({ searchParams }: Props) {
           </div>
           <div className="button-row">
             <SubmitButton className="button button-secondary" pendingLabel="Saving…">Save plan choice</SubmitButton>
-            {chosenPlan && <button className="button button-outline" type="submit" name="planCode" value="">Clear</button>}
+            {chosenPlan && <button className="button button-outline" type="submit" name="clearPlan" value="1">Clear</button>}
           </div>
         </form>
       </section>
