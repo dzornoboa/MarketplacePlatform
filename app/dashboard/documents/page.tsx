@@ -36,7 +36,7 @@ export default async function DocumentsPage({ searchParams }: Props) {
   const hasOrg = (orgCount ?? 0) > 0
 
   const [{ data: documents }, { data: myOpportunities }, { count: ownedCount }] = await Promise.all([
-    supabase.from('document_records').select('*').order('created_at', { ascending: false }).limit(100),
+    supabase.from('document_records').select('*').order('created_at', { ascending: false }).limit(100).throwOnError(),
     supabase.from('opportunities').select('id,title').eq('owner_user_id', profile.id).order('updated_at', { ascending: false }),
     supabase.from('document_records').select('id', { count: 'exact', head: true }).eq('owner_user_id', profile.id),
   ])
@@ -47,7 +47,7 @@ export default async function DocumentsPage({ searchParams }: Props) {
     <div>
       <p className="eyebrow">Secure storage</p>
       <h1>Documents</h1>
-      <p className="muted">Files live in a private bucket. Links are signed and expire after two minutes, so they cannot be forwarded and reused.</p>
+      <p className="muted">Files live in a private bucket. Opening a file creates a link that expires after two minutes. Anyone with that link can use it until it expires.</p>
     </div>
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
