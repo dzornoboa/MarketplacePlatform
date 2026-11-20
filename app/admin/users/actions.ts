@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { requireAdminProfile, requireSuperAdmin } from '@/lib/auth/guards'
 import { createClient } from '@/lib/supabase/server'
 
 function back(key: 'error' | 'message', message: string, userId?: string) {
@@ -51,7 +52,10 @@ export async function updateStaffRole(formData: FormData) {
   const targetUser = String(formData.get('userId') ?? '')
   const newRole = String(formData.get('systemRole') ?? '')
   if (!targetUser || !newRole) redirect(back('error', 'Invalid role change.'))
-  const supabase = await createClient()
+  const { supabase, profile } = await requireAdminProfile()
+  if (newRole === 'super_admin' && profile.system_role !== 'super_admin') {
+    redirect(back('error', 'Only a super administrator can assign that role.', target(formData)))
+  }
   const { error } = await supabase.rpc('set_staff_role', { target_user: targetUser, new_role: newRole })
   if (error) redirect(back('error', error.message, target(formData)))
   revalidatePath('/admin/users'); revalidatePath(`/admin/users/${targetUser}`)
@@ -64,7 +68,7 @@ export async function setDelegatedCapabilities(formData: FormData) {
   const expires = String(formData.get('expiresAt') ?? '').trim()
   const capabilities = formData.getAll('capability').map(value => String(value))
   if (!targetUser) redirect(back('error', 'User not found.'))
-  const supabase = await createClient()
+  const { supabase } = await requireSuperAdmin()
   const { error } = await supabase.rpc('set_delegated_capabilities', {
     target_user: targetUser,
     capabilities,
