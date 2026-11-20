@@ -2,14 +2,14 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { requireAdminProfile, requireSuperAdmin } from '@/lib/auth/guards'
 
 const back = (kind: 'message' | 'error', text: string) => `/admin/backups?${kind}=${encodeURIComponent(text)}`
 
 export async function createBackup(formData: FormData) {
   const label = String(formData.get('label') ?? '').trim()
   const note = String(formData.get('note') ?? '').trim()
-  const supabase = await createClient()
+  const { supabase } = await requireAdminProfile()
   const { error } = await supabase.rpc('create_platform_backup', {
     backup_label: label || null,
     backup_note: note || null,
@@ -25,7 +25,8 @@ export async function restoreBackup(formData: FormData) {
   const mode = String(formData.get('mode') ?? 'merge')
   const confirmation = String(formData.get('confirmation') ?? '').trim()
   if (!backupId || !['merge','reset'].includes(mode)) redirect(back('error', 'Invalid restore request.'))
-  const supabase = await createClient()
+  if (mode === 'reset' && confirmation !== 'RESET') redirect(back('error', 'Type RESET to confirm.'))
+  const { supabase } = await requireSuperAdmin()
   const { error } = await supabase.rpc('restore_platform_backup', {
     backup_id: backupId,
     restore_mode: mode,
@@ -41,7 +42,7 @@ export async function updateBackupMetadata(formData: FormData) {
   const backupId = String(formData.get('backupId') ?? '')
   const label = String(formData.get('label') ?? '').trim()
   const note = String(formData.get('note') ?? '').trim()
-  const supabase = await createClient()
+  const { supabase } = await requireSuperAdmin()
   const { error } = await supabase.rpc('rename_platform_backup', {
     backup_id: backupId,
     new_label: label,
@@ -56,7 +57,7 @@ export async function deleteBackup(formData: FormData) {
   const backupId = String(formData.get('backupId') ?? '')
   const confirmation = String(formData.get('confirmation') ?? '').trim()
   if (confirmation !== 'DELETE BACKUP') redirect(back('error', 'Type DELETE BACKUP to confirm.'))
-  const supabase = await createClient()
+  const { supabase } = await requireSuperAdmin()
   const { error } = await supabase.rpc('delete_platform_backup', { backup_id: backupId })
   if (error) redirect(back('error', error.message))
   revalidatePath('/admin/backups')
