@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { requireCapability } from '@/lib/auth/guards'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSiteUrl } from '@/lib/supabase/config'
@@ -27,7 +28,7 @@ export async function generateMembershipId(formData: FormData) {
   const note = String(formData.get('note') ?? '').trim()
   const memberType = String(formData.get('memberType') ?? 'wtc_accra')
   if (!MEMBER_TYPES.has(memberType)) redirect(back('error', 'Choose a valid membership type.'))
-  const supabase = await createClient()
+  const { supabase } = await requireCapability('membership_ids')
   const { data, error } = await supabase.rpc('generate_membership_access_id', {
     member_type: memberType,
     assigned_email: email || null,
@@ -42,7 +43,7 @@ export async function generateMembershipId(formData: FormData) {
 export async function assignMembershipId(formData: FormData) {
   const code = String(formData.get('code') ?? '').trim().toUpperCase()
   const email = String(formData.get('email') ?? '').trim().toLowerCase()
-  const supabase = await createClient()
+  const { supabase } = await requireCapability('membership_ids')
   const { error } = await supabase.rpc('assign_membership_access_id', {
     membership_code: code,
     member_email: email,
@@ -55,7 +56,7 @@ export async function assignMembershipId(formData: FormData) {
 export async function revokeMembershipId(formData: FormData) {
   const code = String(formData.get('code') ?? '').trim().toUpperCase()
   const reason = String(formData.get('reason') ?? '').trim()
-  const supabase = await createClient()
+  const { supabase } = await requireCapability('membership_ids')
   const { error } = await supabase.rpc('revoke_membership_access_id', {
     membership_code: code,
     reason: reason || null,
