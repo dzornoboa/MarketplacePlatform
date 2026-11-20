@@ -7,16 +7,16 @@ type Supabase = Awaited<ReturnType<typeof createClient>>
    aggregation is done in JS rather than with per-metric SQL. */
 export async function gatherInsights(supabase: Supabase) {
   const [{ data: profiles }, { data: subs }, { data: payments }, { data: opps }, { data: bids }, { data: plans }, { data: vrs }, { data: conns }, { data: matches }, { data: support }] = await Promise.all([
-    supabase.from('profiles').select('id,participant_type,verification_status,account_status,created_at,country,system_role').limit(5000),
-    supabase.from('subscriptions').select('plan_code,status,starts_at,ends_at,created_at').limit(5000),
-    supabase.from('payments').select('amount,currency,status,method,provider,paid_at,created_at').limit(5000),
-    supabase.from('opportunities').select('id,title,status,kind,intent,sector,country,capital_required,currency,published_at,created_at,importance').limit(5000),
-    supabase.from('expressions_of_interest').select('opportunity_id,status,created_at').limit(5000),
-    supabase.from('subscription_plans').select('code,name,price_usd,tier'),
-    supabase.from('verification_requests').select('status,submitted_at,reviewed_at').limit(5000),
-    supabase.from('connections').select('status,created_at').limit(5000),
-    supabase.from('matches').select('status,score').limit(5000),
-    supabase.from('support_requests').select('status,created_at').limit(5000),
+    supabase.from('profiles').select('id,participant_type,verification_status,account_status,created_at,country,system_role').limit(5000).throwOnError(),
+    supabase.from('subscriptions').select('plan_code,status,starts_at,ends_at,created_at').limit(5000).throwOnError(),
+    supabase.from('payments').select('amount,currency,status,method,provider,paid_at,created_at').limit(5000).throwOnError(),
+    supabase.from('opportunities').select('id,title,status,kind,intent,sector,country,capital_required,currency,published_at,created_at,importance').limit(5000).throwOnError(),
+    supabase.from('expressions_of_interest').select('opportunity_id,status,created_at').limit(5000).throwOnError(),
+    supabase.from('subscription_plans').select('code,name,price_usd,tier').throwOnError(),
+    supabase.from('verification_requests').select('status,submitted_at,reviewed_at').limit(5000).throwOnError(),
+    supabase.from('connections').select('status,created_at').limit(5000).throwOnError(),
+    supabase.from('matches').select('status,score').limit(5000).throwOnError(),
+    supabase.from('support_requests').select('status,created_at').limit(5000).throwOnError(),
   ])
   const priceByCode = new Map((plans ?? []).map(p => [p.code, Number(p.price_usd)]))
   const nameByCode = new Map((plans ?? []).map(p => [p.code, p.name]))
