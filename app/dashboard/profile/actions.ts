@@ -89,9 +89,14 @@ export async function uploadAvatar(formData: FormData) {
 
 export async function removeAvatar() {
   const { supabase, profile } = await requireUserProfile()
-  const old = profile.avatar_url?.split('/avatars/')[1]
-  if (old) await supabase.storage.from('avatars').remove([old]).catch(() => undefined)
-  await supabase.from('profiles').update({ avatar_url: null }).eq('id', profile.id)
+  if (profile.avatar_url) {
+    const { data, error } = await supabase.from('profiles').update({ avatar_url: null })
+      .eq('id', profile.id).eq('avatar_url', profile.avatar_url).select('id').maybeSingle()
+    if (error || !data) redirect('/dashboard/profile?error=Could%20not%20remove%20the%20photo.%20Refresh%20and%20try%20again.')
+
+    const old = profile.avatar_url.split('/avatars/')[1]
+    if (old?.startsWith(`${profile.id}/`)) await supabase.storage.from('avatars').remove([old]).catch(() => undefined)
+  }
   revalidatePath('/', 'layout')
   redirect('/dashboard/profile?message=Profile%20photo%20removed.')
 }
