@@ -17,6 +17,9 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Set by `next upgrade --agent=security` when moving to 16.4.6 for a
+  // published advisory. It marks this app as taking security updates.
+  experimental: { agentUpgrade: 'security' },
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }]
   },
