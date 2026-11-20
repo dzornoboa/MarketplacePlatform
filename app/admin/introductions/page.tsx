@@ -23,9 +23,9 @@ export default async function AdminIntroductionsPage({ searchParams }: Props) {
   const q = str('q').trim()
   const sort = str('sort') === 'newest' ? 'newest' : 'oldest'
 
-  const [{ data: rows }, counts] = await Promise.all([
+  const [{ data: rows, error: rowsError }, counts] = await Promise.all([
     supabase.from('introductions').select('*').eq('status', status as 'requested').order('created_at', { ascending: sort === 'oldest' }).limit(1000),
-    Promise.all(TABS.map(async t => ({ t, n: (await supabase.from('introductions').select('*', { count: 'exact', head: true }).eq('status', t)).count ?? 0 }))),
+    Promise.all(TABS.map(async t => ({ t, n: (await supabase.from('introductions').select('*', { count: 'exact', head: true }).eq('status', t)).count }))),
   ])
   const oppIds = [...new Set((rows ?? []).map(r => r.opportunity_id))]
   const userIds = [...new Set((rows ?? []).flatMap(r => [r.requester_id, r.recipient_id]))]
@@ -51,7 +51,7 @@ export default async function AdminIntroductionsPage({ searchParams }: Props) {
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
 
-    <nav className="queue-tabs">{counts.map(c => <a key={c.t} className={c.t === status ? 'queue-tab queue-tab-active' : 'queue-tab'} href={`/admin/introductions?status=${c.t}`}>{stageLabel(c.t)}<span>{c.n}</span></a>)}</nav>
+    <nav className="queue-tabs">{counts.map(c => <a key={c.t} className={c.t === status ? 'queue-tab queue-tab-active' : 'queue-tab'} href={`/admin/introductions?status=${c.t}`}>{stageLabel(c.t)}<span>{c.n ?? 'Count unavailable'}</span></a>)}</nav>
 
     <form className="filter-row card" method="get">
       <input type="hidden" name="status" value={status} />
@@ -60,7 +60,9 @@ export default async function AdminIntroductionsPage({ searchParams }: Props) {
       <button className="button button-outline" type="submit">Apply</button>
     </form>
 
-    {items.length === 0
+    {rowsError
+      ? <p className="alert alert-error" role="alert">Could not load introductions. Refresh the page to try again.</p>
+      : items.length === 0
       ? <section className="card empty-state"><BrandCircle /><h2>Queue is clear</h2><p>No requests with status “{stageLabel(status)}”.</p></section>
       : <div className="review-list">{items.map(item => {
           const opp = oppById.get(item.opportunity_id)
