@@ -11,14 +11,14 @@ export const dynamic = 'force-dynamic'
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
 export default async function MatchesPage({ searchParams }: Props) {
-  const { supabase } = await requireUserProfile()
+  const { supabase, profile } = await requireUserProfile()
   const params = await searchParams
   const error = typeof params.error === 'string' ? params.error : null
   const message = typeof params.message === 'string' ? params.message : null
 
   // Matching runs automatically whenever a mandate/requirement or a listing changes; this keeps a stale account fresh.
   await supabase.rpc('refresh_my_matches')
-  const { data: matches } = await supabase.from('matches').select('*').order('score', { ascending: false })
+  const { data: matches } = await supabase.from('matches').select('*').eq('user_id', profile.id).order('score', { ascending: false }).throwOnError()
   const oppIds = [...new Set((matches ?? []).map(m => m.opportunity_id))]
   const [{ data: opportunities }, { data: teasers }] = oppIds.length
     ? await Promise.all([supabase.from('opportunities').select('*').in('id', oppIds), supabase.rpc('public_listing_teasers', { max_rows: 200 })])
