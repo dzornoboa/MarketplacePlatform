@@ -15,6 +15,10 @@ export default async function DealsFinancePage({ searchParams }: Props) {
   const status = typeof params.status === 'string' && ['all', 'active', 'closed'].includes(params.status) ? params.status : 'all'
   const finance = capabilities.has('finance')
   const { data, error } = await supabase.from('deal_rooms').select('id,opportunity_id,status,created_at,closed_at,deal_value,deal_currency,success_fee_amount,deal_value_usd,success_fee_amount_usd,success_fee_rate').order('created_at', { ascending: false }).limit(1000)
+  if (error) return <div className="page-stack">
+    <h1>Deal Finance</h1>
+    <p className="alert alert-error" role="alert">Could not load deal rooms. Refresh the page to try again.</p>
+  </div>
   const rooms = (data ?? []) as Room[]
   const oppIds = [...new Set(rooms.map(r => r.opportunity_id))]
   const { data: opportunities } = oppIds.length
@@ -34,7 +38,6 @@ export default async function DealsFinancePage({ searchParams }: Props) {
       <h1>Deals & Finance</h1>
       <p className="muted">Monitor Deal Rooms, confirmed transaction values, and recorded success-fee calculations. Settlement status is not inferred from deal closure; payment reconciliation requires a separate success-fee ledger.</p>
     </div>
-    {error && <div className="alert alert-error">Unable to load Deal Rooms: {error.message}</div>}
     <section className="dashboard-grid">
       <article className="metric-card"><span>Active Deal Rooms</span><strong>{active.length}</strong><p>Transactions in progress</p></article>
       <article className="metric-card"><span>Closed Deal Rooms</span><strong>{closed.length}</strong><p>Recorded closures</p></article>
