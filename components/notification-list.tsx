@@ -1,9 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
+import { useEffect, useRef, useState } from 'react'
 import { dateTime } from '@/lib/format'
-import { bulkNotifications } from '@/app/dashboard/notifications/actions'
+import { bulkNotifications, markSeen, openNotification } from '@/app/dashboard/notifications/actions'
 
 type Item = { id: string; kind: string; title: string; body: string | null; href: string | null; created_at: string; read_at: string | null }
 
@@ -11,6 +10,17 @@ type Item = { id: string; kind: string; title: string; body: string | null; href
    read/unread in one go. "Delete all" clears everything after a confirm. */
 export function NotificationList({ items }: { items: Item[] }) {
   const [picked, setPicked] = useState<Set<string>>(new Set())
+  /* The rows are on screen, so they count as seen and the badge stops counting
+     them. Mark unread puts any of them back. */
+  const seenSent = useRef(false)
+  useEffect(() => {
+    if (seenSent.current) return
+    const unread = items.filter(item => !item.read_at).map(item => item.id)
+    if (unread.length === 0) return
+    seenSent.current = true
+    void markSeen(unread).catch(() => { seenSent.current = false })
+  }, [items])
+
   const all = picked.size === items.length && items.length > 0
   const toggle = (id: string) => setPicked(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n })
   const toggleAll = () => setPicked(all ? new Set() : new Set(items.map(i => i.id)))
@@ -40,7 +50,7 @@ export function NotificationList({ items }: { items: Item[] }) {
         </div>
         <div className="notification-meta">
           <span>{dateTime(item.created_at)}</span>
-          {item.href && <Link className="arrow-link" href={item.href}>Open →</Link>}
+          {item.href && <button className="arrow-link link-button" type="submit" formAction={openNotification} name="open" value={item.id}>Open →</button>}
         </div>
       </article>)}</div>
   </form>

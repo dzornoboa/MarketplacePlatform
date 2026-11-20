@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { safeNextPath } from '@/lib/auth/redirects'
 
 async function me() {
   const supabase = await createClient()
@@ -22,6 +23,35 @@ export async function markAllRead() {
   const { error } = await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('user_id', userId).is('read_at', null)
   if (error) updateFailed()
   done('All notifications marked as read.')
+}
+
+/* Opening a notification is reading it. Until now only the Mark read buttons
+   set read_at, so following a notification through to the thing it was about
+   left it unread and the badge still counting it. */
+export async function openNotification(formData: FormData) {
+  const { supabase, userId } = await me()
+  const id = String(formData.get('open') ?? '')
+  if (!id) redirect('/dashboard/notifications')
+  const { data: row } = await supabase.from('notifications')
+    .select('href').eq('user_id', userId).eq('id', id).maybeSingle()
+  await supabase.from('notifications')
+    .update({ read_at: new Date().toISOString() })
+    .eq('user_id', userId).eq('id', id).is('read_at', null)
+  revalidatePath('/dashboard/notifications')
+  revalidatePath('/dashboard')
+  redirect(safeNextPath(row?.href ?? null, '/dashboard/notifications'))
+}
+
+/* Seeing the list is reading it too: once the page has shown these rows the
+   badge stops counting them. Mark unread puts any of them back. */
+export async function markSeen(ids: string[]) {
+  const { supabase, userId } = await me()
+  const wanted = ids.filter(Boolean).slice(0, 1000)
+  if (wanted.length === 0) return
+  await supabase.from('notifications')
+    .update({ read_at: new Date().toISOString() })
+    .eq('user_id', userId).in('id', wanted).is('read_at', null)
+  revalidatePath('/dashboard')
 }
 
 /* Bulk actions on the ticked notifications: `ids` are the checked rows. */
