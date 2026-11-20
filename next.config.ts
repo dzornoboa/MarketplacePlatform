@@ -16,8 +16,14 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  experimental: { serverActions: { bodySizeLimit: '1100kb' } },
   poweredByHeader: false,
+  experimental: {
+    // Uploads travel through server actions, so the body limit is raised.
+    serverActions: { bodySizeLimit: '1100kb' },
+    // Set by `next upgrade --agent=security` when moving to 16.4.6 for a
+    // published advisory. It marks this app as taking security updates.
+    agentUpgrade: 'security',
+  },
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }]
   },
