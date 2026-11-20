@@ -17,8 +17,8 @@ export default async function MandatePage({ searchParams }: Props) {
   const message = typeof params.message === 'string' ? params.message : null
 
   const [{ data: mandates }, { data: requirements }] = await Promise.all([
-    supabase.from('investor_mandates').select('*').order('created_at', { ascending: false }).limit(1),
-    supabase.from('buyer_requirements').select('*').order('created_at', { ascending: false }).limit(1),
+    supabase.from('investor_mandates').select('*').eq('user_id', profile.id).order('created_at', { ascending: false }).limit(1).throwOnError(),
+    supabase.from('buyer_requirements').select('*').eq('user_id', profile.id).order('created_at', { ascending: false }).limit(1).throwOnError(),
   ])
   const mandate = mandates?.[0]
   const requirement = requirements?.[0]
