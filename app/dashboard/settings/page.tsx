@@ -25,7 +25,7 @@ export default async function SettingsPage({ searchParams }: Props) {
   const error = typeof params.error === 'string' ? params.error : null
   const message = typeof params.message === 'string' ? params.message : null
 
-  const { data: preferences } = await supabase.from('user_preferences').select('*').maybeSingle()
+  const { data: preferences } = await supabase.from('user_preferences').select('*').eq('user_id', profile.id).maybeSingle().throwOnError()
   const value = (column: string, fallback: boolean) =>
     preferences ? Boolean((preferences as unknown as Record<string, unknown>)[column]) : fallback
 
