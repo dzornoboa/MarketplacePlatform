@@ -28,7 +28,7 @@ export default async function AdminOpportunitiesPage({ searchParams }: Props) {
   query = sort === 'title' ? query.order('title')
     : sort === 'amount' ? query.order('capital_required', { ascending: false, nullsFirst: false })
     : query.order('created_at', { ascending: sort === 'oldest' })
-  const { data: opportunities } = await query
+  const { data: opportunities, error: listingsError } = await query
 
   const ownerIds = [...new Set((opportunities ?? []).map(o => o.owner_user_id))]
   const { data: owners } = ownerIds.length
@@ -38,7 +38,7 @@ export default async function AdminOpportunitiesPage({ searchParams }: Props) {
 
   const counts = await Promise.all(QUEUES.map(async q => {
     const { count } = await supabase.from('opportunities').select('*', { count: 'exact', head: true }).eq('status', q)
-    return { status: q, count: count ?? 0 }
+    return { status: q, count }
   }))
 
   return <div className="page-stack">
@@ -53,7 +53,7 @@ export default async function AdminOpportunitiesPage({ searchParams }: Props) {
 
     <nav className="queue-tabs">
       {counts.map(q => <a key={q.status} className={q.status === status ? 'queue-tab queue-tab-active' : 'queue-tab'} href={`/admin/opportunities?status=${q.status}`}>
-        {humanize(q.status)}<span>{q.count}</span>
+        {humanize(q.status)}<span>{q.count ?? 'Unavailable'}</span>
       </a>)}
     </nav>
 
@@ -74,7 +74,9 @@ export default async function AdminOpportunitiesPage({ searchParams }: Props) {
       <button className="button button-outline" type="submit">Apply</button>
     </form>
 
-    {(opportunities ?? []).length === 0
+    {listingsError
+      ? <p className="alert alert-error" role="alert">Could not load opportunities. Refresh the page to try again.</p>
+      : (opportunities ?? []).length === 0
       ? <section className="card empty-state"><BrandCircle /><h2>{q || intent ? 'No matches' : 'Queue is clear'}</h2><p>No opportunities with status “{humanize(status)}”.</p></section>
       : <div className="review-list">{(opportunities ?? []).map(item => {
           const owner = ownerById.get(item.owner_user_id)
