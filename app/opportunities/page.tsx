@@ -34,7 +34,7 @@ export default async function PublicListingsPage({ searchParams }: Props) {
 
   // Apply marketplace access before rendering any restricted listing text.
   const supabase = await createClient()
-  const [{ data: claimsData }, accessState, { data: listings }, { data: facets }] = await Promise.all([
+  const [{ data: claimsData }, accessState, { data: listings, error: listingsError }, { data: facets, error: facetsError }] = await Promise.all([
     supabase.auth.getClaims(),
     readAccessState(supabase),
     supabase.rpc('public_listing_teasers', {
@@ -97,7 +97,10 @@ export default async function PublicListingsPage({ searchParams }: Props) {
         {filtered && <Link className="text-link" href="/opportunities">Reset</Link>}
       </form>
 
-      {(listings ?? []).length === 0
+      {facetsError && <p className="alert alert-error" role="alert">Some filters could not be loaded. Refresh the page to try again.</p>}
+      {listingsError
+        ? <p className="alert alert-error" role="alert">Could not load listings. Refresh the page to try again.</p>
+        : (listings ?? []).length === 0
         ? <section className="card empty-state">
             <BrandCircle />
             <h2>{filtered ? 'No listings match those filters' : 'No Live Deals Yet'}</h2>
