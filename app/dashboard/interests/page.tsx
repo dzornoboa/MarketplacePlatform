@@ -19,7 +19,7 @@ export default async function InterestsPage({ searchParams }: Props) {
   const message = typeof params.message === 'string' ? params.message : null
 
   // RLS returns both sides of the conversation: what I sent and what I received.
-  const { data: interests } = await supabase.from('expressions_of_interest').select('*').order('created_at', { ascending: false })
+  const { data: interests } = await supabase.from('expressions_of_interest').select('*').order('created_at', { ascending: false }).throwOnError()
   const ids = [...new Set((interests ?? []).map(i => i.opportunity_id))]
   const { data: opportunities } = ids.length
     ? await supabase.from('opportunities').select('id,title,owner_user_id,sector,country').in('id', ids)
