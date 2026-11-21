@@ -41,7 +41,7 @@ export default async function NetworkPage({ searchParams }: Props) {
 
   const search = str('q'), participant = str('participant'), memberCountry = str('country')
 
-  const [{ data: directory }, { data: connections, error: connectionsError }] = await Promise.all([
+  const [{ data: directory, error: directoryError }, { data: connections, error: connectionsError }] = await Promise.all([
     supabase.rpc('member_directory', {
       search: search || null,
       participant: participant || null,
@@ -146,7 +146,9 @@ export default async function NetworkPage({ searchParams }: Props) {
         <button className="button button-outline" type="submit">Search</button>
       </form>
 
-      {(directory ?? []).length === 0
+      {directoryError
+        ? <p className="alert alert-error" role="alert">Could not load the member directory. Refresh the page to try again.</p>
+        : (directory ?? []).length === 0
         ? <section className="card empty-state"><BrandCircle /><h2>No members match</h2><p>Widen your search, or check back as WTC Accra verifies more participants.</p></section>
         : <div className="member-grid">{(directory ?? []).map(person => {
           const connection = relationship.get(person.id)
