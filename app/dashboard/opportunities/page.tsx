@@ -45,12 +45,12 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
   query = sort === 'amount' ? query.order('capital_required_usd', { ascending: false, nullsFirst: false })
     : sort === 'deadline' ? query.order('deadline', { ascending: true, nullsFirst: false })
     : query.order('published_at', { ascending: sort === 'oldest' })
-  const [{ data: published, error: publishedError }, { data: mine }, { data: sentInterests }, { data: savedRows }, { data: facets }, typeCounts] = await Promise.all([
+  const [{ data: published, error: publishedError }, { data: mine }, { data: sentInterests }, { data: savedRows }, { data: facets, error: facetsError }, typeCounts] = await Promise.all([
     browseLock.locked ? Promise.resolve({ data: [], error: null }) : query,
     supabase.from('opportunities').select('*').eq('owner_user_id', profile.id).order(mineSort === 'title' ? 'title' : mineSort === 'status' ? 'status' : 'updated_at', { ascending: mineSort !== 'updated' }),
     supabase.from('expressions_of_interest').select('id,opportunity_id,status').eq('applicant_id', profile.id),
     supabase.from('saved_opportunities').select('opportunity_id'),
-    browseLock.locked ? Promise.resolve({ data: [] }) : supabase.rpc('public_listing_facets'),
+    browseLock.locked ? Promise.resolve({ data: [], error: null }) : supabase.rpc('public_listing_facets'),
     browseLock.locked ? [] : Promise.all(opportunityKinds.map(async type => {
       const { count } = await publishedQuery(true).eq('kind', type)
       return [type, count] as const
@@ -169,6 +169,7 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
         {(q || investmentBand || sector || kind || sort !== 'newest') && <Link className="text-link" href={mineSort === 'updated' ? '/dashboard/opportunities' : `?mine=${mineSort}`}>Reset filters</Link>}
       </form>
 
+      {facetsError && <p className="alert alert-error" role="alert">Some filters could not be loaded. Refresh the page to try again.</p>}
       {publishedError
         ? <section className="card empty-state"><h2>Could not load listings</h2><p>Refresh the page to try again.</p></section>
         : (published ?? []).length === 0
