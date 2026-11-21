@@ -51,7 +51,9 @@ export async function memberReport(supabase: Supabase, kind: MemberReport, param
       rows: finish((data ?? []).map(o => ({ id: o.id, title: o.title, status: humanize(o.status), sector: o.sector ?? null, country: o.country ?? null, capital_required: o.capital_required ?? null, date: day(o.created_at), published: day(o.published_at) })), params, 'date') }
   }
   if (kind === 'deals_sent' || kind === 'deals_received') {
-    const { data } = await supabase.from('expressions_of_interest').select('id,opportunity_id,applicant_id,status,created_at').throwOnError()
+    let query = supabase.from('expressions_of_interest').select('id,opportunity_id,applicant_id,status,created_at')
+    if (kind === 'deals_sent') query = query.eq('applicant_id', userId)
+    const { data } = await query.throwOnError()
     const mine = (data ?? []).filter(b => kind === 'deals_sent' ? b.applicant_id === userId : b.applicant_id !== userId)
     const oppIds = [...new Set(mine.map(b => b.opportunity_id))]
     const { data: opps } = oppIds.length ? await supabase.from('opportunities').select('id,title').in('id', oppIds).throwOnError() : { data: [] }
@@ -60,16 +62,17 @@ export async function memberReport(supabase: Supabase, kind: MemberReport, param
       rows: finish(mine.map(b => ({ id: b.id, listing: title.get(b.opportunity_id) ?? 'Listing', status: humanize(b.status), date: day(b.created_at) })), params, 'date') }
   }
   if (kind === 'payments') {
-    const { data } = await supabase.from('payments').select('id,reference,amount,currency,method,provider,status,plan_code,created_at,paid_at').throwOnError()
+    const { data } = await supabase.from('payments').select('id,reference,amount,currency,method,provider,status,plan_code,created_at,paid_at').eq('user_id', userId).throwOnError()
     return { title: 'Your payments', columns: [col('reference', 'Reference'), col('plan', 'Plan'), col('amount', 'Amount'), col('method', 'Method'), col('status', 'Status'), col('date', 'Started'), col('paid', 'Paid')],
       rows: finish((data ?? []).map(p => ({ id: p.id, reference: p.reference, plan: humanize(p.plan_code), amount: `${p.currency} ${Number(p.amount).toLocaleString()}`, method: humanize(p.method), status: humanize(p.status), date: day(p.created_at), paid: day(p.paid_at) })), params, 'date') }
   }
   if (kind === 'subscriptions') {
-    const { data } = await supabase.from('subscriptions').select('id,plan_code,status,starts_at,ends_at,created_at').throwOnError()
+    const { data } = await supabase.from('subscriptions').select('id,plan_code,status,starts_at,ends_at,created_at').eq('user_id', userId).throwOnError()
     return { title: 'Your subscription history', columns: [col('plan', 'Plan'), col('status', 'Status'), col('starts', 'Starts'), col('ends', 'Ends'), col('date', 'Requested')],
       rows: finish((data ?? []).map(s => ({ id: s.id, plan: humanize(s.plan_code), status: humanize(s.status), starts: day(s.starts_at), ends: day(s.ends_at), date: day(s.created_at) })), params, 'date') }
   }
-  const { data } = await supabase.from('connections').select('id,requester_id,addressee_id,intent,status,created_at,responded_at').throwOnError()
+  const { data } = await supabase.from('connections').select('id,requester_id,addressee_id,intent,status,created_at,responded_at')
+    .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`).throwOnError()
   const ids = [...new Set((data ?? []).flatMap(c => [c.requester_id, c.addressee_id]).filter(i => i !== userId))]
   const { data: people } = ids.length ? await supabase.rpc('listing_owner_cards', { owner_ids: ids }).throwOnError() : { data: [] }
   const name = new Map((people ?? []).map(p => [p.id, p.full_name]))
