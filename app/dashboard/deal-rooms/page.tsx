@@ -11,14 +11,14 @@ export default async function DealRoomsPage() {
 
   /* RLS returns only rooms this member owns the opportunity for, or has been
      added to. Deal rooms are opened by the WTC Accra trade desk, not members. */
-  const { data: rooms } = await supabase.from('deal_rooms').select('*').order('created_at', { ascending: false })
+  const { data: rooms } = await supabase.from('deal_rooms').select('*').order('created_at', { ascending: false }).throwOnError()
   const roomIds = (rooms ?? []).map(r => r.id)
   const oppIds = [...new Set((rooms ?? []).map(r => r.opportunity_id))]
 
   const [{ data: members }, { data: opportunities }, { data: documents }] = await Promise.all([
-    roomIds.length ? supabase.from('deal_room_members').select('*').in('deal_room_id', roomIds) : Promise.resolve({ data: [] }),
+    roomIds.length ? supabase.from('deal_room_members').select('*').in('deal_room_id', roomIds).throwOnError() : Promise.resolve({ data: [] }),
     oppIds.length ? supabase.from('opportunities').select('id,title,sector,country').in('id', oppIds) : Promise.resolve({ data: [] }),
-    roomIds.length ? supabase.from('document_records').select('*').in('deal_room_id', roomIds) : Promise.resolve({ data: [] }),
+    roomIds.length ? supabase.from('document_records').select('*').in('deal_room_id', roomIds).throwOnError() : Promise.resolve({ data: [] }),
   ])
 
   const peopleIds = [...new Set((members ?? []).map(m => m.user_id))]
