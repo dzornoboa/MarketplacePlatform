@@ -40,7 +40,7 @@ export default async function BillingPage({ searchParams }: Props) {
     query(supabase.from('memberships').select('*').order('created_at', { ascending: false }), 'memberships'),
     query(supabase.from('membership_types').select('*').eq('active', true), 'membership types'),
     withTimeout(readAccessState(supabase), null, 'access state'),
-    query(supabase.from('payments').select('*').order('created_at', { ascending: false }).limit(10), 'payments'),
+    query(supabase.from('payments').select('*').eq('user_id', profile.id).order('created_at', { ascending: false }).limit(10), 'payments'),
     withTimeout(getSiteChrome(), CHROME_FALLBACK, 'site settings'),
     query(supabase.from('billing_addresses').select('*').eq('user_id', profile.id).maybeSingle(), 'billing address'),
     query(supabase.from('payment_methods').select('*').eq('user_id', profile.id).order('is_primary', { ascending: false }).order('created_at'), 'payment methods'),
@@ -188,7 +188,9 @@ export default async function BillingPage({ searchParams }: Props) {
             {st.payment_instructions && <p className="field-help">{st.payment_instructions}</p>}
             <p className="field-help">Amount: <strong>{money(openPayment.amount, openPayment.currency)}</strong> · Method chosen: {humanize(openPayment.method)} · Started {date(openPayment.created_at)}</p>
           </div>
-        : <form action={startPayment} className="form-stack">
+        : payments === null
+          ? <p className="alert alert-error" role="alert">Could not check for a pending payment. Refresh before starting a new payment.</p>
+          : <form action={startPayment} className="form-stack">
             <p className="muted">{online ? `Pay by card or mobile money and your plan activates automatically${testMode ? ' (test mode — no money moves)' : ''}. Or pay by bank transfer and finance confirms it.` : 'Choose how you will pay. You will get a reference and the account details; WTC Accra finance confirms the payment and your plan activates.'}</p>
             <div className="pay-methods">
               <label className="pay-method"><input type="radio" name="method" value="mobile_money" defaultChecked={(primaryMethod?.kind ?? 'mobile_money') === 'mobile_money'} /> <span><strong>Mobile money</strong><small>MTN · Telecel · AirtelTigo{online ? ' — instant' : ''}</small></span></label>
@@ -235,6 +237,7 @@ export default async function BillingPage({ searchParams }: Props) {
       </details>}
     </section>
 
+    {payments === null && <p className="alert alert-error" role="alert">Could not load your payment history. Refresh the page to try again.</p>}
     {(payments ?? []).length > 0 && <section className="card">
       <h2>Payments</h2>
       <div className="history-list">{(payments ?? []).map(p => <div key={p.id}>
