@@ -26,10 +26,10 @@ export default async function AdminSubscriptionsPage({ searchParams }: Props) {
   let query = supabase.from('subscriptions').select('*').eq('status', status as 'pending').limit(1000)
   if (planFilter) query = query.eq('plan_code', planFilter)
   query = sort === 'ends' ? query.order('ends_at', { ascending: true, nullsFirst: false }) : query.order('created_at', { ascending: sort === 'oldest' })
-  const [{ data: rows }, { data: plans }, counts] = await Promise.all([
+  const [{ data: rows, error: rowsError }, { data: plans, error: plansError }, counts] = await Promise.all([
     query,
     supabase.from('subscription_plans').select('*').order('tier'),
-    Promise.all(TABS.map(async t => ({ t, n: (await supabase.from('subscriptions').select('*', { count: 'exact', head: true }).eq('status', t)).count ?? 0 }))),
+    Promise.all(TABS.map(async t => ({ t, n: (await supabase.from('subscriptions').select('*', { count: 'exact', head: true }).eq('status', t)).count }))),
   ])
   const planByCode = new Map((plans ?? []).map(p => [p.code, p]))
   const userIds = [...new Set((rows ?? []).map(s => s.user_id))]
@@ -55,7 +55,7 @@ export default async function AdminSubscriptionsPage({ searchParams }: Props) {
     {message && <div className="alert alert-success">{message}</div>}
 
     <nav className="queue-tabs">
-      {counts.map(c => <a key={c.t} className={c.t === status ? 'queue-tab queue-tab-active' : 'queue-tab'} href={`/admin/subscriptions?status=${c.t}`}>{humanize(c.t)}<span>{c.n}</span></a>)}
+      {counts.map(c => <a key={c.t} className={c.t === status ? 'queue-tab queue-tab-active' : 'queue-tab'} href={`/admin/subscriptions?status=${c.t}`}>{humanize(c.t)}<span>{c.n ?? 'Unavailable'}</span></a>)}
     </nav>
 
     <form className="filter-row card" method="get">
@@ -72,7 +72,9 @@ export default async function AdminSubscriptionsPage({ searchParams }: Props) {
       <article className="metric-card"><span>Plans offered</span><strong>{(plans ?? []).filter(p => p.active).length}</strong><p>Active subscription plans.</p></article>
     </section>
 
-    {subscriptions.length === 0
+    {rowsError || plansError
+      ? <p className="alert alert-error" role="alert">Could not load the subscription queue. Refresh the page to try again.</p>
+      : subscriptions.length === 0
       ? <section className="card empty-state"><BrandCircle /><h2>Nothing in this queue</h2><p>No subscriptions with status “{humanize(status)}”{q || planFilter ? ' matching the filters' : ''}.</p></section>
       : <div className="review-list">{subscriptions.map(item => {
           const member = memberById.get(item.user_id)
@@ -83,7 +85,7 @@ export default async function AdminSubscriptionsPage({ searchParams }: Props) {
             <div className="review-head">
               <div>
                 <h2><Link href={`/admin/users/${item.user_id}`}>{member?.full_name ?? 'Unknown member'}</Link></h2>
-                <p>{plan?.name ?? item.plan_code} · {Number(plan?.price_usd ?? 0) === 0 ? 'Free' : money(plan?.price_usd ?? null)} / {plan?.billing_interval ?? 'year'} · {labelForParticipantType(member?.participant_type)} · {member?.country ?? '—'}</p>
+                <p>{plan?.name ?? item.plan_code} · {plan ? (Number(plan.price_usd) === 0 ? 'Free' : money(plan.price_usd)) : 'Price unavailable'} / {plan?.billing_interval ?? 'year'} · {labelForParticipantType(member?.participant_type)} · {member?.country ?? '—'}</p>
               </div>
               <span>{dateTime(item.created_at)}</span>
             </div>
