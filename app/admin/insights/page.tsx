@@ -37,8 +37,8 @@ export default async function AdminInsightsPage() {
     <section className="dashboard-grid">
       <article className="metric-card"><span>Members</span><strong>{k.members}</strong><p>{k.verified} verified</p></article>
       <article className="metric-card"><span>Active plans</span><strong>{k.activeSubs}</strong><p>{money(k.arr)} annual value{k.expiringSoon ? ` · ${k.expiringSoon} ending soon` : ''}</p></article>
-      <article className="metric-card"><span>Payments received</span><strong>{money(k.revenue)}</strong><p>{money(k.revenueThisMonth)} this month</p></article>
-      <article className="metric-card"><span>Live listings</span><strong>{k.published}</strong><p>{money(k.dealValue)} capital sought</p></article>
+      <article className="metric-card"><span>USD payments received</span><strong>{money(k.revenue)}</strong><p>{money(k.revenueThisMonth)} this month</p></article>
+      <article className="metric-card"><span>Live listings</span><strong>{k.published}</strong><p>{money(k.dealValue)} capital sought in USD</p></article>
       <article className="metric-card"><span>Bids</span><strong>{k.bids}</strong><p>{k.bidsAccepted} accepted by owners</p></article>
       <article className="metric-card"><span>Connections</span><strong>{k.connections}</strong><p>{k.matches} automatic matches</p></article>
       <article className="metric-card"><span>Verification speed</span><strong>{k.avgReviewDays === null ? '—' : k.avgReviewDays < 1 ? '<1 day' : `${k.avgReviewDays.toFixed(1)} d`}</strong><p>Average time to decision</p></article>
@@ -47,7 +47,7 @@ export default async function AdminInsightsPage() {
 
     <div className="insight-grid">
       <section className="card"><LineChart title="Sign-ups and verifications" labels={data.months} series={[{ name: 'Sign-ups', values: data.series.signups, color: chartColors.NAVY }, { name: 'Verified', values: data.series.verifications, color: chartColors.TEAL }]} /></section>
-      <section className="card"><LineChart title="Payments received (US$)" labels={data.months} money series={[{ name: 'Revenue', values: data.series.revenue, color: chartColors.ORANGE }]} /></section>
+      <section className="card"><LineChart title="USD payments received" labels={data.months} money series={[{ name: 'Revenue', values: data.series.revenue, color: chartColors.ORANGE }]} /></section>
       <section className="card"><LineChart title="Deal flow" labels={data.months} series={[{ name: 'Listings published', values: data.series.listings, color: chartColors.NAVY }, { name: 'Bids placed', values: data.series.bids, color: chartColors.GOLD }]} /></section>
       <section className="card"><Funnel title="Member funnel" steps={[{ label: 'Signed up', value: data.funnel.signups }, { label: 'Verified', value: data.funnel.verified }, { label: 'Subscribed', value: data.funnel.subscribed }, { label: 'Listings with bids', value: data.funnel.bidders }]} /></section>
       <section className="card"><Donut title="Members by type" data={toData(data.breakdowns.membersByType, labelForParticipantType)} /></section>
@@ -62,7 +62,7 @@ export default async function AdminInsightsPage() {
       <h2>Top listings</h2>
       {data.topListings.length === 0 ? <p className="muted">No live listings yet.</p> : <div className="table-wrap"><table className="data-table">
         <thead><tr><th>Listing</th><th>Sector</th><th>Rating</th><th>Capital</th><th>Bids</th></tr></thead>
-        <tbody>{data.topListings.map(l => <tr key={l.id}><td><Link href={`/opportunities/${l.id}`}>{l.title}</Link></td><td>{l.sector}</td><td>{'★'.repeat(l.importance)}</td><td>{money(l.value)}</td><td>{l.bids}</td></tr>)}</tbody>
+        <tbody>{data.topListings.map(l => <tr key={l.id}><td><Link href={`/opportunities/${l.id}`}>{l.title}</Link></td><td>{l.sector}</td><td>{'★'.repeat(l.importance)}</td><td>{money(l.value, l.currency)}</td><td>{l.bids}</td></tr>)}</tbody>
       </table></div>}
     </section>
   </div>

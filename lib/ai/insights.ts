@@ -37,10 +37,11 @@ export async function gatherInsights(supabase: Supabase) {
   const paid = (payments ?? []).filter(p => p.status === 'paid')
   const active = (subs ?? []).filter(s => s.status === 'active')
   const published = (opps ?? []).filter(o => o.status === 'published')
-  const dealValue = published.reduce((s, o) => s + Number(o.capital_required ?? 0), 0)
+  const paidUsd = paid.filter(p => p.currency?.toUpperCase() === 'USD')
+  const dealValue = published.filter(o => o.currency?.toUpperCase() === 'USD').reduce((s, o) => s + Number(o.capital_required ?? 0), 0)
 
   const bidsByOpp = count(bids ?? [], b => b.opportunity_id)
-  const topListings = [...published].map(o => ({ id: o.id, title: o.title, bids: bidsByOpp[o.id] ?? 0, value: Number(o.capital_required ?? 0), sector: o.sector, importance: o.importance })).sort((a, b) => b.bids - a.bids || b.value - a.value).slice(0, 6)
+  const topListings = [...published].map(o => ({ id: o.id, title: o.title, bids: bidsByOpp[o.id] ?? 0, value: Number(o.capital_required ?? 0), currency: o.currency, sector: o.sector, importance: o.importance })).sort((a, b) => b.bids - a.bids).slice(0, 6)
 
   const daysToReview = (vrs ?? []).filter(v => v.reviewed_at).map(v => (new Date(v.reviewed_at!).getTime() - new Date(v.submitted_at).getTime()) / 86400000)
   const avgReviewDays = daysToReview.length ? daysToReview.reduce((a, b) => a + b, 0) / daysToReview.length : null
@@ -52,8 +53,8 @@ export async function gatherInsights(supabase: Supabase) {
       verified: members.filter(m => m.verification_status === 'verified').length,
       activeSubs: active.length,
       arr: active.reduce((s, x) => s + (priceByCode.get(x.plan_code) ?? 0), 0),
-      revenue: paid.reduce((s, p) => s + Number(p.amount), 0),
-      revenueThisMonth: paid.filter(p => mkey(p.paid_at) === months[5].key).reduce((s, p) => s + Number(p.amount), 0),
+      revenue: paidUsd.reduce((s, p) => s + Number(p.amount), 0),
+      revenueThisMonth: paidUsd.filter(p => mkey(p.paid_at) === months[5].key).reduce((s, p) => s + Number(p.amount), 0),
       published: published.length,
       dealValue,
       bids: (bids ?? []).length,
@@ -67,7 +68,7 @@ export async function gatherInsights(supabase: Supabase) {
     series: {
       signups: perMonth(members, m => m.created_at),
       verifications: perMonth(vrs ?? [], v => v.reviewed_at),
-      revenue: perMonth(paid, p => p.paid_at, p => Number(p.amount)),
+      revenue: perMonth(paidUsd, p => p.paid_at, p => Number(p.amount)),
       listings: perMonth(opps ?? [], o => o.published_at),
       bids: perMonth(bids ?? [], b => b.created_at),
     },
@@ -120,11 +121,11 @@ function ruleBased(d: Insights): string[] {
   out.push(`${k.members} member${k.members === 1 ? '' : 's'}, ${k.verified} verified (${pct(k.verified, k.members)}%) and ${k.activeSubs} on an active plan worth US$${k.arr.toLocaleString()} a year.`)
   if (k.members - k.verified > 0) out.push(`${k.members - k.verified} member${k.members - k.verified === 1 ? ' is' : 's are'} not yet verified — check the verification queue and chase missing documents.`)
   if (k.verified - k.activeSubs > 0) out.push(`${k.verified - k.activeSubs} verified member${k.verified - k.activeSubs === 1 ? '' : 's'} have no active plan — a reminder about plans or a support bypass could open the marketplace for them.`)
-  out.push(`${k.published} live listing${k.published === 1 ? '' : 's'} with US$${k.dealValue.toLocaleString()} of capital sought; ${k.bids} deal request${k.bids === 1 ? '' : 's'} and ${k.bidsAccepted} connected (${pct(k.bidsAccepted, k.bids)}% acceptance).`)
+  out.push(`${k.published} live listing${k.published === 1 ? '' : 's'} with US$${k.dealValue.toLocaleString()} of USD-denominated capital sought; ${k.bids} deal request${k.bids === 1 ? '' : 's'} and ${k.bidsAccepted} connected (${pct(k.bidsAccepted, k.bids)}% acceptance).`)
   if (k.published > 0 && k.bids === 0) out.push('No deal requests yet on live deals — consider featuring relevant deals or notifying matched members.')
   if (k.expiringSoon > 0) out.push(`${k.expiringSoon} subscription${k.expiringSoon === 1 ? '' : 's'} end within 30 days — renewal reminders go out automatically, but a personal message helps.`)
   if (k.avgReviewDays !== null) out.push(`Verification decisions take ${k.avgReviewDays < 1 ? 'under a day' : `${k.avgReviewDays.toFixed(1)} days`} on average.`)
   if (k.openSupport > 0) out.push(`${k.openSupport} support request${k.openSupport === 1 ? '' : 's'} open.`)
-  out.push(`Payments received: US$${k.revenue.toLocaleString()} in total, US$${k.revenueThisMonth.toLocaleString()} this month.`)
+  out.push(`USD payments received: US$${k.revenue.toLocaleString()} in total, US$${k.revenueThisMonth.toLocaleString()} this month.`)
   return out
 }
