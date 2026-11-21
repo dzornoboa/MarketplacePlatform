@@ -61,11 +61,14 @@ export async function startPayment(formData: FormData) {
   if (!plan || Number(plan.price_usd) <= 0) redirect(back('error', 'This plan does not require payment.'))
 
   // Reuse an open pending payment rather than creating one per click.
-  const { data: open } = await supabase.from('payments').select('id,reference,method')
-    .eq('subscription_id', subscription.id).eq('status', 'pending').order('created_at', { ascending: false }).limit(1).maybeSingle()
+  const { data: open, error: openError } = await supabase.from('payments').select('id,reference,method')
+    .eq('user_id', userId).eq('subscription_id', subscription.id).eq('status', 'pending').order('created_at', { ascending: false }).limit(1).maybeSingle()
+
+  if (openError) redirect(back('error', 'Could not check for an existing payment. Try again before paying.'))
 
   const reference = open?.reference ?? `WTC-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`
-  const { data: modeRow } = await supabase.from('site_settings').select('value').eq('key', 'payment_mode').maybeSingle()
+  const { data: modeRow, error: modeError } = await supabase.from('site_settings').select('value').eq('key', 'payment_mode').maybeSingle()
+  if (modeError) redirect(back('error', 'Could not load payment settings. Try again before paying.'))
   const testMode = (modeRow?.value ?? 'test') !== 'live'
   const useProvider = method !== 'bank_transfer' && !testMode && paystackConfigured()
   // Test mode: card and mobile money go to the simulated checkout page.
@@ -86,7 +89,8 @@ export async function startPayment(formData: FormData) {
     })
     if (error) redirect(back('error', error.message))
   } else if (open.method !== method) {
-    await supabase.from('payments').update({ method: method as 'card' | 'mobile_money' | 'bank_transfer', provider: useProvider ? 'paystack' : useTest ? 'test' : 'manual', payment_method_id: savedMethod?.id ?? null }).eq('id', open.id)
+    const { data: updated, error: updateError } = await supabase.from('payments').update({ method: method as 'card' | 'mobile_money' | 'bank_transfer', provider: useProvider ? 'paystack' : useTest ? 'test' : 'manual', payment_method_id: savedMethod?.id ?? null }).eq('id', open.id).eq('user_id', userId).eq('status', 'pending').select('id').maybeSingle()
+    if (updateError || !updated) redirect(back('error', 'Could not update the pending payment. Refresh before trying again.'))
   }
 
   if (useTest) redirect(`/dashboard/billing/checkout?ref=${encodeURIComponent(reference)}`)
