@@ -29,7 +29,7 @@ export default async function AdminDealsPage({ searchParams }: Props) {
   const q = typeof params.q === 'string' ? params.q.trim() : ''
   const sort = typeof params.sort === 'string' && ['newest', 'oldest'].includes(params.sort) ? params.sort : 'oldest'
 
-  const { data: allDeals } = await supabase.from('expressions_of_interest')
+  const { data: allDeals, error: dealsError } = await supabase.from('expressions_of_interest')
     .select('*').eq('status', status as 'submitted').order('created_at', { ascending: sort === 'oldest' }).limit(1000)
 
   const oppIds = [...new Set((allDeals ?? []).map(row => row.opportunity_id))]
@@ -82,7 +82,7 @@ export default async function AdminDealsPage({ searchParams }: Props) {
 
   const counts = await Promise.all(QUEUES.map(async tab => ({
     ...tab,
-    count: (await supabase.from('expressions_of_interest').select('*', { count: 'exact', head: true }).eq('status', tab.key)).count ?? 0,
+    count: (await supabase.from('expressions_of_interest').select('*', { count: 'exact', head: true }).eq('status', tab.key)).count,
   })))
 
   return <div className="page-stack">
@@ -142,7 +142,7 @@ export default async function AdminDealsPage({ searchParams }: Props) {
 
     {section === 'deals' && <>
     <nav className="queue-tabs">
-      {counts.map(tab => <a key={tab.key} className={tab.key === status ? 'queue-tab queue-tab-active' : 'queue-tab'} href={`/admin/deals?status=${tab.key}`}>{tab.label}<span>{tab.count}</span></a>)}
+      {counts.map(tab => <a key={tab.key} className={tab.key === status ? 'queue-tab queue-tab-active' : 'queue-tab'} href={`/admin/deals?status=${tab.key}`}>{tab.label}<span>{tab.count ?? 'Unavailable'}</span></a>)}
     </nav>
 
     <form className="filter-row card" method="get">
@@ -152,7 +152,9 @@ export default async function AdminDealsPage({ searchParams }: Props) {
       <button className="button button-outline" type="submit">Apply</button>
     </form>
 
-    {deals.length === 0
+    {dealsError
+      ? <p className="alert alert-error" role="alert">Could not load deal requests. Refresh the page to try again.</p>
+      : deals.length === 0
       ? <section className="card empty-state"><BrandCircle /><h2>{q ? 'No Matching Deals' : 'Queue Is Clear'}</h2><p>No deal requests are currently in “{QUEUES.find(tab => tab.key === status)?.label}”.</p></section>
       : <div className="review-list">{deals.map(deal => {
           const opp = oppById.get(deal.opportunity_id)
