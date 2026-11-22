@@ -17,12 +17,12 @@ export default async function MatchesPage({ searchParams }: Props) {
   const message = typeof params.message === 'string' ? params.message : null
 
   // Matching runs automatically whenever a mandate/requirement or a listing changes; this keeps a stale account fresh.
-  await supabase.rpc('refresh_my_matches')
+  const { error: refreshError } = await supabase.rpc('refresh_my_matches')
   const { data: matches } = await supabase.from('matches').select('*').eq('user_id', profile.id).order('score', { ascending: false }).throwOnError()
   const oppIds = [...new Set((matches ?? []).map(m => m.opportunity_id))]
-  const [{ data: opportunities }, { data: teasers }] = oppIds.length
+  const [{ data: opportunities, error: opportunitiesError }, { data: teasers, error: teasersError }] = oppIds.length
     ? await Promise.all([supabase.from('opportunities').select('*').in('id', oppIds), supabase.rpc('public_listing_teasers', { max_rows: 200 })])
-    : [{ data: [] }, { data: [] }]
+    : [{ data: [], error: null }, { data: [], error: null }]
   const oppById = new Map((opportunities ?? []).map(o => [o.id, o]))
   // Without marketplace access RLS hides the listing; the teaser still names it.
   const teaserById = new Map((teasers ?? []).map(t => [t.id, t]))
@@ -38,14 +38,17 @@ export default async function MatchesPage({ searchParams }: Props) {
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
 
-    {live.length === 0
+    {refreshError && <p className="alert alert-error" role="alert">Could not refresh matches. Refresh the page to try again.</p>}
+    {(opportunitiesError || teasersError) && <p className="alert alert-error" role="alert">Some listing details could not be loaded. Refresh the page to try again.</p>}
+
+    {live.length === 0 && !refreshError
       ? <section className="card empty-state">
           <BrandCircle />
           <h2>No matches yet</h2>
           <p>Add an investment mandate or buying requirement and matches are generated automatically as listings are published.</p>
           <a className="button button-primary" href="/dashboard/mandate">Set your mandate</a>
         </section>
-      : <div className="opportunity-list">{live.map(match => {
+      : live.length > 0 && <div className="opportunity-list">{live.map(match => {
           const opportunity = oppById.get(match.opportunity_id)
           const teaser = teaserById.get(match.opportunity_id)
           return <article className="card opportunity-card" key={match.id}>
