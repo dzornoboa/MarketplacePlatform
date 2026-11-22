@@ -4,7 +4,7 @@ import { VerifiedCheck } from '@/components/verified-check'
 import { ParticipantBadge } from '@/components/participant-badge'
 import { Avatar } from '@/components/avatar'
 import { requireCapability } from '@/lib/auth/guards'
-import { humanize, labelForParticipantType, systemRoleLabels, systemRoles, accountStatuses } from '@/lib/auth/access'
+import { humanize, labelForParticipantType, systemRoleLabels, systemRoles, accountStatuses, verificationStatuses } from '@/lib/auth/access'
 import { date } from '@/lib/format'
 import { BrandCircle } from '@/components/brand'
 import { updateMarketplaceAccess, updateAccountStatus, updateStaffRole } from './actions'
@@ -18,15 +18,15 @@ export default async function AdminUsersPage({ searchParams }: Props) {
   const params = await searchParams
   const error = typeof params.error === 'string' ? params.error : null
   const message = typeof params.message === 'string' ? params.message : null
-  const filter = typeof params.status === 'string' ? params.status : ''
+  const filter = verificationStatuses.find(status => status === params.status) ?? ''
   const search = typeof params.q === 'string' ? params.q.trim() : ''
 
   let query = supabase.from('profiles').select('*').order('created_at', { ascending: false }).limit(1000)
   if (me.system_role === 'admin') query = query.neq('system_role', 'super_admin')
   else if (me.system_role !== 'super_admin') query = query.eq('system_role', 'user')
-  if (filter) query = query.eq('verification_status', filter as 'verified')
+  if (filter) query = query.eq('verification_status', filter)
   if (search) query = query.ilike('full_name', containsPattern(search))
-  const { data: profiles } = await query
+  const { data: profiles, error: profilesError } = await query
 
   const ids = (profiles ?? []).map(p => p.id)
   const { data: subs } = ids.length
@@ -59,7 +59,9 @@ export default async function AdminUsersPage({ searchParams }: Props) {
       <button className="button button-outline" type="submit">Apply</button>
     </form>
 
-    {(profiles ?? []).length === 0
+    {profilesError
+      ? <p className="alert alert-error" role="alert">Could not load members. Refresh the page to try again.</p>
+      : (profiles ?? []).length === 0
       ? <section className="card empty-state"><BrandCircle /><h2>No members match</h2><p>Adjust the filters above.</p></section>
       : <div className="review-list">{(profiles ?? []).map(person => {
           const self = person.id === me.id
