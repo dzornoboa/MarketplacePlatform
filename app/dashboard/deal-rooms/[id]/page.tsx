@@ -28,13 +28,16 @@ export default async function DealRoomPage({ params, searchParams }: Props) {
 
   const { data: room } = await supabase.from('deal_rooms').select('*').eq('id', id).maybeSingle()
   if (!room) notFound()
-  const [{ data: opp }, { data: members }, { data: messages }, { data: docs }] = await Promise.all([
+  const messageLimit = 500
+  const [{ data: opp }, { data: members }, { data: recentMessages, error: messagesError }, { data: docs }] = await Promise.all([
     supabase.from('opportunities').select('id,title,sector,country,capital_required,currency,owner_user_id,status').eq('id', room.opportunity_id).maybeSingle(),
     supabase.from('deal_room_members').select('*').eq('deal_room_id', id),
-    supabase.from('deal_room_messages').select('*').eq('deal_room_id', id).order('created_at').limit(500),
+    supabase.from('deal_room_messages').select('*').eq('deal_room_id', id)
+      .order('created_at', { ascending: false }).order('id', { ascending: false }).limit(messageLimit + 1),
     supabase.from('document_records').select('*').eq('deal_room_id', id).order('created_at', { ascending: false }),
   ])
-  const peopleIds = [...new Set([...(members ?? []).map(m => m.user_id), ...(messages ?? []).map(m => m.author_id), ...(docs ?? []).map(d => d.owner_user_id)])]
+  const messages = (recentMessages ?? []).slice(0, messageLimit).reverse()
+  const peopleIds = [...new Set([...(members ?? []).map(m => m.user_id), ...messages.map(m => m.author_id), ...(docs ?? []).map(d => d.owner_user_id)])]
   // listing_owner_cards is SECURITY DEFINER, so counterparties (including staff) resolve even where profile RLS would hide them.
   const [{ data: cards }, { data: staffRows }] = await Promise.all([
     peopleIds.length ? supabase.rpc('listing_owner_cards', { owner_ids: peopleIds }) : Promise.resolve({ data: [] }),
@@ -76,8 +79,10 @@ export default async function DealRoomPage({ params, searchParams }: Props) {
       <section className="card deal-thread">
         <h2>Messages</h2>
         <div className="deal-messages">
-          {(messages ?? []).length === 0 && <p className="muted">No messages yet. Say hello and agree the next steps.</p>}
-          {(messages ?? []).map(m => {
+          {messagesError && <p className="alert alert-error" role="alert">Could not load messages. Refresh the page to try again.</p>}
+          {!messagesError && messages.length === 0 && <p className="muted">No messages yet. Say hello and agree the next steps.</p>}
+          {(recentMessages?.length ?? 0) > messageLimit && <p className="muted">Showing the latest {messageLimit} messages.</p>}
+          {messages.map(m => {
             const mine = m.author_id === profile.id
             const who = personById.get(m.author_id)
             return <div key={m.id} className={mine ? 'deal-msg deal-msg-mine' : 'deal-msg'}>
