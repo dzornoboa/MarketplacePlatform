@@ -54,6 +54,16 @@ export async function updateProfile(formData: FormData) {
     patch.requested_participant_type = requested
   }
 
+  const changedDisplayText = [
+    fullName !== profile.full_name ? fullName : null,
+    username !== profile.username ? username : null,
+    jobTitle !== profile.job_title ? jobTitle : null,
+    city !== profile.city ? city : null,
+    country !== profile.country ? country : null,
+  ].filter(Boolean).join('\n')
+  const screening = await moderationError('member profile text', changedDisplayText, { localOnly: true })
+  if (screening) redirect(`/dashboard/profile?error=${encodeURIComponent(screening)}`)
+
   const { error } = await supabase.from('profiles').update(patch).eq('id', profile.id)
   if (error) redirect(`/dashboard/profile?error=${encodeURIComponent(error.message)}`)
   const { error: preferenceError } = await supabase.auth.updateUser({ data: { investment_band: investmentBand || null } })
