@@ -25,7 +25,7 @@ export default async function BackupAdminPage({ searchParams }: Props) {
   const message = typeof params.message === 'string' ? params.message : null
   const superAdmin = profile.system_role === 'super_admin'
 
-  const [{ data: backups }, { data: creators }] = await Promise.all([
+  const [{ data: backups, error: backupsError }, { data: creators }] = await Promise.all([
     supabase.from('platform_backups').select('id,label,note,scope,table_counts,created_by,created_at,last_restored_at,last_restored_by,restore_count,status').order('created_at', { ascending:false }).limit(1000),
     supabase.from('profiles').select('id,full_name').neq('system_role','user'),
   ])
@@ -54,7 +54,7 @@ export default async function BackupAdminPage({ searchParams }: Props) {
 
     <section className="card table-wrap">
       <h2>Restore Points</h2>
-      {(backups ?? []).length === 0 ? <p className="muted">No backups have been created yet.</p> : <table className="data-table">
+      {backupsError ? <p className="alert alert-error" role="alert">Could not load backups. Refresh the page to try again.</p> : (backups ?? []).length === 0 ? <p className="muted">No backups have been created yet.</p> : <table className="data-table">
         <thead><tr><th>Created</th><th>Name</th><th>Created By</th><th>Records</th><th>Restores</th><th>Status</th><th>Export</th><th>{superAdmin ? 'Super Admin Controls' : 'Access'}</th></tr></thead>
         <tbody>{(backups ?? []).map(backup => <tr key={backup.id}>
           <td>{dateTime(backup.created_at)}</td>
