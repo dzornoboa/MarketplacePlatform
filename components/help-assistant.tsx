@@ -37,7 +37,7 @@ export function HelpAssistant({ signedIn = false, onClose }: { signedIn?: boolea
     const lastQ = [...turns].reverse().find(t => t.role === 'user')?.text ?? 'Question from the AI helper'
     const r = await fetch('/api/assistant', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'escalate', subject: lastQ.slice(0, 120), history: turns.map(t => ({ role: t.role, text: t.text })) }) })
     const j = await r.json()
-    setTurns(t => [...t, { role: 'assistant', text: j.ok ? 'Sent to the WTC Accra team. They will reply under Support.' : (j.error ?? 'Could not send.'), links: j.ok ? [{ href: '/dashboard/support', title: 'Open Support' }] : [] }])
+    setTurns(t => [...t, { role: 'assistant', text: j.ok ? 'Sent to the WTC Accra team. They will reply under Support.' : (j.error ?? 'Could not send.'), links: j.ok || j.href === '/dashboard/support' ? [{ href: '/dashboard/support', title: 'Open Support' }] : [] }])
     setBusy(false)
   }
 

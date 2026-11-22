@@ -28,7 +28,16 @@ export async function POST(req: Request) {
     const transcript = (body.history ?? []).map(t => `${t.role === 'user' ? 'Member' : 'Helper'}: ${t.text}`).join('\n').slice(0, 4500)
     const { data: request, error } = await supabase.from('support_requests').insert({ user_id: userId, subject, category: 'general', priority: 'normal' }).select('id').single()
     if (error || !request) return NextResponse.json({ ok: false, error: error?.message ?? 'Could not open the request.' }, { status: 400 })
-    await supabase.from('support_messages').insert({ support_request_id: request.id, author_id: userId, body: transcript || subject })
+    const { error: transcriptError } = await supabase.from('support_messages')
+      .insert({ support_request_id: request.id, author_id: userId, body: transcript || subject })
+    if (transcriptError) {
+      console.error('Could not save assistant escalation transcript', transcriptError.code)
+      return NextResponse.json({
+        ok: false,
+        error: 'Your support request was opened, but the conversation could not be attached. Open Support and add your question to the request.',
+        href: '/dashboard/support',
+      }, { status: 500 })
+    }
     return NextResponse.json({ ok: true, href: '/dashboard/support' })
   }
 
