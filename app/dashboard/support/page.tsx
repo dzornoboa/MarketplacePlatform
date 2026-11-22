@@ -18,15 +18,15 @@ export default async function SupportPage({ searchParams }: Props) {
   const error = typeof params.error === 'string' ? params.error : null
   const message = typeof params.message === 'string' ? params.message : null
 
-  const { data: requests } = await supabase.from('support_requests').select('*').order('updated_at', { ascending: false })
+  const { data: requests } = await supabase.from('support_requests').select('*').order('updated_at', { ascending: false }).throwOnError()
   const requestIds = (requests ?? []).map(r => r.id)
   const { data: messages } = requestIds.length
-    ? await supabase.from('support_messages').select('*').in('support_request_id', requestIds).order('created_at')
+    ? await supabase.from('support_messages').select('*').in('support_request_id', requestIds).order('created_at').throwOnError()
     : { data: [] }
 
   const authorIds = [...new Set((messages ?? []).map(m => m.author_id))]
   const { data: authors } = authorIds.length
-    ? await supabase.from('profiles').select('id,full_name,system_role').in('id', authorIds)
+    ? await supabase.from('profiles').select('id,full_name,system_role').in('id', authorIds).throwOnError()
     : { data: [] }
   const authorById = new Map((authors ?? []).map(a => [a.id, a]))
 
