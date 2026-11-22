@@ -11,7 +11,7 @@ type Tally = Record<string, number>
 /* One grouped count per table so the overview shows both what is waiting
    and what has already moved through each queue. */
 async function tally(supabase: Awaited<ReturnType<typeof requireStaffConsole>>['supabase'], table: 'verification_requests' | 'opportunities' | 'subscriptions' | 'expressions_of_interest' | 'support_requests' | 'payments' | 'profiles' | 'introductions', column = 'status'): Promise<Tally> {
-  const { data } = await supabase.from(table).select(column).limit(5000)
+  const { data } = await supabase.from(table).select(column).limit(5000).throwOnError()
   const out: Tally = {}
   for (const row of (data ?? []) as unknown as Record<string, string | null>[]) { const k = row[column] ?? 'unknown'; out[k] = (out[k] ?? 0) + 1 }
   return out
@@ -29,13 +29,13 @@ export default async function AdminPage() {
     tally(supabase, 'verification_requests'), tally(supabase, 'opportunities'), tally(supabase, 'subscriptions'),
     tally(supabase, 'expressions_of_interest'), tally(supabase, 'support_requests'), tally(supabase, 'payments'), tally(supabase, 'introductions'),
     tally(supabase, 'profiles', 'account_status'), tally(supabase, 'profiles', 'verification_status'),
-    supabase.from('subscription_plans').select('code,price_usd'),
-    supabase.from('subscriptions').select('plan_code').eq('status', 'active'),
-    supabase.from('payments').select('amount,paid_at').eq('status', 'paid'),
-    admin ? supabase.from('audit_events').select('*').order('created_at', { ascending: false }).limit(12) : Promise.resolve({ data: [] }),
-    supabase.from('notifications').select('id,title,body,href,created_at,read_at').eq('user_id', profile.id).order('created_at', { ascending: false }).limit(8),
-    supabase.from('profiles').select('id,full_name,participant_type,verification_status,created_at').order('created_at', { ascending: false }).limit(5),
-    supabase.from('opportunities').select('id,title,status,updated_at').order('updated_at', { ascending: false }).limit(5),
+    supabase.from('subscription_plans').select('code,price_usd').throwOnError(),
+    supabase.from('subscriptions').select('plan_code').eq('status', 'active').throwOnError(),
+    supabase.from('payments').select('amount,paid_at').eq('status', 'paid').throwOnError(),
+    admin ? supabase.from('audit_events').select('*').order('created_at', { ascending: false }).limit(12).throwOnError() : Promise.resolve({ data: [] }),
+    supabase.from('notifications').select('id,title,body,href,created_at,read_at').eq('user_id', profile.id).order('created_at', { ascending: false }).limit(8).throwOnError(),
+    supabase.from('profiles').select('id,full_name,participant_type,verification_status,created_at').order('created_at', { ascending: false }).limit(5).throwOnError(),
+    supabase.from('opportunities').select('id,title,status,updated_at').order('updated_at', { ascending: false }).limit(5).throwOnError(),
   ])
   const priceByCode = new Map((plans ?? []).map(p => [p.code, Number(p.price_usd)]))
   const recurringValue = (activeSubs ?? []).reduce((s, x) => s + (priceByCode.get(x.plan_code) ?? 0), 0)
@@ -43,7 +43,7 @@ export default async function AdminPage() {
   const receivedThisMonth = (paidRows ?? []).filter(p => p.paid_at && new Date(p.paid_at).getMonth() === new Date().getMonth() && new Date(p.paid_at).getFullYear() === new Date().getFullYear()).reduce((s, p) => s + Number(p.amount), 0)
 
   const actorIds = [...new Set((recentAudit ?? []).map(e => e.actor_id).filter((x): x is string => !!x))]
-  const { data: actors } = actorIds.length ? await supabase.from('profiles').select('id,full_name').in('id', actorIds) : { data: [] }
+  const { data: actors } = actorIds.length ? await supabase.from('profiles').select('id,full_name').in('id', actorIds).throwOnError() : { data: [] }
   const actorName = new Map((actors ?? []).map(a => [a.id, a.full_name]))
 
   const queues = [
