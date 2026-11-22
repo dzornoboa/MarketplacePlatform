@@ -21,18 +21,18 @@ export default async function InterestsPage({ searchParams }: Props) {
   // RLS returns both sides of the conversation: what I sent and what I received.
   const { data: interests } = await supabase.from('expressions_of_interest').select('*').order('created_at', { ascending: false }).throwOnError()
   const ids = [...new Set((interests ?? []).map(i => i.opportunity_id))]
-  const { data: opportunities } = ids.length
+  const { data: opportunities, error: opportunitiesError } = ids.length
     ? await supabase.from('opportunities').select('id,title,owner_user_id,sector,country').in('id', ids)
-    : { data: [] }
+    : { data: [], error: null }
   const byId = new Map((opportunities ?? []).map(o => [o.id, o]))
 
   const sent = (interests ?? []).filter(i => i.applicant_id === profile.id)
   const received = (interests ?? []).filter(i => i.applicant_id !== profile.id)
   const applicantIds = [...new Set(received.map(i => i.applicant_id))]
   const actionIds = [...new Set((interests ?? []).map(i => i.last_action_by).filter((id): id is string => !!id))]
-  const [{ data: applicants }, { data: actors }] = await Promise.all([
-    applicantIds.length ? supabase.rpc('listing_owner_cards', { owner_ids: applicantIds }) : Promise.resolve({ data: [] }),
-    actionIds.length ? supabase.from('profiles').select('id,full_name,system_role').in('id', actionIds) : Promise.resolve({ data: [] }),
+  const [{ data: applicants, error: applicantsError }, { data: actors, error: actorsError }] = await Promise.all([
+    applicantIds.length ? supabase.rpc('listing_owner_cards', { owner_ids: applicantIds }) : Promise.resolve({ data: [], error: null }),
+    actionIds.length ? supabase.from('profiles').select('id,full_name,system_role').in('id', actionIds) : Promise.resolve({ data: [], error: null }),
   ])
   const applicantById = new Map((applicants ?? []).map(a => [a.id, a]))
   const actorById = new Map((actors ?? []).map(a => [a.id, a]))
@@ -46,6 +46,9 @@ export default async function InterestsPage({ searchParams }: Props) {
     </div>
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
+    {(opportunitiesError || applicantsError || actorsError) && (
+      <p className="alert alert-error" role="alert">Some listing or participant details could not be loaded. Refresh the page to try again.</p>
+    )}
 
     <section>
       <h2>Received on your listings</h2>
