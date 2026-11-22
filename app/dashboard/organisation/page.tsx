@@ -17,10 +17,10 @@ export default async function OrganisationPage({ searchParams }: Props) {
   const message = typeof params.message === 'string' ? params.message : null
 
   // RLS returns only organisations this member belongs to.
-  const { data: memberships } = await supabase.from('organization_members').select('organization_id,role').eq('user_id', profile.id)
+  const { data: memberships } = await supabase.from('organization_members').select('organization_id,role').eq('user_id', profile.id).throwOnError()
   const orgIds = (memberships ?? []).map(m => m.organization_id)
   const { data: organisations } = orgIds.length
-    ? await supabase.from('organizations').select('*').in('id', orgIds)
+    ? await supabase.from('organizations').select('*').in('id', orgIds).throwOnError()
     : { data: [] }
   const roleByOrg = new Map((memberships ?? []).map(m => [m.organization_id, m.role]))
 
