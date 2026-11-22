@@ -36,14 +36,14 @@ export default async function IntroductionsPage({ searchParams }: Props) {
   const message = typeof params.message === 'string' ? params.message : null
   const preselect = typeof params.opportunity === 'string' ? params.opportunity : ''
 
-  const { data: introductions } = await supabase.from('introductions').select('*').order('created_at', { ascending: false })
+  const { data: introductions, error: introductionsError } = await supabase.from('introductions').select('*').order('created_at', { ascending: false })
   const oppIds = [...new Set((introductions ?? []).map(i => i.opportunity_id))]
   const { data: opportunities } = oppIds.length
     ? await supabase.from('opportunities').select('id,title,sector,country').in('id', oppIds)
     : { data: [] }
   const oppById = new Map((opportunities ?? []).map(o => [o.id, o]))
   // Match-access requests must also work for investors whose deal details are intentionally hidden.
-  const { data: teaserRows } = await supabase.rpc('public_listing_teasers', { max_rows: 100 })
+  const { data: teaserRows, error: teasersError } = await supabase.rpc('public_listing_teasers', { max_rows: 100 })
   const candidates = (teaserRows ?? []).filter(row => row.id && !row.title_hidden)
   const peopleIds = [...new Set((introductions ?? []).flatMap(i => [i.requester_id, i.recipient_id]))].filter(id => id !== profile.id)
   const actionIds = [...new Set((introductions ?? []).map(i => i.last_action_by).filter((id): id is string => !!id))]
@@ -67,7 +67,9 @@ export default async function IntroductionsPage({ searchParams }: Props) {
 
     <section className="card">
       <h2>Request Match Access</h2>
-      {(candidates ?? []).length === 0
+      {teasersError
+        ? <p className="alert alert-error" role="alert">Could not load eligible listings. Refresh the page to try again.</p>
+        : candidates.length === 0
         ? <p className="muted">No eligible live deal teasers are available right now.</p>
         : <form action={requestIntroduction} className="form-stack">
             <label>Listing
@@ -81,7 +83,9 @@ export default async function IntroductionsPage({ searchParams }: Props) {
           </form>}
     </section>
 
-    {(introductions ?? []).length === 0
+    {introductionsError
+      ? <p className="alert alert-error" role="alert">Could not load match access requests. Refresh the page to try again.</p>
+      : (introductions ?? []).length === 0
       ? <section className="card empty-state">
           <BrandCircle />
           <h2>No Access Requests Yet</h2>
