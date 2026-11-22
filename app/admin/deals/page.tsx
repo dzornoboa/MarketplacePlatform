@@ -35,9 +35,9 @@ export default async function AdminDealsPage({ searchParams }: Props) {
   const oppIds = [...new Set((allDeals ?? []).map(row => row.opportunity_id))]
   const applicantIds = [...new Set((allDeals ?? []).map(row => row.applicant_id))]
   const actionIds = [...new Set((allDeals ?? []).map(row => row.last_action_by).filter((id): id is string => !!id))]
-  const [{ data: opportunities }, { data: applicants }, { data: actors }] = await Promise.all([
-    oppIds.length ? supabase.from('opportunities').select('id,title,sector,country,owner_user_id,capital_required,currency').in('id', oppIds) : Promise.resolve({ data: [] }),
-    applicantIds.length ? supabase.from('profiles').select('id,full_name,participant_type,country,verification_status,avatar_url').in('id', applicantIds) : Promise.resolve({ data: [] }),
+  const [{ data: opportunities, error: opportunitiesError }, { data: applicants, error: applicantsError }, { data: actors }] = await Promise.all([
+    oppIds.length ? supabase.from('opportunities').select('id,title,sector,country,owner_user_id,capital_required,currency').in('id', oppIds) : Promise.resolve({ data: [], error: null }),
+    applicantIds.length ? supabase.from('profiles').select('id,full_name,participant_type,country,verification_status,avatar_url').in('id', applicantIds) : Promise.resolve({ data: [], error: null }),
     actionIds.length ? supabase.from('profiles').select('id,full_name,system_role').in('id', actionIds) : Promise.resolve({ data: [] }),
   ])
   const ownerIds = [...new Set((opportunities ?? []).map(o => o.owner_user_id))]
@@ -152,7 +152,7 @@ export default async function AdminDealsPage({ searchParams }: Props) {
       <button className="button button-outline" type="submit">Apply</button>
     </form>
 
-    {dealsError
+    {dealsError || (q && (opportunitiesError || applicantsError))
       ? <p className="alert alert-error" role="alert">Could not load deal requests. Refresh the page to try again.</p>
       : deals.length === 0
       ? <section className="card empty-state"><BrandCircle /><h2>{q ? 'No Matching Deals' : 'Queue Is Clear'}</h2><p>No deal requests are currently in “{QUEUES.find(tab => tab.key === status)?.label}”.</p></section>
