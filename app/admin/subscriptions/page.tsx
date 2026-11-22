@@ -33,15 +33,16 @@ export default async function AdminSubscriptionsPage({ searchParams }: Props) {
   ])
   const planByCode = new Map((plans ?? []).map(p => [p.code, p]))
   const userIds = [...new Set((rows ?? []).map(s => s.user_id))]
-  const { data: members } = userIds.length ? await supabase.from('profiles').select('id,full_name,participant_type,country,verification_status').in('id', userIds) : { data: [] }
+  const { data: members, error: membersError } = userIds.length ? await supabase.from('profiles').select('id,full_name,participant_type,country,verification_status').in('id', userIds) : { data: [], error: null }
   const memberById = new Map((members ?? []).map(m => [m.id, m]))
   const replacedIds = [...new Set((rows ?? []).map(s => s.replaces_subscription_id).filter((x): x is string => !!x))]
-  const { data: replaced } = replacedIds.length ? await supabase.from('subscriptions').select('id,plan_code').in('id', replacedIds) : { data: [] }
+  const { data: replaced, error: replacedError } = replacedIds.length ? await supabase.from('subscriptions').select('id,plan_code').in('id', replacedIds) : { data: [], error: null }
   const replacedById = new Map((replaced ?? []).map(r => [r.id, r]))
 
   let subscriptions = (rows ?? []).filter(s => !q || (memberById.get(s.user_id)?.full_name ?? '').toLowerCase().includes(q.toLowerCase()))
   if (sort === 'member') subscriptions = [...subscriptions].sort((a, b) => (memberById.get(a.user_id)?.full_name ?? '').localeCompare(memberById.get(b.user_id)?.full_name ?? ''))
   if (sort === 'value') subscriptions = [...subscriptions].sort((a, b) => Number(planByCode.get(b.plan_code)?.price_usd ?? 0) - Number(planByCode.get(a.plan_code)?.price_usd ?? 0))
+  const loadFailed = rowsError || plansError || membersError || replacedError
   const revenue = subscriptions.reduce((sum, s) => sum + Number(planByCode.get(s.plan_code)?.price_usd ?? 0), 0)
 
   return <div className="page-stack">
@@ -68,11 +69,11 @@ export default async function AdminSubscriptionsPage({ searchParams }: Props) {
 
     <section className="dashboard-grid">
       <article className="metric-card"><span>In this queue</span><strong>{subscriptions.length}</strong><p>Records with status “{humanize(status)}”.</p></article>
-      <article className="metric-card"><span>Annual value</span><strong>{money(revenue)}</strong><p>List value of the records shown.</p></article>
+      <article className="metric-card"><span>Annual value</span><strong>{loadFailed ? 'Unavailable' : money(revenue)}</strong><p>List value of the records shown.</p></article>
       <article className="metric-card"><span>Plans offered</span><strong>{(plans ?? []).filter(p => p.active).length}</strong><p>Active subscription plans.</p></article>
     </section>
 
-    {rowsError || plansError
+    {loadFailed
       ? <p className="alert alert-error" role="alert">Could not load the subscription queue. Refresh the page to try again.</p>
       : subscriptions.length === 0
       ? <section className="card empty-state"><BrandCircle /><h2>Nothing in this queue</h2><p>No subscriptions with status “{humanize(status)}”{q || planFilter ? ' matching the filters' : ''}.</p></section>
