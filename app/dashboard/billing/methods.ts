@@ -93,7 +93,13 @@ export async function savePaymentMethod(formData: FormData) {
     if (error || !data) redirect(back('error', error?.message ?? 'Could not save the payment method.'))
     methodId = data.id
   }
-  if (makePrimary && methodId) await supabase.rpc('set_primary_payment_method', { method_id: methodId })
+  if (makePrimary && methodId) {
+    const { error } = await supabase.rpc('set_primary_payment_method', { method_id: methodId })
+    if (error) {
+      revalidatePath('/dashboard/billing')
+      redirect(back('error', 'Payment method saved. Could not make it primary. Try setting it as primary from your saved methods.'))
+    }
+  }
   revalidatePath('/dashboard/billing')
   redirect(back('message', id ? 'Payment method updated.' : 'Payment method saved.'))
 }
