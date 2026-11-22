@@ -33,12 +33,12 @@ export default async function AdminSupportPage({ searchParams }: Props) {
   if (category) query = query.eq('category', category)
   if (priority) query = query.eq('priority', priority)
   query = query.order('created_at', { ascending: sort !== 'newest' })
-  const { data } = await query
+  const { data } = await query.throwOnError()
   const requests = sort === 'priority' ? data?.sort((a, b) => priorityOrder.indexOf(a.priority) - priorityOrder.indexOf(b.priority)) : data
 
   const requestIds = (requests ?? []).map(r => r.id)
   const { data: messages } = requestIds.length
-    ? await supabase.from('support_messages').select('*').in('support_request_id', requestIds).order('created_at')
+    ? await supabase.from('support_messages').select('*').in('support_request_id', requestIds).order('created_at').throwOnError()
     : { data: [] }
 
   const peopleIds = [...new Set([
@@ -46,13 +46,13 @@ export default async function AdminSupportPage({ searchParams }: Props) {
     ...(messages ?? []).map(m => m.author_id),
   ])]
   const { data: people } = peopleIds.length
-    ? await supabase.from('profiles').select('id,full_name,system_role,verification_status,participant_type').in('id', peopleIds)
+    ? await supabase.from('profiles').select('id,full_name,system_role,verification_status,participant_type').in('id', peopleIds).throwOnError()
     : { data: [] }
   const personById = new Map((people ?? []).map(p => [p.id, p]))
 
   const counts = await Promise.all(TABS.map(async tab => {
     const { count } = await supabase.from('support_requests').select('*', { count: 'exact', head: true }).eq('status', tab)
-    return { status: tab, count: count ?? 0 }
+    return { status: tab, count }
   }))
 
   return <div className="page-stack">
@@ -67,7 +67,7 @@ export default async function AdminSupportPage({ searchParams }: Props) {
 
     <nav className="queue-tabs">
       {counts.map(tab => <a key={tab.status} className={tab.status === status ? 'queue-tab queue-tab-active' : 'queue-tab'} href={`/admin/support?status=${tab.status}`}>
-        {humanize(tab.status)}<span>{tab.count}</span>
+        {humanize(tab.status)}<span>{tab.count ?? 'Count unavailable'}</span>
       </a>)}
     </nav>
 
