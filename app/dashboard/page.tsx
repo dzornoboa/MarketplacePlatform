@@ -18,7 +18,7 @@ export default async function DashboardPage() {
   const { supabase, profile, claims } = await requireUserProfile()
   const displayName = profile.full_name || String(claims.email ?? 'Member')
 
-  const [state, { count: myListings }, { count: openInterest }, { data: notifications }, { data: activeSub }] = await Promise.all([
+  const [state, { count: myListings, error: myListingsError }, { count: openInterest, error: openInterestError }, { data: notifications, error: notificationsError }, { data: activeSub, error: activeSubError }] = await Promise.all([
     readAccessState(supabase),
     supabase.from('opportunities').select('*', { count: 'exact', head: true }).eq('owner_user_id', profile.id),
     supabase.from('expressions_of_interest').select('*', { count: 'exact', head: true }).eq('status', 'submitted'),
@@ -26,7 +26,7 @@ export default async function DashboardPage() {
     supabase.from('subscriptions').select('plan_code,ends_at').eq('status', 'active').limit(1).maybeSingle(),
   ])
   // Deal-flow KPIs: the member's listings, deals placed and received, matches and connections.
-  const [{ data: myOpps }, { data: myDeals }, { data: recvDeals }, { data: myMatches }, { data: myConns, error: connectionError }, { data: mySaved }] = await Promise.all([
+  const [{ data: myOpps, error: myOppsError }, { data: myDeals, error: myDealsError }, { data: recvDeals, error: recvDealsError }, { data: myMatches, error: myMatchesError }, { data: myConns, error: connectionError }, { data: mySaved, error: mySavedError }] = await Promise.all([
     supabase.from('opportunities').select('id,status,capital_required').eq('owner_user_id', profile.id),
     supabase.from('expressions_of_interest').select('status').eq('applicant_id', profile.id),
     supabase.from('expressions_of_interest').select('status,opportunity_id').neq('applicant_id', profile.id),
@@ -34,6 +34,10 @@ export default async function DashboardPage() {
     supabase.from('connections').select(connectionColumns).or(`requester_id.eq.${profile.id},addressee_id.eq.${profile.id}`),
     supabase.from('saved_opportunities').select('opportunity_id'),
   ])
+  const activityLoadFailed = [myListingsError, openInterestError, notificationsError, activeSubError, myOppsError, myDealsError, recvDealsError, myMatchesError, mySavedError, connectionError].some(Boolean)
+  const activityWarning = activityLoadFailed && (
+    <p className="alert alert-error" role="alert">Some dashboard activity could not be loaded. Refresh the page to try again.</p>
+  )
   const tally = (rows: Array<{ status: string }> | null) => { const o: Record<string, number> = {}; for (const r of rows ?? []) o[r.status] = (o[r.status] ?? 0) + 1; return o }
   const relationships = connectionByMember(myConns ?? [], profile.id)
   const oppT = tally(myOpps), dealT = tally(myDeals), recvT = tally(recvDeals), matchT = tally(myMatches), connT = tally([...relationships.values()])
@@ -86,6 +90,7 @@ export default async function DashboardPage() {
       : { data: null }
 
     return <div className="member-home">
+      {activityWarning}
       {browse?.locked && <section className="restriction-banner member-restriction">
         <div><strong>Marketplace Access Is Restricted</strong><p>{browse.reason}</p></div>
         {browse.action && <Link className="button button-light" href={browse.action.href}>{browse.action.label}</Link>}
@@ -217,6 +222,7 @@ export default async function DashboardPage() {
   }
 
   return <div className="page-stack">
+    {activityWarning}
     <div>
       <p className="eyebrow">Member dashboard</p>
       <h1>Welcome, {displayName}</h1>
