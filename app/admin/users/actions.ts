@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { requireAdminProfile, requireSuperAdmin } from '@/lib/auth/guards'
+import { requireAdminProfile, requireCapability, requireSuperAdmin } from '@/lib/auth/guards'
 import { createClient } from '@/lib/supabase/server'
 
 function back(key: 'error' | 'message', message: string, userId?: string) {
@@ -39,7 +39,7 @@ export async function updateAccountStatus(formData: FormData) {
   if (!targetUser || !['pending', 'active', 'suspended', 'disabled'].includes(newStatus)) {
     redirect(back('error', 'Invalid account status.'))
   }
-  const supabase = await createClient()
+  const { supabase } = await requireCapability('users')
   const { error } = await supabase.rpc('set_account_status', {
     target_user: targetUser, new_status: newStatus, reason: reason || null,
   })
