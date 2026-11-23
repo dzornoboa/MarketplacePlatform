@@ -19,7 +19,14 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const { data: backup, error } = await supabase.from('platform_backups').select('*').eq('id', id).maybeSingle()
   if (error || !backup) return NextResponse.json({ error: 'Backup not found' }, { status: 404 })
 
-  await supabase.rpc('log_platform_backup_export', { backup_id: id })
+  const { error: auditError } = await supabase.rpc('log_platform_backup_export', { backup_id: id })
+  if (auditError) {
+    console.error('Could not record backup export', auditError.code)
+    return NextResponse.json({ error: 'Could not record the backup export. Try again.' }, {
+      status: 503,
+      headers: { 'cache-control': 'no-store' },
+    })
+  }
 
   const body = JSON.stringify({
     format: 'wtc-accra-hub-logical-backup-v1',
