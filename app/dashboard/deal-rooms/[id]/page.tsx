@@ -26,7 +26,8 @@ export default async function DealRoomPage({ params, searchParams }: Props) {
   const error = typeof sp.error === 'string' ? sp.error : null
   const message = typeof sp.message === 'string' ? sp.message : null
 
-  const { data: room } = await supabase.from('deal_rooms').select('*').eq('id', id).maybeSingle()
+  const { data: room, error: roomError } = await supabase.from('deal_rooms').select('*').eq('id', id).maybeSingle()
+  if (roomError && roomError.code !== '22P02') throw roomError
   if (!room) notFound()
   const messageLimit = 500
   const [{ data: opp }, { data: members }, { data: recentMessages, error: messagesError }, { data: docs }] = await Promise.all([
