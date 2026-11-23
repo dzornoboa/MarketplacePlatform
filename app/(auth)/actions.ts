@@ -1,5 +1,7 @@
 'use server'
 
+import { cookies } from 'next/headers'
+import { hasPasswordRecoveryGrant, recoveryCookie } from '@/lib/auth/password-recovery'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -267,9 +269,26 @@ export async function updatePassword(formData: FormData) {
   if (password !== confirmPassword) redirect(withMessage('/reset-password', 'error', 'Passwords do not match.'))
   const supabase = await createClient()
   const { data: claimsData } = await supabase.auth.getClaims()
-  if (!claimsData?.claims) redirect('/login')
+  const claims = claimsData?.claims
+  if (!claims?.sub || !(await hasPasswordRecoveryGrant(claims.session_id))) {
+    redirect(withMessage('/forgot-password', 'error', 'Open a fresh password email before choosing a new password.'))
+  }
   const { error } = await supabase.auth.updateUser({ password })
   if (error) redirect(withMessage('/reset-password', 'error', 'Unable to update the password.'))
+  const cookieStore = await cookies()
+  cookieStore.delete(recoveryCookie)
+  if (typeof claims.email === 'string') {
+    try {
+      const { error: emailError } = await createAdminClient().from('outbound_emails').insert({
+        to_email: claims.email, to_user_id: claims.sub, kind: 'password_changed',
+        subject: 'Your WTC Accra Hub password was changed',
+        body: 'Your WTC Accra Hub password was changed. If you did not make this change, contact membership@wtcaccra.com.',
+      })
+      if (emailError) console.error('Password change notice could not be queued', emailError.code)
+    } catch {
+      console.error('Password change notice could not be queued')
+    }
+  }
   await supabase.auth.signOut()
   revalidatePath('/', 'layout')
   redirect(withMessage('/login', 'message', 'Password updated. Sign in with your new password.'))

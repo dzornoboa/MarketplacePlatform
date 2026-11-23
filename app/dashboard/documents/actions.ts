@@ -1,7 +1,5 @@
 'use server'
 
-import { safeNextPath } from '@/lib/auth/redirects'
-
 import { moderationError } from '@/lib/ai/content-moderation'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
@@ -27,34 +25,50 @@ export async function uploadDocument(formData: FormData) {
   const userId = claimsData?.claims?.sub
   if (!userId) redirect('/login')
 
+  const dealRoomId = String(formData.get('dealRoomId') ?? '').trim() || null
+  const verificationUpload = formData.get('returnTo') === '/dashboard/verification'
+  const validRoomId = dealRoomId && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(dealRoomId)
+  const returnTo = validRoomId ? `/dashboard/deal-rooms/${dealRoomId}`
+    : verificationUpload ? '/dashboard/verification' : '/dashboard/documents'
+  const fail = (message: string): never => redirect(`${returnTo}?error=${encodeURIComponent(message)}`)
+
+  if (dealRoomId && !validRoomId) fail('Deal room not found.')
   const file = formData.get('file')
-  if (!(file instanceof File)) redirect(back('error', 'Choose a file to upload.'))
+  if (!(file instanceof File)) return fail('Choose a file to upload.')
   const fileError = documentUploadError(file)
-  if (fileError) redirect(back('error', fileError))
+  if (fileError) fail(fileError)
+
+  if (dealRoomId) {
+    const { data: room, error } = await supabase.from('deal_rooms').select('status').eq('id', dealRoomId).maybeSingle()
+    if (error) fail('Could not check the deal room. Try again.')
+    if (!room) fail('You do not have access to this deal room.')
+    if (room?.status !== 'active') fail('This deal room is closed to new documents.')
+  }
 
   const { count, error: countError } = await supabase.from('document_records')
     .select('id', { count: 'exact', head: true }).eq('owner_user_id', userId)
-  if (countError || count === null) redirect(back('error', 'Unable to check your document limit. Try again.'))
-  if (count >= DOCUMENT_LIMIT) redirect(back('error', 'Delete an old document or request an extra upload.'))
+  if (countError || count === null) return fail('Unable to check your document limit. Try again.')
+  if (count >= DOCUMENT_LIMIT) fail('Delete an old document or request an extra upload.')
 
   const scope = String(formData.get('accessScope') ?? 'private')
-  if (!SCOPES.has(scope)) redirect(back('error', 'Choose who may see this document.'))
+  if (!SCOPES.has(scope)) fail('Choose who may see this document.')
   const opportunityId = String(formData.get('opportunityId') ?? '').trim() || null
-  const dealRoomId = String(formData.get('dealRoomId') ?? '').trim() || null
   const purpose = String(formData.get('purpose') ?? 'general')
-  const returnTo = safeNextPath(String(formData.get('returnTo') ?? ''), '/dashboard/documents')
-  if (!(DOCUMENT_PURPOSES as readonly string[]).includes(purpose)) redirect(back('error', 'Choose what this document is.'))
+  if (!(DOCUMENT_PURPOSES as readonly string[]).includes(purpose)) fail('Choose what this document is.')
 
   const shared = Boolean(dealRoomId) || (scope !== 'private' && Boolean(opportunityId))
   if (shared && file.type.startsWith('image/')) {
     const screening = await moderationError('shared document image', '', { image: file })
-    if (screening) redirect(back('error', screening))
+    if (screening) fail(screening)
   }
 
   const objectPath = documentObjectPath(userId, file.name)
   const { error: uploadError } = await supabase.storage.from(BUCKET)
     .upload(objectPath, file, { contentType: file.type, upsert: false })
-  if (uploadError) redirect(back('error', `Upload failed: ${uploadError.message}`))
+  if (uploadError) {
+    console.error('Document storage upload failed', uploadError.name)
+    fail('Could not upload the file. Try again.')
+  }
 
   const { error: recordError } = await supabase.from('document_records').insert({
     owner_user_id: String(userId),
@@ -71,7 +85,11 @@ export async function uploadDocument(formData: FormData) {
     // The member cannot read an object without a record, so privileged cleanup is limited to the path just created above.
     if (process.env.SUPABASE_SERVICE_ROLE_KEY) await createAdminClient().storage.from(BUCKET).remove([objectPath])
     else await supabase.storage.from(BUCKET).remove([objectPath])
-    redirect(back('error', recordError.message))
+    console.error('Document record write failed', recordError.code)
+    if (recordError.code === 'P0001' && recordError.message.startsWith('You can keep up to five')) {
+      fail('Delete an old document or request an extra upload.')
+    }
+    fail('Could not attach the file. Check your access and try again.')
   }
 
   revalidatePath('/dashboard/documents')

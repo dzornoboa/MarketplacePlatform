@@ -10,6 +10,7 @@ import { hasCapability, humanize, labelForParticipantType } from '@/lib/auth/acc
 import { date, dateTime, money } from '@/lib/format'
 import { uploadDocument } from '../../documents/actions'
 import { closeDealRoom, postMessage } from '../actions'
+import { DOCUMENT_ACCEPT } from '@/lib/document-uploads'
 import { MoneyCurrencyField } from '@/components/country-currency-fields'
 
 export const dynamic = 'force-dynamic'
@@ -133,7 +134,7 @@ export default async function DealRoomPage({ params, searchParams }: Props) {
             <input type="hidden" name="dealRoomId" value={id} />
             <input type="hidden" name="accessScope" value="private" />
             <input type="hidden" name="returnTo" value={`/dashboard/deal-rooms/${id}`} />
-            <label>Share a file<input type="file" name="file" required accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx" /></label>
+            <label>Share a file<input type="file" name="file" required accept={DOCUMENT_ACCEPT} /></label>
             <label>What is it
               <select name="purpose" defaultValue="general">
                 <option value="general">General</option><option value="financials">Financials</option><option value="business_certificate">Business certificate</option><option value="other">Other</option>

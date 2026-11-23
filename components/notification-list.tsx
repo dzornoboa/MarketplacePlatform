@@ -1,8 +1,10 @@
 'use client'
 
+import Link from 'next/link'
+import { safeNextPath } from '@/lib/auth/redirects'
 import { useEffect, useRef, useState } from 'react'
 import { dateTime } from '@/lib/format'
-import { bulkNotifications, markSeen, openNotification } from '@/app/dashboard/notifications/actions'
+import { bulkNotifications, markSeen } from '@/app/dashboard/notifications/actions'
 
 type Item = { id: string; kind: string; title: string; body: string | null; href: string | null; created_at: string; read_at: string | null }
 
@@ -40,8 +42,9 @@ export function NotificationList({ items }: { items: Item[] }) {
         <button className="button button-danger" name="bulk" value="delete_all" type="submit">Delete all</button>
       </div>
     </div>
-    <div className="notification-list">{items.map(item =>
-      <article className={`card notification${item.read_at ? '' : ' notification-unread'}${picked.has(item.id) ? ' notification-picked' : ''}`} key={item.id}>
+    <div className="notification-list">{items.map(item => {
+      const href = safeNextPath(item.href, '')
+      return <article className={`card notification${item.read_at ? '' : ' notification-unread'}${picked.has(item.id) ? ' notification-picked' : ''}`} key={item.id}>
         <label className="notification-pick"><input type="checkbox" name="ids" value={item.id} checked={picked.has(item.id)} onChange={() => toggle(item.id)} aria-label={`Select ${item.title}`} /></label>
         <div>
           <span className="eyebrow">{item.kind.replaceAll('_', ' ')}</span>
@@ -50,8 +53,9 @@ export function NotificationList({ items }: { items: Item[] }) {
         </div>
         <div className="notification-meta">
           <span>{dateTime(item.created_at)}</span>
-          {item.href && <button className="arrow-link link-button" type="submit" formAction={openNotification} name="open" value={item.id}>Open →</button>}
+          {href && <Link className="arrow-link" href={href} prefetch={false}>Open →</Link>}
         </div>
-      </article>)}</div>
+      </article>
+    })}</div>
   </form>
 }

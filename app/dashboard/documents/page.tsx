@@ -47,7 +47,7 @@ export default async function DocumentsPage({ searchParams }: Props) {
     <div>
       <p className="eyebrow">Secure storage</p>
       <h1>Documents</h1>
-      <p className="muted">Files live in a private bucket. Opening a file creates a link that expires after two minutes. Anyone with that link can use it until it expires.</p>
+      <p className="muted">Documents open through WTC Accra Hub. Only signed-in users with access can open them.</p>
     </div>
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}

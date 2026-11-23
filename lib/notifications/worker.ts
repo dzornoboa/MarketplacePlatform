@@ -36,7 +36,7 @@ async function finishDelivery(admin: SupabaseClient<Database>, table: QueueTable
 
 /* Queued bodies are plain text; wrap them in the WTC Accra shell so members
    receive a branded message with the contact line on every email. */
-function brandedHtml(subject: string, body: string, unsubscribeUrl?: string | null): string {
+function brandedHtml(subject: string, body: string, unsubscribeUrl?: string | null, passwordLink?: string): string {
   const esc = (v: string) => v
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -48,6 +48,7 @@ function brandedHtml(subject: string, body: string, unsubscribeUrl?: string | nu
     <p style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#E4580A;font-weight:800;margin:0 0 6px">World Trade Centre Accra</p>
     <h1 style="font-size:19px;color:#154074;margin:0 0 16px">${esc(subject)}</h1>
     ${paragraphs}
+    ${passwordLink ? `<p><a href="${esc(passwordLink)}" style="color:#154074;font-weight:700">Choose a new password</a></p>` : ''}
     <p style="margin:22px 0 0;font-size:12.5px;color:#5b6470;border-top:1px solid #e3e7ec;padding-top:12px">World Trade Centre Accra · 22 Independence Avenue, Accra, Ghana · +233 302 631 437 · membership@wtcaccra.com</p>
     ${unsubscribeUrl ? `<p style="margin:8px 0 0;font-size:12.5px;color:#5b6470">This is a marketing message. <a href="${esc(unsubscribeUrl)}" style="color:#154074;text-decoration:underline">Unsubscribe from marketing emails</a>.</p>` : ''}
   </div>`
@@ -129,17 +130,30 @@ export async function drainEmails(admin: SupabaseClient<Database>) {
         ? marketingUnsubscribeUrl(getSiteUrl(), row.to_user_id, row.to_email)
         : null
       if (marketing && !unsubscribeUrl) throw new Error('Marketing email blocked: configure EMAIL_UNSUBSCRIBE_SECRET and associate the message with a user before sending.')
+      let body = row.body
+      let passwordLink: string | undefined
+      if (row.kind === 'password_reset') {
+        const { data, error } = await admin.auth.admin.generateLink({ type: 'recovery', email: row.to_email })
+        if (error || !row.to_user_id || data.user?.id !== row.to_user_id || !data.properties?.hashed_token) {
+          throw new Error('Could not generate the password reset link.')
+        }
+        const link = new URL('/auth/confirm', getSiteUrl())
+        link.searchParams.set('type', 'recovery')
+        link.searchParams.set('token_hash', data.properties.hashed_token)
+        passwordLink = link.toString()
+        body = 'You requested a new password for your WTC Accra Hub account. If you did not request this, you can ignore this email.'
+      }
       const postal = 'World Trade Centre Accra, 22 Independence Avenue, Accra, Ghana'
       const textFooter = `\n\n—\n${postal}\n+233 302 631 437 · membership@wtcaccra.com${unsubscribeUrl ? `\nUnsubscribe from marketing emails: ${unsubscribeUrl}` : ''}`
       await mailer.sendMail({
         from, to: row.to_email, replyTo, subject: row.subject,
-        text: row.body + textFooter,
-        html: brandedHtml(row.subject, row.body, unsubscribeUrl),
+        text: body + (passwordLink ? `\n\nChoose a new password: ${passwordLink}` : '') + textFooter,
+        html: brandedHtml(row.subject, body, unsubscribeUrl, passwordLink),
         ...(unsubscribeUrl ? { headers: { 'List-Unsubscribe': `<${unsubscribeUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } } : {}),
       })
       if (await finishDelivery(admin, 'outbound_emails', row.id, lease, { status: 'sent', sent_at: new Date().toISOString(), error: null })) sent += 1
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Send failed'
+      const message = row.kind === 'password_reset' ? 'Password reset email could not be sent.' : error instanceof Error ? error.message : 'Send failed'
       await finishDelivery(admin, 'outbound_emails', row.id, lease, { status: 'failed', error: message })
     }
   }

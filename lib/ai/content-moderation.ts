@@ -1,4 +1,4 @@
-import { AI_MODEL, aiAvailable, anthropic } from '@/lib/ai/client'
+import { aiAvailable, anthropic } from '@/lib/ai/client'
 import { moderationReasons, obviousViolation, parseModerationResult } from '@/lib/ai/content-rules'
 import { requireUserProfile } from '@/lib/auth/guards'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -39,29 +39,38 @@ export async function moderationError(surface: string, text: string, options: { 
   if (!text.trim() && !image) return null
   const { profile } = await requireUserProfile()
   if (text.length > 20000) return 'Shorten the submission to 20,000 characters and try again.'
-  const unavailable = allowUnavailable && !image ? null : 'Content screening is temporarily unavailable. Please try again later.'
+  const unavailable = image
+    ? 'Image screening is temporarily unavailable. Try again later, or share an existing PDF, Word document, or Excel file.'
+    : allowUnavailable ? null : 'Content screening is temporarily unavailable. Please try again later.'
   let verdict = obviousViolation(text)
   if (!verdict) {
     if (localOnly) return null
-    if (!aiAvailable()) return unavailable
+    if (!aiAvailable()) {
+      console.error('Content screening unavailable: API key not configured')
+      return unavailable
+    }
     try {
       const content = image
         ? [{ type: 'image' as const, source: {
             type: 'base64' as const,
             media_type: image.type as 'image/jpeg' | 'image/png' | 'image/webp',
             data: Buffer.from(await image.arrayBuffer()).toString('base64'),
-          } }, { type: 'text' as const, text: 'Classify this image before it is made public.' }]
+          } }, { type: 'text' as const, text: 'Classify this image before it is shared.' }]
         : [{ type: 'text' as const, text: JSON.stringify({ submission: text }) }]
       const result = await anthropic().messages.create({
-        model: process.env.ANTHROPIC_MODERATION_MODEL || AI_MODEL, system: policy, max_tokens: 32,
+        model: process.env.ANTHROPIC_MODERATION_MODEL || 'claude-haiku-4-5-20251001', system: policy, max_tokens: 256,
         messages: [{ role: 'user', content }],
       }, { timeout: 12000, maxRetries: 0 })
       const output = result.content.find(block => block.type === 'text')
       const decision = output?.type === 'text' ? parseModerationResult(output.text) : null
       if (decision === 'allow') return null
+      if (!decision) console.error('Content screening returned no decision', { stopReason: result.stop_reason })
       verdict = decision
-    } catch {
-      console.error('Content screening provider unavailable')
+    } catch (error) {
+      console.error('Content screening provider unavailable', {
+        type: error instanceof Error ? error.name : 'UnknownError',
+        status: typeof error === 'object' && error && 'status' in error ? error.status : undefined,
+      })
     }
   }
   if (!verdict) return unavailable

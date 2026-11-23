@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { updatePassword } from '../actions'
 import { LogoLink } from '@/components/brand'
+import { hasPasswordRecoveryGrant } from '@/lib/auth/password-recovery'
 import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -11,12 +12,9 @@ export default async function ResetPasswordPage({ searchParams }: Props) {
   const params = await searchParams
   const error = typeof params.error === 'string' ? params.error : null
 
-  /* Reaching this page without a session means the recovery link was never
-     verified — expired, already used, or opened in a different browser.
-     Showing the form anyway would fail confusingly on submit. */
   const supabase = await createClient()
   const { data: claimsData } = await supabase.auth.getClaims()
-  const signedIn = !!claimsData?.claims?.sub
+  const verifiedLink = !!claimsData?.claims?.sub && await hasPasswordRecoveryGrant(claimsData.claims.session_id)
 
   return (
     <main className="center-page">
@@ -26,7 +24,7 @@ export default async function ResetPasswordPage({ searchParams }: Props) {
         <h1>Update password</h1>
         {error && <div className="alert alert-error">{error}</div>}
 
-        {signedIn ? (
+        {verifiedLink ? (
           <>
             <p className="muted">Pick a password you have not used on this account before.</p>
             <form action={updatePassword} className="form-stack">

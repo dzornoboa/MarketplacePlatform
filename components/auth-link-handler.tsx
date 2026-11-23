@@ -56,7 +56,7 @@ export function AuthLinkHandler() {
     if (!errorCode && !code && !tokenHash) return
 
     const forward = new URLSearchParams()
-    for (const key of ['error', 'error_code', 'error_description', 'code', 'token_hash', 'type', 'next']) {
+    for (const key of ['error', 'error_code', 'error_description', 'code', 'token_hash', 'type', 'next', 'sb_flow_id']) {
       const value = fromHash.get(key) ?? fromQuery.get(key)
       if (value) forward.set(key, value)
     }

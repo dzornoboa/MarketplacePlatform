@@ -3,7 +3,7 @@ import { isAdminRole, systemRoleLabels } from '@/lib/auth/access'
 import { safeNextPath } from '@/lib/auth/redirects'
 import { MfaClient } from './mfa-client'
 import { SubmitButton } from '@/components/submit-button'
-import { changePassword } from './actions'
+import { emailPasswordReset } from './actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -48,7 +48,15 @@ export default async function SecurityPage({ searchParams }: Props) {
         <p className="field-help">Your password is not changed by this. If you lose the phone, WTC Accra technical support can reset the authenticator on this account.</p>
       </section>}
 
+      {error && <div className="alert alert-error">{error}</div>}
+      {message && <div className="alert alert-success">{message}</div>}
       <MfaClient adminRequired={true} next={next} />
+      <form action={emailPasswordReset} className="card form-stack" id="password">
+      <h2>Set or change your password</h2>
+      <p className="muted">Open the secure link sent to your account email to choose a new password.</p>
+      <div><SubmitButton pendingLabel="Requesting link…">Email me a password link</SubmitButton></div>
+    </form>
+
     </div>
   }
 
@@ -60,15 +68,10 @@ export default async function SecurityPage({ searchParams }: Props) {
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
 
-    <form action={changePassword} className="card form-stack">
-      <h2>Change password</h2>
-      <label>Current password<input name="currentPassword" type="password" autoComplete="current-password" required /></label>
-      <div className="form-grid">
-        <label>New password<input name="newPassword" type="password" autoComplete="new-password" required minLength={8} /></label>
-        <label>Confirm new password<input name="confirmPassword" type="password" autoComplete="new-password" required minLength={8} /></label>
-      </div>
-      <p className="field-help">At least 8 characters with an uppercase letter, a lowercase letter and a number. Forgotten it? Sign out and use “Forgot password” on the sign-in page.</p>
-      <div><SubmitButton pendingLabel="Changing…">Change password</SubmitButton></div>
+    <form action={emailPasswordReset} className="card form-stack" id="password">
+      <h2>Set or change your password</h2>
+      <p className="muted">Open the secure link sent to your account email to choose a new password.</p>
+      <div><SubmitButton pendingLabel="Requesting link…">Email me a password link</SubmitButton></div>
     </form>
 
     <div>

@@ -84,9 +84,9 @@ export default async function SettingsPage({ searchParams }: Props) {
 
     <section className="card">
       <h2>Security</h2>
-      <p className="muted">Passwords and two-factor authentication are managed separately. Administrators must complete MFA before opening administrative routes.</p>
+      <p className="muted">Set or change your password by email, or manage two-factor authentication.</p>
       <div className="button-row">
-        <Link className="button button-secondary" href="/dashboard/security">Security settings</Link>
+        <Link className="button button-secondary" href="/dashboard/security#password">Password and security</Link>
         <Link className="button button-outline" href="/dashboard/profile">Edit profile</Link>
       </div>
     </section>

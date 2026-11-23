@@ -1740,3 +1740,12 @@ h1,h2,h3,h4,
   .audit-filters label:first-child{flex:initial}
   .audit-filters .arrow-link{align-self:flex-start}
 }
+
+.staff-console-shell .admin-main{min-width:0}
+.dashboard-sidebar .nav-disclosure{margin:0}
+.nav-section-button{width:100%;display:flex;align-items:center;gap:8px;text-align:left;border:0;background:transparent;border-radius:var(--radius);padding:10px 13px;color:var(--ink);font:inherit;font-weight:700;cursor:pointer}
+.nav-section-button:hover,.nav-section-button:focus-visible,.nav-section-current{background:var(--navy-soft);color:var(--wtc-navy)}
+.nav-section-chevron{margin-left:auto;width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg)}
+.nav-section-button[aria-expanded="true"] .nav-section-chevron{transform:rotate(45deg)}
+.nav-section-links{margin:4px 0 4px 12px;border-left:1px solid var(--line);padding-left:5px}
+.nav-section-links[hidden]{display:none}
