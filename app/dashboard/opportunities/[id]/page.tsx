@@ -25,7 +25,8 @@ export default async function OpportunityDetailPage({ params, searchParams }: Pr
 
   /* RLS decides visibility: the owner sees any status, everyone else needs
      marketplace access and a published listing. A miss is a genuine 404. */
-  const { data: item } = await supabase.from('opportunities').select('*').eq('id', id).maybeSingle()
+  const { data: item, error: listingError } = await supabase.from('opportunities').select('*').eq('id', id).maybeSingle()
+  if (listingError && listingError.code !== '22P02') throw listingError
   if (!item) notFound()
 
   const isOwner = item.owner_user_id === profile.id
