@@ -25,16 +25,16 @@ export default async function AdminAuditPage({ searchParams }: Props) {
   if (/^\d{4}-\d{2}-\d{2}$/.test(since) && Number.isFinite(Date.parse(since))) {
     query = query.gte('created_at', new Date(since).toISOString())
   }
-  const [{ data: events, error: eventsError }, { data: allActors }, { data: typeRows }] = await Promise.all([
+  const [{ data: events, error: eventsError }, { data: allActors, error: allActorsError }, { data: typeRows, error: typeRowsError }] = await Promise.all([
     query,
     supabase.from('profiles').select('id,full_name').neq('system_role', 'user').order('full_name'),
     supabase.from('audit_events').select('entity_type').limit(3000),
   ])
 
   const actorIds = [...new Set((events ?? []).map(e => e.actor_id).filter((id): id is string => !!id))]
-  const { data: actors } = actorIds.length
+  const { data: actors, error: actorsError } = actorIds.length
     ? await supabase.from('profiles').select('id,full_name').in('id', actorIds)
-    : { data: [] }
+    : { data: [], error: null }
   const actorById = new Map((actors ?? []).map(a => [a.id, a.full_name]))
   const entityTypes = [...new Set((typeRows ?? []).map(e => e.entity_type))].sort()
 
@@ -46,15 +46,18 @@ export default async function AdminAuditPage({ searchParams }: Props) {
       <p className="muted">Every verification decision, access change, role change and review is recorded here with the acting administrator.</p>
     </div>
 
+    {(allActorsError || typeRowsError || actorsError) && <p className="alert alert-error" role="alert">Some audit filters or actor names could not be loaded. Refresh the page to try again.</p>}
+
     <form className="filter-row card" method="get">
       <label>Action<input name="q" defaultValue={q} placeholder="e.g. verification, payment" /></label>
       <label>Entity
         <select name="entity" defaultValue={entity}>
           <option value="">All entities</option>
+          {entity && !entityTypes.includes(entity) && <option value={entity}>{humanize(entity)}</option>}
           {entityTypes.map(t => <option key={t} value={t}>{humanize(t)}</option>)}
         </select>
       </label>
-      <label>Actor<select name="actor" defaultValue={actor}><option value="">Anyone</option>{(allActors ?? []).map(a => <option key={a.id} value={a.id}>{a.full_name}</option>)}</select></label>
+      <label>Actor<select name="actor" defaultValue={actor}><option value="">Anyone</option>{actor && !(allActors ?? []).some(a => a.id === actor) && <option value={actor}>{actorById.get(actor) ?? "Selected actor"}</option>}{(allActors ?? []).map(a => <option key={a.id} value={a.id}>{a.full_name}</option>)}</select></label>
       <label>Since<input type="date" name="since" defaultValue={since} /></label>
       <label>Sort<select name="sort" defaultValue={sort}><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select></label>
       <button className="button button-outline" type="submit">Apply</button>
