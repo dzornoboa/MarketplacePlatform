@@ -27,7 +27,7 @@ export default async function MembershipIdsPage({ searchParams }: Props) {
   if (status) query = query.eq('status', status)
   if (type) query = query.eq('membership_type_code', type)
   if (q) query = query.or(searchColumns(q, ['code', 'assigned_email']))
-  const { data: ids } = await query
+  const { data: ids, error: idsError } = await query
 
   const userIds = [...new Set((ids ?? []).map(row => row.assigned_user_id).filter((id): id is string => !!id))]
   const { data: profiles } = userIds.length
@@ -137,7 +137,7 @@ export default async function MembershipIdsPage({ searchParams }: Props) {
 
     <section className="card table-wrap">
       <h2>Membership ID Register</h2>
-      {(ids ?? []).length === 0 ? <p className="muted">No Membership IDs match the current filters.</p> : <table className="data-table">
+      {idsError ? <p className="alert alert-error" role="alert">Could not load Membership IDs. Refresh the page to try again.</p> : (ids ?? []).length === 0 ? <p className="muted">No Membership IDs match the current filters.</p> : <table className="data-table">
         <thead><tr><th>ID</th><th>Type</th><th>Status</th><th>Assigned Email</th><th>Linked Account</th><th>Created</th><th>Used</th><th>Actions</th></tr></thead>
         <tbody>{(ids ?? []).map(row => {
           const person = row.assigned_user_id ? profileById.get(row.assigned_user_id) : null
