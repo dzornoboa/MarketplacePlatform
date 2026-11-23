@@ -37,7 +37,12 @@ async function finishDelivery(admin: SupabaseClient<Database>, table: QueueTable
 /* Queued bodies are plain text; wrap them in the WTC Accra shell so members
    receive a branded message with the contact line on every email. */
 function brandedHtml(subject: string, body: string, unsubscribeUrl?: string | null): string {
-  const esc = (v: string) => v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  const esc = (v: string) => v
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
   const paragraphs = body.split(/\n{2,}/).map(part => `<p style="margin:0 0 14px;line-height:1.55">${esc(part).replace(/\n/g, "<br />")}</p>`).join("")
   return `<div style="font-family:Segoe UI,Arial,sans-serif;font-size:15px;color:#1d2733;max-width:560px;margin:0 auto;padding:24px">
     <p style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#E4580A;font-weight:800;margin:0 0 6px">World Trade Centre Accra</p>
