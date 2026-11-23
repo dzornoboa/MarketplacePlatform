@@ -18,8 +18,11 @@ export async function reviewOpportunity(formData: FormData) {
   }
   const { supabase } = await requireCapability('opportunities')
   if (decision === 'publish') {
-    const { data: listing } = await supabase.from('opportunities')
+    const { data: listing, error: listingError } = await supabase.from('opportunities')
       .select('owner_user_id,title,summary,description,sector,country,city,region,tags').eq('id', opportunityId).maybeSingle()
+    if (listingError && listingError.code !== '22P02') {
+      redirect(`${target}?error=${encodeURIComponent('Could not load the opportunity for review. Try again.')}`)
+    }
     if (!listing) redirect(`${target}?error=Opportunity%20not%20found.`)
     const { owner_user_id, ...content } = listing
     const screening = await moderationError('opportunity publication', Object.values(content).flat().join('\n'), { submittedBy: owner_user_id, allowUnavailable: formData.get('manualReview') === 'on' })
