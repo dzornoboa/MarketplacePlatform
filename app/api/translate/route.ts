@@ -27,10 +27,18 @@ function remember(language: string, text: string, translation: string) {
   CACHE.set(language + '\u0000' + text, translation)
 }
 
+const translationEntities: Record<string, string> = {
+  '&quot;': '"',
+  '&#39;': "'",
+  '&amp;': '&',
+  '&lt;': '<',
+  '&gt;': '>',
+  '&nbsp;': ' ',
+}
+
 function decodeEntities(value: string) {
-  return value
-    .replaceAll('&quot;', '"').replaceAll('&#39;', "'").replaceAll('&amp;', '&')
-    .replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&nbsp;', ' ')
+  // Decode exactly one layer of the provider's text encoding.
+  return value.replace(/&(?:quot|#39|amp|lt|gt|nbsp);/g, entity => translationEntities[entity])
 }
 
 /* Money is taken out of the sentence before it is translated and put back

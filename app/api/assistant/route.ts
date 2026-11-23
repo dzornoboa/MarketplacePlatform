@@ -67,7 +67,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, ...reply })
   }
 
-  const pages = PLATFORM_PAGES.filter(p => audience.includes(p.audience)).map(p => `${p.href} — ${p.title}: ${p.summary}`).join('\n')
+  const availablePages = PLATFORM_PAGES.filter(p => audience.includes(p.audience))
+  const pages = availablePages.map(p => `${p.href} — ${p.title}: ${p.summary}`).join('\n')
   const history = (body.history ?? []).slice(-8)
   try {
     const res = await anthropic().messages.create({
@@ -82,8 +83,10 @@ export async function POST(req: Request) {
     let text = res.content.filter(b => b.type === 'text').map(b => b.text).join('\n').trim()
     const escalate = /\bESCALATE\b/.test(text)
     text = text.replace(/\n?\s*ESCALATE\s*$/, '').trim()
-    const found = [...text.matchAll(/\]\((\/[^)\s]*)\)/g)].map(m => m[1])
-    const merged = [...new Map([...found.map(h => ({ href: h, title: PLATFORM_PAGES.find(p => p.href === h)?.title ?? h })), ...links].map(l => [l.href, l])).values()].slice(0, 5)
+    const mentioned = new Set([...text.matchAll(/\[([^\]\n]+)\]\((\/[^)\s]*)\)/g)].map(match => match[2]))
+    text = text.replace(/\[([^\]\n]+)\]\(\/[^)\s]*\)/g, '$1')
+    const suggested = availablePages.filter(page => mentioned.has(page.href)).map(({ href, title }) => ({ href, title }))
+    const merged = [...new Map([...suggested, ...links].map(link => [link.href, link])).values()].slice(0, 5)
     return NextResponse.json({ ok: true, answer: text, links: merged, escalate, source: 'claude' } satisfies Reply & { ok: true })
   } catch (err) {
     const reply: Reply = candidates.length

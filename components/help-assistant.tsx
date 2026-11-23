@@ -41,17 +41,11 @@ export function HelpAssistant({ signedIn = false, onClose }: { signedIn?: boolea
     setBusy(false)
   }
 
-  // Render [label](/path) markdown links as real links; everything else as text.
-  const render = (text: string) => text.split(/(\[[^\]]+\]\(\/[^)]+\))/g).map((part, i) => {
-    const m = part.match(/^\[([^\]]+)\]\((\/[^)]+)\)$/)
-    return m ? <Link key={i} href={m[2]}>{m[1]}</Link> : <span key={i}>{part}</span>
-  })
-
   return <section id="help-assistant" className="helper-panel" aria-label="Help assistant">
     <header className="helper-head"><span>WTC Accra helper</span><button type="button" onClick={onClose} aria-label="Close">×</button></header>
     <div className="helper-log" ref={log}>
       {turns.map((t, i) => <div key={i} className={`helper-msg helper-msg-${t.role === 'user' ? 'user' : 'bot'}`}>
-        {render(t.text)}
+        <span>{t.text}</span>
         {t.links && t.links.length > 0 && <div className="helper-links">{t.links.map(l => <Link key={l.href} href={l.href}>{l.title} →</Link>)}</div>}
         {t.escalate && signedIn && <div className="helper-links"><button type="button" className="button button-outline" onClick={escalate} disabled={busy}>Send this to the WTC Accra team</button></div>}
         {t.escalate && !signedIn && <div className="helper-links"><Link href="/login">Sign in to contact the team →</Link><Link href="/contact">Contact page →</Link></div>}
