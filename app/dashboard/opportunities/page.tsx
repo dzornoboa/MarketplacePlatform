@@ -45,7 +45,7 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
   query = sort === 'amount' ? query.order('capital_required_usd', { ascending: false, nullsFirst: false })
     : sort === 'deadline' ? query.order('deadline', { ascending: true, nullsFirst: false })
     : query.order('published_at', { ascending: sort === 'oldest' })
-  const [{ data: published, error: publishedError }, { data: mine }, { data: sentInterests }, { data: savedRows }, { data: facets, error: facetsError }, typeCounts] = await Promise.all([
+  const [{ data: published, error: publishedError }, { data: mine }, { data: sentInterests, error: interestsError }, { data: savedRows, error: savedError }, { data: facets, error: facetsError }, typeCounts] = await Promise.all([
     browseLock.locked ? Promise.resolve({ data: [], error: null }) : query,
     supabase.from('opportunities').select('*').eq('owner_user_id', profile.id).order(mineSort === 'title' ? 'title' : mineSort === 'status' ? 'status' : 'updated_at', { ascending: mineSort !== 'updated' }),
     supabase.from('expressions_of_interest').select('id,opportunity_id,status').eq('applicant_id', profile.id),
@@ -169,6 +169,8 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
         {(q || investmentBand || sector || kind || sort !== 'newest') && <Link className="text-link" href={mineSort === 'updated' ? '/dashboard/opportunities' : `?mine=${mineSort}`}>Reset filters</Link>}
       </form>
 
+      {savedError && <p className="alert alert-error" role="alert">Could not load your shortlist status. Refresh the page to try again.</p>}
+      {interestsError && <p className="alert alert-error" role="alert">Could not load your deal request status. Refresh the page to try again.</p>}
       {facetsError && <p className="alert alert-error" role="alert">Some filters could not be loaded. Refresh the page to try again.</p>}
       {publishedError
         ? <section className="card empty-state"><h2>Could not load listings</h2><p>Refresh the page to try again.</p></section>
@@ -196,12 +198,12 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
               </div>
               <p className="listing-preview-summary">{item.summary}</p>
               <Link className="arrow-link" href={`/dashboard/opportunities/${item.id}`} aria-label={`See more about ${item.title}`}>See more →</Link>
-              {!own && <form action={toggleSaved} className="save-row">
+              {!own && !savedError && <form action={toggleSaved} className="save-row">
                 <input type="hidden" name="opportunityId" value={item.id} />
                 <input type="hidden" name="saved" value={savedIds.has(item.id) ? '1' : '0'} />
                 <button className={savedIds.has(item.id) ? 'save-toggle save-toggle-on' : 'save-toggle'} type="submit">{savedIds.has(item.id) ? '★ Saved to shortlist' : '☆ Save to shortlist'}</button>
               </form>}
-              {!own && (() => {
+              {!own && !interestsError && (() => {
                 const request = interestByOpportunity.get(item.id)
                 if (request) return <div className="request-state-row">
                   <span className={`status-dot status-eoi-${request.status}`}>{requestLabel(request.status)}</span>
