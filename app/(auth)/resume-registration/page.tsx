@@ -15,6 +15,10 @@ export default async function ResumeRegistrationPage({ searchParams }: Props) {
     <p className="eyebrow">Continue Registration</p>
     <h1>Continue Your Existing Account</h1>
     <p className="muted">Enter the email you used previously. We will send the appropriate secure email to continue without revealing account status on this page.</p>
+    {params.status === 'signup-pending' && <div className="alert alert-error" role="alert">
+      Registration took longer than expected. Check your inbox and spam folder for a confirmation email.
+      If it does not arrive, use Continue Account Setup below. If you still receive no email, return to registration and try again.
+    </div>}
     {error && <div className="alert alert-error">{error}</div>}
     {message && <div className="alert alert-success">{message}</div>}
     <form action={resumeRegistration} className="form-stack">

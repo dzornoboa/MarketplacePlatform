@@ -1525,6 +1525,9 @@ h1,h2,h3,h4,
 .pagination-jump select{height:38px;padding:0 28px 0 10px;border:1px solid var(--line-strong);border-radius:7px;background:#fff}
 .pagination-meta{width:100%;font-size:10px;color:var(--muted);text-align:right}
 
+.opportunity-filters label:first-of-type{flex:1 1 auto;min-width:min(100%,15rem)}
+.opportunity-filters label:first-of-type input{width:100%;min-width:0}
+
 /* Size cards against the space available beside the dashboard sidebar. */
 .opportunity-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,max(24rem,calc((100% - 18px)/2))),1fr));gap:18px;align-items:start}
 .opportunity-list>.opportunity-card{min-width:0}

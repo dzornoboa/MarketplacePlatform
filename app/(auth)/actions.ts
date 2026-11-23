@@ -76,19 +76,30 @@ export async function signup(formData: FormData) {
   const legalAgreementAccepted = String(formData.get('legalAgreementAccepted') ?? '') === 'yes'
   const legalAgreementVersion = String(formData.get('legalAgreementVersion') ?? '').trim()
   if (!legalAgreementAccepted || legalAgreementVersion !== '2026-09-29-v2') redirect(withMessage('/register', 'error', 'Read and accept the NDA, Terms and User Agreement before registration.'))
-    const username = String(formData.get('username') ?? '').trim().toLowerCase()
+  const username = String(formData.get('username') ?? '').trim().toLowerCase()
   if (!/^[a-z0-9][a-z0-9._-]{2,29}$/.test(username)) redirect(withMessage('/register', 'error', 'Choose a valid username using lowercase letters, numbers, dots, hyphens or underscores.'))
   const validation = validateSignupInput({ fullName, email, password, participantType })
   if (!validation.ok) redirect(withMessage('/register', 'error', Object.values(validation.errors)[0] ?? 'Check your registration details.'))
-  if (!(await allow('signup', 5, 3600))) redirect(withMessage('/register', 'error', 'Too many registrations from this connection. Try again later.'))
-  // The address must be deliverable before an account exists for it.
-  const address = await checkEmailAddress(email)
-  if (!address.ok) redirect(withMessage('/register', 'error', address.reason))
-  const supabase = await createClient()
   const COMPANY_TYPES = new Set(['business', 'wtc_association_member', 'wtc_accra_member'])
   const organisationName = String(formData.get('organisationName') ?? '').trim()
   if (COMPANY_TYPES.has(participantType) && organisationName.length < 2) redirect(withMessage('/register', 'error', 'Enter your organisation name.'))
   const membershipAccessId = String(formData.get('membershipAccessId') ?? formData.get('wtcAccraMembershipId') ?? '').trim().toUpperCase()
+  const country = String(formData.get('country') ?? '').trim()
+  const countryCode = String(formData.get('countryCode') ?? '').trim().toUpperCase()
+  const phoneCountryCode = String(formData.get('phoneCountryCode') ?? '').trim()
+  const phoneLocal = String(formData.get('phoneLocal') ?? '').replace(/\D/g, '')
+  const preferredCurrency = String(formData.get('preferredCurrency') ?? 'USD').trim().toUpperCase()
+  if (!country || !/^[A-Z]{2}$/.test(countryCode)) redirect(withMessage('/register', 'error', 'Select a valid country.'))
+  if (!/^\+[0-9]{1,4}$/.test(phoneCountryCode) || phoneLocal.length < 5 || phoneLocal.length > 15) redirect(withMessage('/register', 'error', 'Enter a valid telephone number for your selected country.'))
+  if (!/^[A-Z]{3}$/.test(preferredCurrency)) redirect(withMessage('/register', 'error', 'Select a valid preferred currency.'))
+  const nationalNumber = phoneLocal.replace(/^0+/, '')
+  const phone = `${phoneCountryCode}${nationalNumber}`
+  const language = String(formData.get('language') ?? 'en').trim().toLowerCase()
+  const locale = String(formData.get('locale') ?? 'en').trim()
+  const timezone = String(formData.get('timezone') ?? 'UTC').trim()
+  const investmentBand = String(formData.get('investmentBand') ?? '')
+  if (!['up-to-5m', '5m-to-10m', '10m-to-50m', 'above-50m'].includes(investmentBand)) redirect(withMessage('/register', 'error', 'Select your intended investment size category.'))
+  if (!(await allow('signup', 5, 3600))) redirect(withMessage('/register', 'error', 'Too many registrations from this connection. Try again later.'))
   if (participantType === 'wtc_accra_member' || participantType === 'wtc_association_member') {
     const expectedPattern = participantType === 'wtc_accra_member' ? /^WTCA[0-9]{10}$/ : /^WTCAM[0-9]{10}$/
     const label = participantType === 'wtc_accra_member' ? 'WTC Accra Membership ID' : 'WTCA Member ID'
@@ -116,21 +127,9 @@ export async function signup(formData: FormData) {
       redirect(withMessage('/register', 'error', `That ${label} is not valid for this email or has not been activated. Enter the ID issued to you by WTC Accra through wtcaccra.com.`))
     }
   }
-  const country = String(formData.get('country') ?? '').trim()
-  const countryCode = String(formData.get('countryCode') ?? '').trim().toUpperCase()
-  const phoneCountryCode = String(formData.get('phoneCountryCode') ?? '').trim()
-  const phoneLocal = String(formData.get('phoneLocal') ?? '').replace(/\D/g, '')
-  const preferredCurrency = String(formData.get('preferredCurrency') ?? 'USD').trim().toUpperCase()
-  if (!country || !/^[A-Z]{2}$/.test(countryCode)) redirect(withMessage('/register', 'error', 'Select a valid country.'))
-  if (!/^\+[0-9]{1,4}$/.test(phoneCountryCode) || phoneLocal.length < 5 || phoneLocal.length > 15) redirect(withMessage('/register', 'error', 'Enter a valid telephone number for your selected country.'))
-  if (!/^[A-Z]{3}$/.test(preferredCurrency)) redirect(withMessage('/register', 'error', 'Select a valid preferred currency.'))
-  const nationalNumber = phoneLocal.replace(/^0+/, '')
-  const phone = `${phoneCountryCode}${nationalNumber}`
-  const language = String(formData.get('language') ?? 'en').trim().toLowerCase()
-  const locale = String(formData.get('locale') ?? 'en').trim()
-  const timezone = String(formData.get('timezone') ?? 'UTC').trim()
-  const investmentBand = String(formData.get('investmentBand') ?? '')
-  if (!['up-to-5m', '5m-to-10m', '10m-to-50m', 'above-50m'].includes(investmentBand)) redirect(withMessage('/register', 'error', 'Select your intended investment size category.'))
+  const address = await checkEmailAddress(email)
+  if (!address.ok) redirect(withMessage('/register', 'error', address.reason))
+  const supabase = await createClient()
   const extra = {
     investment_band: investmentBand,
     organisation_name: organisationName || null,
@@ -156,8 +155,17 @@ export async function signup(formData: FormData) {
   }
   const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, participant_type: participantType, ...extra }, emailRedirectTo: `${getSiteUrl()}/auth/confirm` } })
   if (error) {
-    if (/already|registered|exists/i.test(error.message)) redirect(`/resume-registration?email=${encodeURIComponent(email)}`)
-    redirect(withMessage('/register', 'error', error.message))
+    if (error.code === 'request_timeout' || error.name === 'AuthRetryableFetchError' || (error.status ?? 0) >= 500) {
+      console.error('Signup confirmation unavailable', { status: error.status, code: error.code })
+      redirect(`/resume-registration?${new URLSearchParams({ email, status: 'signup-pending' })}`)
+    }
+    if (error.code === 'user_already_exists' || error.code === 'email_exists') {
+      redirect(`/resume-registration?email=${encodeURIComponent(email)}`)
+    }
+    if (error.status === 429) {
+      redirect(withMessage('/register', 'error', 'Registration is temporarily rate limited. Wait a few minutes before trying again.'))
+    }
+    redirect(withMessage('/register', 'error', 'We could not create your account. Check your registration details and try again.'))
   }
   // Supabase deliberately returns a user with no identities for a repeated signup.
   // Never send that person to a misleading "new code sent" screen.

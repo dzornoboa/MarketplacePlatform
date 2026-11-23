@@ -141,7 +141,7 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
 
     {!browseLock.locked && <section>
       <h2>Published opportunities</h2>
-      <form className="filter-row" method="get">
+      <form className="filter-row opportunity-filters" method="get">
         {mineSort !== 'updated' && <input type="hidden" name="mine" value={mineSort} />}
         <label>Search<input name="q" defaultValue={q} placeholder="Title, summary or country" /></label>
         <label>Investment Size (USD)<select name="band" defaultValue={investmentBand}><option value="">All Investment Sizes</option>{investmentBands.map(b => <option key={b.code} value={b.code}>{b.label}</option>)}</select></label>
