@@ -30,11 +30,11 @@ function suggestedUsername(name: string) {
   return base.length >= 3 ? base : ''
 }
 
-export function RegisterFields({ email, initialPlan = '', initialType = '' }: { email?: string; plans?: unknown[]; initialPlan?: string; initialType?: string }) {
+export function RegisterFields({ email, initialName = '', initialPlan = '', initialType = '' }: { email?: string; initialName?: string; plans?: unknown[]; initialPlan?: string; initialType?: string }) {
   const [type, setType] = useState(initialType)
   const [mail, setMail] = useState(email ?? '')
-  const [fullName, setFullName] = useState('')
-  const [username, setUsername] = useState('')
+  const [fullName, setFullName] = useState(initialName)
+  const [username, setUsername] = useState(() => suggestedUsername(initialName))
   const [usernameState, setUsernameState] = useState<'idle'|'checking'|'available'|'taken'|'invalid'>('idle')
   const [dob, setDob] = useState('')
   const [countries, setCountries] = useState<CountryOption[]>([])

@@ -8,6 +8,7 @@ import { validateEmail, validatePassword, validateSignupInput } from '@/lib/auth
 import { getSiteUrl } from '@/lib/supabase/config'
 import { allow, checkAllowed, resetLimit } from '@/lib/security/throttle'
 import { checkEmailAddress } from '@/lib/email/verify-address'
+import { clearRegistrationFollowup, trackRegistrationFailure } from '@/lib/auth/registration-followups'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 function withMessage(path: string, key: 'error' | 'message', message: string) {
@@ -157,6 +158,7 @@ export async function signup(formData: FormData) {
   if (error) {
     if (error.code === 'request_timeout' || error.name === 'AuthRetryableFetchError' || (error.status ?? 0) >= 500) {
       console.error('Signup confirmation unavailable', { status: error.status, code: error.code })
+      await trackRegistrationFailure(email, fullName, participantType)
       redirect(`/resume-registration?${new URLSearchParams({ email, status: 'signup-pending' })}`)
     }
     if (error.code === 'user_already_exists' || error.code === 'email_exists') {
@@ -172,7 +174,11 @@ export async function signup(formData: FormData) {
   if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
     redirect(`/resume-registration?email=${encodeURIComponent(email)}`)
   }
-  if (data.session) { revalidatePath('/', 'layout'); redirect('/dashboard') }
+  if (data.session) {
+    await clearRegistrationFollowup(email)
+    revalidatePath('/', 'layout')
+    redirect('/dashboard')
+  }
   redirect(`/verify-email?email=${encodeURIComponent(email)}`)
 }
 
@@ -188,6 +194,7 @@ export async function verifyEmailCode(formData: FormData) {
   const supabase = await createClient()
   const { data, error } = await supabase.auth.verifyOtp({ email, token, type: 'signup' })
   if (error || !data.session) redirect(withMessage(back, 'error', 'That code is not valid or has expired. Request a new one below.'))
+  await clearRegistrationFollowup(email)
   revalidatePath('/', 'layout')
   redirect('/dashboard')
 }
@@ -216,19 +223,29 @@ export async function resumeRegistration(formData: FormData) {
   // Do not reveal whether the address exists or whether it is already confirmed.
   // Confirmed accounts receive a password continuation link; unfinished accounts
   // receive a fresh signup-confirmation message. Unknown addresses receive neither.
-  await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${getSiteUrl()}/auth/confirm?next=/reset-password`,
-  }).catch(() => undefined)
-  await supabase.auth.resend({
-    type: 'signup',
-    email,
-    options: { emailRedirectTo: `${getSiteUrl()}/auth/confirm` },
-  }).catch(() => undefined)
+  const results = await Promise.allSettled([
+    supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${getSiteUrl()}/auth/confirm?next=/reset-password`,
+    }),
+    supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo: `${getSiteUrl()}/auth/confirm` },
+    }),
+  ])
+  for (const result of results) {
+    if (result.status === 'rejected') console.error('Registration continuation request failed')
+    else if (result.value.error) {
+      console.error('Registration continuation error', {
+        status: result.value.error.status, code: result.value.error.code,
+      })
+    }
+  }
 
   redirect(withMessage(
     `/resume-registration?email=${encodeURIComponent(email)}`,
     'message',
-    'If an account is associated with this address, we sent the appropriate secure email to continue. Check your inbox and spam folder.',
+    'Check your inbox and spam folder for a WTC Accra email. If no email arrives, return to registration to try again or contact the membership team for help.',
   ))
 }
 

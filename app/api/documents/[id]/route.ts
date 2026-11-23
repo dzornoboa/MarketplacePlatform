@@ -4,10 +4,7 @@ import { allow } from '@/lib/security/throttle'
 
 const BUCKET = 'platform-documents'
 
-/* Resolves a document to a short-lived signed URL and redirects to it.
-   A GET route (rather than a server-action redirect) works in every browser,
-   can be opened in a new tab, and still runs entirely under the caller's RLS:
-   if document_records does not return the row, there is nothing to sign. */
+/* Authorize with the caller's RLS and stream the private object from the Hub. */
 export async function GET(_request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params
   const supabase = await createClient()
@@ -17,16 +14,53 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
   if (!(await allow('document_open', 120, 600))) return new NextResponse('Too many document requests. Try again shortly.', { status: 429 })
 
   const { data: record } = await supabase.from('document_records')
-    .select('id,object_path,file_name').eq('id', id).maybeSingle()
+    .select('id,object_path,file_name,mime_type').eq('id', id).maybeSingle()
   if (!record) return new NextResponse('Not found or not permitted', { status: 404 })
 
   const { data: signed, error } = await supabase.storage.from(BUCKET).createSignedUrl(record.object_path, 120)
   if (error || !signed) return new NextResponse('Unable to sign document', { status: 500 })
 
-  // Best-effort access record; the document still opens if this fails.
-  await supabase.from('document_access_events').insert({
-    document_id: record.id, user_id: String(claimsData.claims.sub), event_type: 'signed_url',
-  })
+  const range = _request.headers.get('range')
+  let upstream: Response
+  try {
+    upstream = await fetch(signed.signedUrl, {
+      cache: 'no-store',
+      redirect: 'error',
+      headers: range ? { Range: range } : {},
+      signal: AbortSignal.timeout(25_000),
+    })
+  } catch {
+    return new NextResponse('Unable to load document', { status: 502 })
+  }
+  if (!upstream.ok && upstream.status !== 416) {
+    await upstream.body?.cancel()
+    return new NextResponse('Unable to load document', { status: 502 })
+  }
 
-  return NextResponse.redirect(signed.signedUrl, { status: 302, headers: { 'cache-control': 'private, no-store', 'referrer-policy': 'no-referrer' } })
+  if (upstream.ok && !range) {
+    // Keep the existing audit event for compatibility with past reports.
+    await supabase.from('document_access_events').insert({
+      document_id: record.id, user_id: String(claimsData.claims.sub), event_type: 'signed_url',
+    })
+  }
+
+  const type = upstream.headers.get('content-type')?.split(';')[0].trim().toLowerCase()
+  const previewable = type === record.mime_type && ['application/pdf', 'image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(type)
+  const filename = encodeURIComponent(record.file_name.toWellFormed()).replace(/[!'()*]/g, char => '%' + char.charCodeAt(0).toString(16))
+  const headers = new Headers({
+    'cache-control': 'private, no-store',
+    'referrer-policy': 'no-referrer',
+    'x-content-type-options': 'nosniff',
+    'content-type': previewable ? type : 'application/octet-stream',
+    'content-disposition': `${previewable ? 'inline' : 'attachment'}; filename*=UTF-8''${filename}`,
+  })
+  for (const name of ['accept-ranges', 'content-range']) {
+    const value = upstream.headers.get(name)
+    if (value) headers.set(name, value)
+  }
+  if (upstream.status === 416) {
+    await upstream.body?.cancel()
+    return new NextResponse(null, { status: 416, headers })
+  }
+  return new NextResponse(upstream.body, { status: upstream.status, headers })
 }

@@ -25,6 +25,6 @@ export default async function ResumeRegistrationPage({ searchParams }: Props) {
       <label>Email Address<input name="email" type="email" autoComplete="email" defaultValue={email} required /></label>
       <SubmitButton pendingLabel="Preparing…">Continue Account Setup</SubmitButton>
     </form>
-    <div className="button-row"><Link className="arrow-link" href="/register">← Back To Registration</Link>{email && <Link className="arrow-link" href={`/login?email=${encodeURIComponent(email)}&next=/dashboard/profile`}>Sign In Instead →</Link>}</div>
+    <div className="button-row"><Link className="arrow-link" href={email ? `/register?email=${encodeURIComponent(email)}` : '/register'}>← Back To Registration</Link>{email && <Link className="arrow-link" href={`/login?email=${encodeURIComponent(email)}&next=/dashboard/profile`}>Sign In Instead →</Link>}</div>
   </section></main>
 }

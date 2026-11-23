@@ -225,6 +225,12 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['follows']['Insert']>
         Relationships: []
       }
+      registration_followups: {
+        Row: { id:string; email:string; full_name:string; participant_type:string; updated_at:string }
+        Insert: { id?:string; email:string; full_name:string; participant_type:string; updated_at?:string }
+        Update: Partial<Database['public']['Tables']['registration_followups']['Insert']>
+        Relationships: []
+      }
       outbound_emails: {
         Row: { id:string; delivery_lease_until:string|null; to_email:string; to_user_id:string|null; subject:string; body:string; kind:string; related_id:string|null; status:string; error:string|null; sent_at:string|null; created_at:string }
         Insert: { id?:string; delivery_lease_until?:string|null; to_email:string; to_user_id?:string|null; subject:string; body:string; kind?:string; related_id?:string|null; status?:string; error?:string|null; sent_at?:string|null; created_at?:string }

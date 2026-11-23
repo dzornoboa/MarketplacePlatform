@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { SubmitButton } from '@/components/submit-button'
 import { RegisterFields } from '@/components/register-fields'
+import { readRegistrationFollowup } from '@/lib/auth/registration-followups'
 import { signup } from '../actions'
 import { BrandCircle, Logo, LogoLink } from '@/components/brand'
 import { getPageBlock, getPublicPlans } from '@/lib/content/site-content'
@@ -13,7 +14,9 @@ export default async function RegisterPage({ searchParams }: Props) {
   const params = await searchParams
   const error = typeof params.error === 'string' ? params.error : null
   const planCode = typeof params.plan === 'string' ? params.plan : ''
-  const typeParam = typeof params.type === 'string' ? params.type : ''
+  const draft = typeof params.resume === 'string' ? await readRegistrationFollowup(params.resume) : null
+  const email = draft?.email ?? (typeof params.email === 'string' ? params.email.slice(0, 254) : undefined)
+  const typeParam = draft?.participant_type ?? (typeof params.type === 'string' ? params.type : '')
   const plans = await getPublicPlans()
   const chosen = plans.find(pl => pl.code === planCode) ?? null
   const aside = await getPageBlock('auth', 'register_aside', { eyebrow: 'Verification first', heading: 'A trusted network,', heading_emphasis: 'not an open deal directory', body: 'WTC Accra reviews participant information before unlocking private opportunities and member privileges.', cta_label: null, cta_href: null, secondary_cta_label: null, secondary_cta_href: null, image_url: null })
@@ -29,7 +32,7 @@ export default async function RegisterPage({ searchParams }: Props) {
         <form action={signup} className="form-stack" data-registration-form>
           <RegistrationAgreementGate>
             <RegistrationDraft />
-            <RegisterFields plans={plans} initialPlan={chosen?.code ?? ''} initialType={chosen?.target_participant_types.includes(typeParam) ? typeParam : (chosen?.target_participant_types[0] ?? typeParam)} />
+            <RegisterFields email={email} initialName={draft?.full_name} plans={plans} initialPlan={chosen?.code ?? ''} initialType={chosen?.target_participant_types.includes(typeParam) ? typeParam : (chosen?.target_participant_types[0] ?? typeParam)} />
             <SubmitButton>Create Account</SubmitButton>
           </RegistrationAgreementGate>
         </form>

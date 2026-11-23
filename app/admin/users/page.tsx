@@ -38,6 +38,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
     <div>
       <p className="eyebrow">User administration</p>
       <h1>Members and access</h1>
+      <Link className="arrow-link" href="/admin/users/registration-followups">Registration follow-ups →</Link>
       <p className="muted">Verification, marketplace switches, account status and staff roles. Every change is audited and pushed to the member in realtime.</p>
     </div>
     {error && <div className="alert alert-error">{error}</div>}

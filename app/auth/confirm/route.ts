@@ -1,6 +1,7 @@
 import type { EmailOtpType } from '@supabase/supabase-js'
 import { type NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { clearRegistrationFollowup } from '@/lib/auth/registration-followups'
 import { safeNextPath } from '@/lib/auth/redirects'
 import { friendlyAuthError, destinationForOtpType } from '@/lib/auth/errors'
 
@@ -34,8 +35,9 @@ export async function GET(request: NextRequest) {
   const tokenHash = params.get('token_hash')
 
   if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
+      if (data.user?.email && data.user.email_confirmed_at) await clearRegistrationFollowup(data.user.email)
       return NextResponse.redirect(new URL(next || destinationForOtpType(type), request.nextUrl.origin))
     }
     const { message, path } = friendlyAuthError('exchange_failed', error.message, type)
@@ -45,8 +47,9 @@ export async function GET(request: NextRequest) {
   }
 
   if (tokenHash && type) {
-    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type })
+    const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type })
     if (!error) {
+      if (data.user?.email && data.user.email_confirmed_at) await clearRegistrationFollowup(data.user.email)
       return NextResponse.redirect(new URL(next || destinationForOtpType(type), request.nextUrl.origin))
     }
     const { message, path } = friendlyAuthError('otp_expired', error.message, type)
