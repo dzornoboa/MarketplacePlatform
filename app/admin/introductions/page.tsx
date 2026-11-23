@@ -30,10 +30,10 @@ export default async function AdminIntroductionsPage({ searchParams }: Props) {
   const oppIds = [...new Set((rows ?? []).map(r => r.opportunity_id))]
   const userIds = [...new Set((rows ?? []).flatMap(r => [r.requester_id, r.recipient_id]))]
   const actionIds = [...new Set((rows ?? []).map(r => r.last_action_by).filter((id): id is string => !!id))]
-  const [{ data: opps }, { data: people }, { data: actors }] = await Promise.all([
-    oppIds.length ? supabase.from('opportunities').select('id,title,sector,country').in('id', oppIds) : Promise.resolve({ data: [] }),
-    userIds.length ? supabase.from('profiles').select('id,full_name,participant_type,country').in('id', userIds) : Promise.resolve({ data: [] }),
-    actionIds.length ? supabase.from('profiles').select('id,full_name,system_role').in('id', actionIds) : Promise.resolve({ data: [] }),
+  const [{ data: opps, error: oppsError }, { data: people, error: peopleError }, { data: actors, error: actorsError }] = await Promise.all([
+    oppIds.length ? supabase.from('opportunities').select('id,title,sector,country').in('id', oppIds) : Promise.resolve({ data: [], error: null }),
+    userIds.length ? supabase.from('profiles').select('id,full_name,participant_type,country').in('id', userIds) : Promise.resolve({ data: [], error: null }),
+    actionIds.length ? supabase.from('profiles').select('id,full_name,system_role').in('id', actionIds) : Promise.resolve({ data: [], error: null }),
   ])
   const oppById = new Map((opps ?? []).map(o => [o.id, o]))
   const personById = new Map((people ?? []).map(p => [p.id, p]))
@@ -60,7 +60,7 @@ export default async function AdminIntroductionsPage({ searchParams }: Props) {
       <button className="button button-outline" type="submit">Apply</button>
     </form>
 
-    {rowsError
+    {rowsError || oppsError || peopleError || actorsError
       ? <p className="alert alert-error" role="alert">Could not load introductions. Refresh the page to try again.</p>
       : items.length === 0
       ? <section className="card empty-state"><BrandCircle /><h2>Queue is clear</h2><p>No requests with status “{stageLabel(status)}”.</p></section>
