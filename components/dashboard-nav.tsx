@@ -20,27 +20,10 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, a
   const [open, setOpen] = useState(false)
   const [expanded, setExpanded] = useState<string | null>(null)
   const groupId = useId()
-  const navRef = useRef<HTMLElement>(null)
-
-  useEffect(() => {
-    if (!expanded) return
-    const closeOutside = (event: PointerEvent) => {
-      if (!navRef.current?.contains(event.target as Node)) setExpanded(null)
-    }
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setExpanded(null)
-    }
-    document.addEventListener('pointerdown', closeOutside)
-    document.addEventListener('keydown', closeOnEscape)
-    return () => {
-      document.removeEventListener('pointerdown', closeOutside)
-      document.removeEventListener('keydown', closeOnEscape)
-    }
-  }, [expanded])
 
   /* On a phone the sidebar is a collapsed menu. Closing it on navigation means
      a tap always lands on the page, not on a menu still covering it. */
-  useEffect(() => { setOpen(false); setExpanded(null) }, [pathname])
+  useEffect(() => { setOpen(false) }, [pathname])
   const asideRef = useRef<HTMLElement>(null)
   // Tap outside the menu, or press Escape, and it closes.
   useEffect(() => {
@@ -122,8 +105,8 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, a
       </button></div>
     </div>
     <Link className="sidebar-user" href="/dashboard/profile"><Avatar src={profile.avatar_url} name={profile.full_name} size={36} /><span><strong>{profile.full_name || 'Your Profile'}<VerifiedCheck verified={profile.verification_status === 'verified'} size={14} /></strong><small>{staff ? 'WTC Accra Staff · WTC Accra Member' : 'Member Workspace'}</small>{staff ? <span className="plan-tag">{profile.system_role.replaceAll('_',' ')}</span> : <ParticipantBadge type={profile.participant_type} requested={profile.requested_participant_type} />}{!staff && planLabel && <span className="plan-tag">{planLabel}</span>}</span></Link>
-    <nav id="dashboard-nav" ref={navRef} aria-label={consoleGroups ? 'Staff console' : 'Dashboard'}>
-      <Link href={overview} onClick={() => setExpanded(null)} className={isActive(overview) ? 'nav-active' : undefined} aria-current={isActive(overview) ? 'page' : undefined}>Overview</Link>
+    <nav id="dashboard-nav" aria-label={consoleGroups ? 'Staff console' : 'Dashboard'}>
+      <Link href={overview} className={isActive(overview) ? 'nav-active' : undefined} aria-current={isActive(overview) ? 'page' : undefined}>Overview</Link>
       {groups.map((group, index) => {
         const links = group.links.filter(link => link.href !== overview)
         if (!links.length) return null
@@ -132,7 +115,7 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, a
         const panel = `${groupId}-${index}`
         const badge = links.reduce((count, link) => count + (link.badge ?? 0), 0)
         return <div className="nav-group nav-disclosure" key={group.label}>
-          <button className={active ? 'nav-section-button nav-section-current' : 'nav-section-button'} type="button" aria-expanded={isOpen} aria-controls={panel} onClick={() => setExpanded(isOpen ? null : group.label)}>
+          <button className={active ? 'nav-section-button nav-section-current' : 'nav-section-button'} type="button" aria-expanded={isOpen} aria-controls={panel} onClick={() => setExpanded(group.label)}>
             <span>{group.label}</span>
             {!isOpen && badge > 0 && <span className="nav-badge" aria-label={`${badge} unread notifications`}>{badge > 99 ? '99+' : badge}</span>}
             <span className="nav-section-chevron" aria-hidden="true" />
@@ -144,7 +127,7 @@ export function DashboardNav({ profile, unreadCount = 0, adminMfaReady = true, a
               return <Link key={link.href}
                 className={[current ? 'nav-active' : '', locked ? 'nav-locked' : ''].filter(Boolean).join(' ')}
                 aria-current={current ? 'page' : undefined} href={link.href}
-                onClick={() => { setExpanded(null); setOpen(false) }}>
+                onClick={() => setOpen(false)}>
                 <span>{link.label}</span>
                 {locked && <span aria-label="Locked">🔒</span>}
                 {!locked && !!link.badge && <span className="nav-badge">{link.badge > 99 ? '99+' : link.badge}</span>}
