@@ -22,6 +22,9 @@ export default async function LoginPage({ searchParams }: Props) {
   return (
     <main className="auth-page">
       <section className="auth-panel">
+        <Link className="text-link" href="/">
+          <span aria-hidden="true">←</span> Back to website
+        </Link>
         <LogoLink />
         <p className="eyebrow">Member access</p>
         <h1>Welcome back</h1>
