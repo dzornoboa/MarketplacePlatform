@@ -20,8 +20,8 @@ export default async function VerifyEmailPage({ searchParams }: Props) {
       <section className="card auth-card">
         <LogoLink />
         <p className="eyebrow">Verify Your Email</p>
-        <h1>Enter The Code We Sent</h1>
-        <p className="muted">Enter the 6-digit code sent to <strong>{email}</strong>. You can also use the secure confirmation link in the email.</p>
+        <h1>Enter Your Verification Code</h1>
+        <p className="muted">Check for a 6-digit verification code at <strong>{email}</strong>. You can also use the secure confirmation link in the email.</p>
         {error && <div className="alert alert-error">{error}</div>}
         {message && <div className="alert alert-success">{message}</div>}
         <form action={verifyEmailCode} className="form-stack">

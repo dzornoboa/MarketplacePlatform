@@ -207,12 +207,24 @@ export async function resendVerificationCode(formData: FormData) {
   if (validateEmail(email)) redirect('/register')
   if (!(await allow('resend_code', 3, 600, email))) redirect(withMessage(back, 'error', 'Please wait before requesting another code.'))
   const supabase = await createClient()
-  await supabase.auth.resend({
+  const result = await supabase.auth.resend({
     type: 'signup',
     email,
     options: { emailRedirectTo: `${getSiteUrl()}/auth/confirm` },
-  }).catch(() => undefined)
-  redirect(withMessage(back, 'message', 'If this address still needs verification, a fresh email will arrive shortly. If it is already confirmed, use Continue Existing Account below.'))
+  }).catch(() => null)
+  const error = result?.error
+
+  if (!result || error) {
+    console.error('Verification email resend failed', { status: error?.status, code: error?.code })
+    if (error?.status === 429) {
+      redirect(withMessage(back, 'error', 'Please wait before requesting another code.'))
+    }
+    if (!result || (error?.status ?? 0) >= 500 || error?.code === 'email_address_not_authorized') {
+      redirect(withMessage(back, 'error', 'We could not request a new verification email right now. Try again later or contact the membership team.'))
+    }
+  }
+
+  redirect(withMessage(back, 'message', 'If this address still needs verification, check your inbox and spam folder for a new code. If you already confirmed it, use Continue Existing Account below.'))
 }
 
 export async function resumeRegistration(formData: FormData) {
