@@ -1,5 +1,7 @@
 'use server'
 
+import { after } from 'next/server'
+import { registrationEmailFetch } from '@/lib/auth/registration-email'
 import { cookies } from 'next/headers'
 import { hasPasswordRecoveryGrant, recoveryCookie } from '@/lib/auth/password-recovery'
 import { revalidatePath } from 'next/cache'
@@ -132,7 +134,7 @@ export async function signup(formData: FormData) {
   }
   const address = await checkEmailAddress(email)
   if (!address.ok) redirect(withMessage('/register', 'error', address.reason))
-  const supabase = await createClient()
+  const supabase = await createClient(registrationEmailFetch)
   const extra = {
     investment_band: investmentBand,
     organisation_name: organisationName || null,
@@ -160,7 +162,7 @@ export async function signup(formData: FormData) {
   if (error) {
     if (error.code === 'request_timeout' || error.name === 'AuthRetryableFetchError' || (error.status ?? 0) >= 500) {
       console.error('Signup confirmation unavailable', { status: error.status, code: error.code })
-      await trackRegistrationFailure(email, fullName, participantType)
+      after(() => trackRegistrationFailure(email, fullName, participantType))
       redirect(`/resume-registration?${new URLSearchParams({ email, status: 'signup-pending' })}`)
     }
     if (error.code === 'user_already_exists' || error.code === 'email_exists') {
@@ -206,7 +208,7 @@ export async function resendVerificationCode(formData: FormData) {
   const back = `/verify-email?email=${encodeURIComponent(email)}`
   if (validateEmail(email)) redirect('/register')
   if (!(await allow('resend_code', 3, 600, email))) redirect(withMessage(back, 'error', 'Please wait before requesting another code.'))
-  const supabase = await createClient()
+  const supabase = await createClient(registrationEmailFetch)
   const result = await supabase.auth.resend({
     type: 'signup',
     email,
@@ -219,7 +221,7 @@ export async function resendVerificationCode(formData: FormData) {
     if (error?.status === 429) {
       redirect(withMessage(back, 'error', 'Please wait before requesting another code.'))
     }
-    if (!result || (error?.status ?? 0) >= 500 || error?.code === 'email_address_not_authorized') {
+    if (!result || (error && error.code !== 'user_not_found' && error.code !== 'email_already_confirmed')) {
       redirect(withMessage(back, 'error', 'We could not request a new verification email right now. Try again later or contact the membership team.'))
     }
   }
@@ -232,7 +234,7 @@ export async function resumeRegistration(formData: FormData) {
   if (validateEmail(email)) redirect(withMessage('/resume-registration', 'error', 'Enter a valid email address.'))
   if (!(await allow('resume_registration', 4, 900, email))) redirect(withMessage('/resume-registration', 'error', 'Too many attempts. Try again in 15 minutes.'))
 
-  const supabase = await createClient()
+  const supabase = await createClient(registrationEmailFetch)
 
   // Do not reveal whether the address exists or whether it is already confirmed.
   // Confirmed accounts receive a password continuation link; unfinished accounts
@@ -254,6 +256,14 @@ export async function resumeRegistration(formData: FormData) {
         status: result.value.error.status, code: result.value.error.code,
       })
     }
+  }
+
+  const unavailable = results.every(result => result.status === 'rejected' ||
+    (result.value.error && (result.value.error.name === 'AuthRetryableFetchError' ||
+      (result.value.error.status ?? 0) >= 500 || result.value.error.code === 'request_timeout')))
+  if (unavailable) {
+    redirect(withMessage(`/resume-registration?email=${encodeURIComponent(email)}`, 'error',
+      'We could not confirm the email request. Try again shortly or contact the membership team.'))
   }
 
   redirect(withMessage(

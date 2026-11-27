@@ -3,10 +3,11 @@ import { cookies } from 'next/headers'
 import type { Database } from '@/lib/database.types'
 import { getSupabasePublicConfig } from '@/lib/supabase/config'
 
-export async function createClient() {
+export async function createClient(fetcher?: typeof fetch) {
   const cookieStore = await cookies()
   const { url, publishableKey } = getSupabasePublicConfig()
   return createServerClient<Database>(url, publishableKey, {
+    global: { fetch: fetcher },
     cookies: {
       getAll() { return cookieStore.getAll() },
       setAll(cookiesToSet) {
