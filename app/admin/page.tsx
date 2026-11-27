@@ -1,3 +1,4 @@
+import { notificationDestination } from '@/lib/notifications/destination'
 import Link from 'next/link'
 import { RealtimeRefresh } from '@/components/realtime-refresh'
 import { requireStaffConsole } from '@/lib/auth/guards'
@@ -33,7 +34,7 @@ export default async function AdminPage() {
     supabase.from('subscriptions').select('plan_code').eq('status', 'active').throwOnError(),
     supabase.from('payments').select('amount,paid_at').eq('status', 'paid').throwOnError(),
     admin ? supabase.from('audit_events').select('*').order('created_at', { ascending: false }).limit(12).throwOnError() : Promise.resolve({ data: [] }),
-    supabase.from('notifications').select('id,title,body,href,created_at,read_at').eq('user_id', profile.id).order('created_at', { ascending: false }).limit(8).throwOnError(),
+    supabase.from('notifications').select('id,kind,title,body,href,created_at,read_at').eq('user_id', profile.id).order('created_at', { ascending: false }).limit(8).throwOnError(),
     supabase.from('profiles').select('id,full_name,participant_type,verification_status,created_at').order('created_at', { ascending: false }).limit(5).throwOnError(),
     supabase.from('opportunities').select('id,title,status,updated_at').order('updated_at', { ascending: false }).limit(5).throwOnError(),
   ])
@@ -98,7 +99,7 @@ export default async function AdminPage() {
       <section className="card">
         <h2>Activity</h2>
         {(staffNotes ?? []).length > 0 && <div className="history-list compact">{(staffNotes ?? []).map(n => <div key={n.id}>
-          <strong>{n.href ? <Link href={n.href}>{n.title}</Link> : n.title}</strong><span>{dateTime(n.created_at)}</span>
+          <strong><Link href={notificationDestination(n) || '/dashboard/notifications'}>{n.title}</Link></strong><span>{dateTime(n.created_at)}</span>
           {n.body && <p className="muted">{n.body}</p>}
         </div>)}</div>}
         {admin && (recentAudit ?? []).length > 0 && <>

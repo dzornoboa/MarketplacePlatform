@@ -23,7 +23,7 @@ async function alertAdmins(userId: string, surface: string, reason: string) {
     if (recipients?.length) {
       const { error: notificationError } = await admin.from('notifications').insert(recipients.map(({ id }) => ({
         user_id: id, kind: 'content_moderation', title: 'Content blocked for review', body: subject,
-        href: `/admin/support#request-${ticket.id}`,
+        href: `/admin/support?request=${ticket.id}#request-${ticket.id}`,
       })))
       if (notificationError) throw new Error('Moderation notification creation failed')
     }

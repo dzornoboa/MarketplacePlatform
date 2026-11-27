@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { safeNextPath } from '@/lib/auth/redirects'
+import { isWelcomeNotification, notificationDestination } from '@/lib/notifications/destination'
 import { useEffect, useRef, useState } from 'react'
 import { dateTime } from '@/lib/format'
 import { bulkNotifications, markSeen } from '@/app/dashboard/notifications/actions'
@@ -43,13 +43,13 @@ export function NotificationList({ items }: { items: Item[] }) {
       </div>
     </div>
     <div className="notification-list">{items.map(item => {
-      const href = safeNextPath(item.href, '')
+      const href = notificationDestination(item)
       return <article className={`card notification${item.read_at ? '' : ' notification-unread'}${picked.has(item.id) ? ' notification-picked' : ''}`} key={item.id}>
         <label className="notification-pick"><input type="checkbox" name="ids" value={item.id} checked={picked.has(item.id)} onChange={() => toggle(item.id)} aria-label={`Select ${item.title}`} /></label>
         <div>
           <span className="eyebrow">{item.kind.replaceAll('_', ' ')}</span>
           <strong>{item.title}</strong>
-          {item.body && <p className="muted">{item.body}</p>}
+          {item.body && <p className="muted">{isWelcomeNotification(item) && item.href === '/dashboard' ? 'Complete your profile to continue membership setup.' : item.body}</p>}
         </div>
         <div className="notification-meta">
           <span>{dateTime(item.created_at)}</span>

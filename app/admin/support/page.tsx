@@ -28,7 +28,9 @@ export default async function AdminSupportPage({ searchParams }: Props) {
   const priorityOrder = ['urgent', 'high', 'normal', 'low']
   const sort = typeof params.sort === 'string' && ['oldest', 'newest', 'priority'].includes(params.sort) ? params.sort : 'oldest'
 
-  let query = supabase.from('support_requests').select('*').eq('status', status as 'open').limit(1000)
+  const requestId = typeof params.request === 'string' && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(params.request) ? params.request : null
+  let query = supabase.from('support_requests').select('*').limit(1000)
+  query = requestId ? query.eq('id', requestId) : query.eq('status', status as 'open')
   if (q) query = query.ilike('subject', containsPattern(q))
   if (category) query = query.eq('category', category)
   if (priority) query = query.eq('priority', priority)
@@ -71,17 +73,18 @@ export default async function AdminSupportPage({ searchParams }: Props) {
       </a>)}
     </nav>
 
-    <form className="filter-row card" method="get">
+    {requestId && <Link href="/admin/support">View all support requests →</Link>}
+    {!requestId && <form className="filter-row card" method="get">
       <input type="hidden" name="status" value={status} />
       <label>Subject<input name="q" defaultValue={q} placeholder="Search subjects" /></label>
       <label>Category<select name="category" defaultValue={category}><option value="">All categories</option><option value="content_moderation">Content moderation</option><option value={EXTRA_DOCUMENT_CATEGORY}>Extra document upload</option></select></label>
       <label>Priority<select name="priority" defaultValue={priority}><option value="">All</option><option value="urgent">Urgent</option><option value="high">High</option><option value="normal">Normal</option><option value="low">Low</option></select></label>
       <label>Sort<select name="sort" defaultValue={sort}><option value="oldest">Oldest first</option><option value="newest">Newest first</option><option value="priority">By priority</option></select></label>
       <button className="button button-outline" type="submit">Apply</button>
-    </form>
+    </form>}
 
     {(requests ?? []).length === 0
-      ? <section className="card empty-state"><BrandCircle /><h2>Queue is clear</h2><p>No requests with status &ldquo;{humanize(status)}&rdquo;.</p></section>
+      ? <section className="card empty-state"><BrandCircle /><h2>{requestId ? 'Request unavailable' : 'Queue is clear'}</h2>{!requestId && <p>No requests with status &ldquo;{humanize(status)}&rdquo;.</p>}</section>
       : <div className="review-list">{(requests ?? []).map(request => {
           const member = personById.get(request.user_id)
           const thread = (messages ?? []).filter(m => m.support_request_id === request.id)

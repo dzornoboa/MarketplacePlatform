@@ -1,3 +1,4 @@
+import { notificationDestination } from '@/lib/notifications/destination'
 import { connectionByMember, connectionColumns, connectionLabel } from '@/lib/connections'
 import { RealtimeRefresh } from '@/components/realtime-refresh'
 import Link from 'next/link'
@@ -22,7 +23,7 @@ export default async function DashboardPage() {
     readAccessState(supabase),
     supabase.from('opportunities').select('*', { count: 'exact', head: true }).eq('owner_user_id', profile.id),
     supabase.from('expressions_of_interest').select('*', { count: 'exact', head: true }).eq('status', 'submitted'),
-    supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(5),
+    supabase.from('notifications').select('*').eq('user_id', profile.id).order('created_at', { ascending: false }).limit(5),
     supabase.from('subscriptions').select('plan_code,ends_at').eq('status', 'active').limit(1).maybeSingle(),
   ])
   // Deal-flow KPIs: the member's listings, deals placed and received, matches and connections.
@@ -207,7 +208,7 @@ export default async function DashboardPage() {
 
           <section className="member-right-card">
             <div className="member-section-title"><h2>Recent Activity</h2><Link href="/dashboard/notifications">View All</Link></div>
-            {(notifications ?? []).length === 0 ? <p className="muted">Your verification, deal and network updates will appear here.</p> : <div className="member-activity-list">{(notifications ?? []).slice(0, 4).map(n => <Link key={n.id} href={n.href || '/dashboard/notifications'}><strong>{n.title}</strong><span>{n.body || 'Open notification'}</span></Link>)}</div>}
+            {(notifications ?? []).length === 0 ? <p className="muted">Your verification, deal and network updates will appear here.</p> : <div className="member-activity-list">{(notifications ?? []).slice(0, 4).map(n => <Link key={n.id} href={notificationDestination(n) || '/dashboard/notifications'}><strong>{n.title}</strong><span>{n.body || 'Open notification'}</span></Link>)}</div>}
           </section>
 
           {outstandingSteps.length > 0 && <section className="member-right-card member-progress-card">
@@ -312,7 +313,7 @@ export default async function DashboardPage() {
         {(notifications ?? []).length === 0
           ? <p className="muted">Nothing yet. Verification and deal-flow updates appear here.</p>
           : <div className="history-list">{(notifications ?? []).map(n => <div key={n.id}>
-              <strong>{n.title}</strong>
+              <strong><Link href={notificationDestination(n) || '/dashboard/notifications'}>{n.title}</Link></strong>
               <span>{dateTime(n.created_at)}</span>
               {n.body && <p className="muted">{n.body}</p>}
             </div>)}</div>}

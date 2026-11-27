@@ -1,3 +1,4 @@
+import { notificationDestination } from './destination'
 import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js'
 import nodemailer from 'nodemailer'
 import webpush from 'web-push'
@@ -191,7 +192,7 @@ export async function drainPushes(admin: SupabaseClient<Database>) {
       await finishDelivery(admin, 'outbound_pushes', row.id, lease, { status: 'no_subscription' })
       continue
     }
-    const payload = JSON.stringify({ title: row.title, body: row.body ?? '', href: row.href ?? '/dashboard/notifications' })
+    const payload = JSON.stringify({ title: row.title, body: row.body ?? '', href: notificationDestination(row) || '/dashboard/notifications' })
     let delivered = false
     let lastError = ''
     for (const sub of subs) {
