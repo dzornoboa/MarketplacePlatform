@@ -226,7 +226,7 @@ export async function resendVerificationCode(formData: FormData) {
     }
   }
 
-  redirect(withMessage(back, 'message', 'If this address still needs verification, check your inbox and spam folder for a new code. If you already confirmed it, use Continue Existing Account below.'))
+  redirect(withMessage(back, 'message', 'If this address still needs verification, check your inbox and spam folder for a new confirmation email. If you already confirmed it, use Continue Existing Account below.'))
 }
 
 export async function resumeRegistration(formData: FormData) {

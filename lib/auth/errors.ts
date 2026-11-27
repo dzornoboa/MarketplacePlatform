@@ -34,8 +34,8 @@ export function friendlyAuthError(
       }
     }
     return {
-      message: 'That link has to be opened in the browser it was requested from. Request a new one, or sign in if your account is already active.',
-      path: '/login',
+      message: 'Open the confirmation link in the same browser where you registered. You can request a fresh email below or sign in if you already confirmed your address.',
+      path: invite || type === 'email_change' ? '/login' : '/verify-email',
     }
   }
 
@@ -56,13 +56,13 @@ export function friendlyAuthError(
         }
       }
       return {
-        message: 'That confirmation link has expired or has already been used. Sign in to request a new one.',
-        path: '/login',
+        message: 'That confirmation link has expired or has already been used. Request a fresh email below, or sign in if you already confirmed your address.',
+        path: type === 'email_change' ? '/login' : '/verify-email',
       }
     case 'access_denied':
       return {
         message: 'That link is no longer valid. Request a new one to continue.',
-        path: recovery ? '/forgot-password' : '/login',
+        path: recovery ? '/forgot-password' : invite || type === 'email_change' ? '/login' : '/verify-email',
       }
     case 'email_not_confirmed':
       return { message: 'Confirm your email address before signing in. Check your inbox for the confirmation link.', path: '/login' }

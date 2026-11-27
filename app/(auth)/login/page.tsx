@@ -38,6 +38,7 @@ export default async function LoginPage({ searchParams }: Props) {
           <button className="button button-primary" type="submit">Sign in</button>
         </form>
         <div className="auth-links">
+          <Link href="/verify-email">Resend confirmation email</Link>
           <Link href="/forgot-password">Forgot password?</Link>
           <Link href="/register">Create an account</Link>
         </div>

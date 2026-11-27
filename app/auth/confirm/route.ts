@@ -17,7 +17,7 @@ import { friendlyAuthError, destinationForOtpType } from '@/lib/auth/errors'
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams
   const next = safeNextPath(params.get('next'), '')
-  const type = params.get('type') as EmailOtpType | null
+  const type = (params.get('type') ?? (next === '/reset-password' ? 'recovery' : null)) as EmailOtpType | null
 
   const redirectTo = request.nextUrl.clone()
   redirectTo.search = ''
